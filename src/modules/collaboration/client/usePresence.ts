@@ -236,15 +236,13 @@ export function usePresence({
                 ackResolversRef.current.delete(data.reqId);
                 resolver(data);
               }
-            } else if (data.type === "revoked") {
-              if (data.userId === currentUserId) {
-                setConnectionStatus("disconnected");
-                if (onRevokedRef.current) {
-                  onRevokedRef.current();
-                } else {
-                  alert("Akses kolaborasi Anda untuk undangan ini telah dicabut oleh pemilik.");
-                  router.push("/");
-                }
+            } else if (data.type === "collaborator.kicked" || data.type === "revoked") {
+              setConnectionStatus("disconnected");
+              if (onRevokedRef.current) {
+                onRevokedRef.current();
+              } else {
+                alert(data.reason || "Akses kolaborasi Anda untuk undangan ini telah dicabut oleh pemilik.");
+                router.push("/");
               }
             }
           } catch {}
@@ -254,12 +252,12 @@ export function usePresence({
           if (isDisposed) return;
           setConnectionStatus("disconnected");
           socketRef.current = null;
-          // Policy close is deliberate: the server revalidates membership every
-          // few seconds and closes the socket when access has been revoked.
-          if (closeEvent.code === 1008) {
+          // Policy close is deliberate: the server revalidates membership or kicks
+          // when access has been revoked or degraded.
+          if (closeEvent.code === 1008 || closeEvent.code === 4403) {
             if (onRevokedRef.current) onRevokedRef.current();
             else {
-              alert("Akses kolaborasi Anda sudah berubah atau dicabut.");
+              alert("Akses kolaborasi Anda telah dicabut oleh pemilik.");
               router.push("/");
             }
             return;

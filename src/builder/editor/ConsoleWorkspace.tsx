@@ -3,7 +3,7 @@
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, ChevronDown, Copy, ExternalLink, Eye, FolderOpen, GripVertical, ImagePlus, LayoutPanelTop, Library, LoaderCircle, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, PanelRightClose, PanelRightOpen, Plus, Redo2, RotateCw, Save, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, Eye, FolderOpen, GripVertical, ImagePlus, LayoutPanelTop, Library, LoaderCircle, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Plus, Redo2, RotateCw, Save, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, WifiOff, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useCallback, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { TemplateKit, TemplateSection } from "@/templates/contracts";
 import { getTemplateRuntime } from "@/templates/runtime-registry";
@@ -162,6 +162,9 @@ export function ConsoleWorkspace({
   const [uploadError, setUploadError] = useState("");
   const [inspectorWidth, setInspectorWidth] = useState(340);
   const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
+  const [isStructureCollapsed, setIsStructureCollapsed] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [showReconnectedBadge, setShowReconnectedBadge] = useState(false);
   const [isInspectorResizing, setIsInspectorResizing] = useState(false);
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [frameMode, setFrameMode] = useState<"desktop" | "ios" | "android" | "clean">("ios");
@@ -400,6 +403,10 @@ export function ConsoleWorkspace({
     if (savedCollapsed === "true") {
       setIsInspectorCollapsed(true);
     }
+    const savedStructureCollapsed = window.localStorage.getItem(`undangan-console:structure-collapsed:${template.code}`);
+    if (savedStructureCollapsed === "true") {
+      setIsStructureCollapsed(true);
+    }
   }, [template.code]);
 
   const toggleInspectorCollapse = useCallback(() => {
@@ -409,6 +416,28 @@ export function ConsoleWorkspace({
       return next;
     });
   }, [template.code]);
+
+  const toggleStructureCollapse = useCallback(() => {
+    setIsStructureCollapsed((prev) => {
+      const next = !prev;
+      window.localStorage.setItem(`undangan-console:structure-collapsed:${template.code}`, String(next));
+      return next;
+    });
+  }, [template.code]);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -595,6 +624,16 @@ export function ConsoleWorkspace({
     if (presence.connectionStatus === "connected") {
       setUploadError("");
     }
+  }, [presence.connectionStatus]);
+
+  const prevWsStatusRef = useRef(presence.connectionStatus);
+  useEffect(() => {
+    if (prevWsStatusRef.current === "connecting" && presence.connectionStatus === "connected") {
+      setShowReconnectedBadge(true);
+      const timer = setTimeout(() => setShowReconnectedBadge(false), 3000);
+      return () => clearTimeout(timer);
+    }
+    prevWsStatusRef.current = presence.connectionStatus;
   }, [presence.connectionStatus]);
 
   // Legacy HTTP auto-save: acts strictly as a FALLBACK callback when WebSocket is disconnected/offline
@@ -1378,13 +1417,46 @@ export function ConsoleWorkspace({
         ))}
       </nav>
 
+      {/* Network Offline / Reconnecting Floating Banner */}
+      {(!isOnline || presence.connectionStatus === "connecting") && authResolved && currentUser && draftId && (
+        <div className="fixed top-18 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50/95 px-4 py-1.5 text-xs font-bold text-amber-900 shadow-lg backdrop-blur-md animate-in slide-in-from-top-2 duration-200">
+          {!isOnline ? <WifiOff size={14} className="text-amber-600" /> : <LoaderCircle size={14} className="animate-spin text-amber-600" />}
+          <span>{!isOnline ? "Anda sedang offline. Perubahan disimpan secara lokal." : "Koneksi terputus. Mencoba menyambung kembali..."}</span>
+        </div>
+      )}
+
+      {showReconnectedBadge && (
+        <div className="fixed top-18 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50/95 px-4 py-1.5 text-xs font-bold text-emerald-900 shadow-lg backdrop-blur-md animate-in slide-in-from-top-2 duration-200">
+          <Check size={14} className="text-emerald-600 font-extrabold" />
+          <span>Terhubung kembali ke server kolaborasi</span>
+        </div>
+      )}
+
       {view === "editor" && (
         <div
           className={`editor-workspace-grid grid min-h-[calc(100vh-64px)] grid-cols-1 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:[overflow-anchor:none] ${
             isInspectorResizing ? "is-resizing" : ""
-          } ${isInspectorCollapsed ? "is-inspector-collapsed" : ""}`}
+          } ${isStructureCollapsed ? "is-structure-collapsed" : ""} ${isInspectorCollapsed ? "is-inspector-collapsed" : ""}`}
           style={{ "--inspector-width": isInspectorCollapsed ? "0px" : `${inspectorWidth}px` } as CSSProperties}
         >
+          {/* Floating Expand Tab for Structure (When Left Sidebar is Collapsed on Desktop) */}
+          {isStructureCollapsed && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsStructureCollapsed(false);
+                window.localStorage.setItem(`undangan-console:structure-collapsed:${template.code}`, "false");
+              }}
+              title="Buka struktur section (Klik untuk expand)"
+              className="fixed left-0 top-1/2 z-40 -translate-y-1/2 hidden lg:flex items-center gap-1.5 rounded-r-2xl border border-l-0 border-slate-200/90 bg-white/95 px-2.5 py-4 text-xs font-bold text-slate-700 shadow-[4px_6px_24px_rgba(15,23,42,0.12)] backdrop-blur-md hover:bg-emerald-50 hover:text-emerald-700 active:scale-95 transition group cursor-pointer"
+            >
+              <PanelLeftOpen size={16} className="text-emerald-600 group-hover:scale-110 transition" />
+              <span className="[writing-mode:vertical-lr] text-[10px] tracking-widest uppercase font-extrabold text-slate-600 group-hover:text-emerald-700">
+                Struktur
+              </span>
+            </button>
+          )}
+
           <aside
             ref={structurePanelRef}
             onPointerMove={(e) => {
@@ -1397,7 +1469,9 @@ export function ConsoleWorkspace({
                 sectionId: selectedId,
               });
             }}
-            className="console-scrollbar relative max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain border-b border-slate-200 bg-white p-4 lg:h-full lg:max-h-none lg:border-r lg:border-b-0"
+            className={`console-scrollbar relative overflow-y-auto overscroll-contain bg-white p-4 lg:h-full lg:max-h-none lg:border-r border-slate-200 transition-all duration-200 ${
+              isStructureCollapsed ? "hidden" : "hidden lg:block"
+            }`}
           >
             <RemoteCursorLayer cursors={presence.remoteCursors} surface="left-sidebar" />
 
@@ -1406,9 +1480,19 @@ export function ConsoleWorkspace({
                 <p className="text-xs font-extrabold text-slate-900">Struktur Undangan</p>
                 <p className="mt-0.5 text-[10px] text-slate-500">Geser section untuk mengatur urutan.</p>
               </div>
-              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                {sections.length}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                  {sections.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleStructureCollapse}
+                  title="Tutup sidebar struktur (Zen Mode)"
+                  className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                >
+                  <PanelLeftClose size={15} />
+                </button>
+              </div>
             </div>
 
             {/* Quick Search Section Filter */}

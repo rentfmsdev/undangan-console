@@ -17,7 +17,24 @@ const VALID_SURFACES = new Set(["canvas", "preview", "left-sidebar", "right-side
 const DRAFT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REDIS_CHANNEL = "undangan:collaboration:events";
 
-const dbPool = mysql.createPool(DB_URL);
+const dbPool = mysql.createPool({
+  uri: DB_URL,
+  waitForConnections: true,
+  connectionLimit: 15,
+  maxIdle: 10,
+  idleTimeout: 60000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
+});
+
+// Periodic ping to keep MySQL connection pool warm and prevent stale connection dropouts
+setInterval(async () => {
+  try {
+    await dbPool.query("SELECT 1");
+  } catch (err) {
+    console.error("[Collab Server] DB KeepAlive ping error:", err.message);
+  }
+}, 45000);
 const server = createServer((req, res) => {
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -603,10 +620,34 @@ wss.on("connection", async (ws, req) => {
       if (!collaboratorId || !["editor", "viewer"].includes(role)) return;
 
       try {
+        const [targetRows] = await dbPool.query(
+          "SELECT user_id AS userId, email FROM invitation_collaborators WHERE id = ? AND invitation_id = ? LIMIT 1",
+          [collaboratorId, draftId]
+        );
+        const target = targetRows[0];
+
         await dbPool.query(
           "UPDATE invitation_collaborators SET role = ?, updated_at = NOW() WHERE id = ? AND invitation_id = ?",
           [role, collaboratorId, draftId]
         );
+
+        // Instantly update active collaborator socket in the room
+        if (target) {
+          for (const clientWs of room.clients) {
+            const clientPrincipal = socketPrincipals.get(clientWs);
+            if (clientPrincipal && (clientPrincipal.id === target.userId || clientPrincipal.email === target.email)) {
+              clientPrincipal.role = role;
+              if (clientWs.readyState === 1) {
+                clientWs.send(JSON.stringify({
+                  type: "permission.update",
+                  role,
+                  message: `Akses Anda telah diubah menjadi ${role === "editor" ? "Bisa Edit (Editor)" : "Hanya Lihat (Viewer)"} oleh pemilik draft.`,
+                }));
+              }
+            }
+          }
+        }
+
         await broadcastCollaborators(draftId);
         ws.send(JSON.stringify({
           type: "collaborator.updateRole.ack",
@@ -627,10 +668,35 @@ wss.on("connection", async (ws, req) => {
       if (!collaboratorId) return;
 
       try {
+        const [targetRows] = await dbPool.query(
+          "SELECT user_id AS userId, email FROM invitation_collaborators WHERE id = ? AND invitation_id = ? LIMIT 1",
+          [collaboratorId, draftId]
+        );
+        const target = targetRows[0];
+
         await dbPool.query(
           "DELETE FROM invitation_collaborators WHERE id = ? AND invitation_id = ?",
           [collaboratorId, draftId]
         );
+
+        // Instantly notify and disconnect the removed collaborator's active socket
+        if (target) {
+          for (const clientWs of room.clients) {
+            const clientPrincipal = socketPrincipals.get(clientWs);
+            if (clientPrincipal && (clientPrincipal.id === target.userId || clientPrincipal.email === target.email)) {
+              if (clientWs.readyState === 1) {
+                clientWs.send(JSON.stringify({
+                  type: "collaborator.kicked",
+                  reason: "Akses kolaborasi Anda telah dicabut oleh pemilik undangan.",
+                }));
+                setTimeout(() => {
+                  try { clientWs.close(4403, "Collaborator removed"); } catch {}
+                }, 100);
+              }
+            }
+          }
+        }
+
         await broadcastCollaborators(draftId);
         ws.send(JSON.stringify({
           type: "collaborator.remove.ack",

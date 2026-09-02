@@ -25,8 +25,9 @@ export const weddingLampungElegance = defineTemplate({
   themes: [
     {
       id: "blue-gold",
-      label: "Royal Blue & Gold",
-      colors: { background: "#f0f5fc", surface: "#ffffff", primary: "#1e40af", accent: "#d97706", text: "#1e293b" },
+      // Keep the historical id so saved drafts remain compatible.
+      label: "Terracotta & Gold",
+      colors: { background: "#fff7f0", surface: "#fffaf6", primary: "#994b36", accent: "#d2a24b", text: "#472b25" },
       fonts: { display: "Great Vibes", heading: "Cormorant Garamond", body: "Manrope" },
     },
     {

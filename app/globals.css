@@ -69,16 +69,23 @@ button, input, textarea, select { font: inherit; }
 .console-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
 .console-scrollbar::-webkit-scrollbar-thumb { border-radius: 999px; background: #cbd5e1; }
 
-.editor-workspace-grid { --inspector-width: 340px; }
+.editor-workspace-grid {
+  --structure-width: 260px;
+  --inspector-width: 340px;
+}
 
 @media (min-width: 1024px) {
   .editor-workspace-grid {
-    grid-template-columns: 260px minmax(0, 1fr) var(--inspector-width);
+    grid-template-columns: var(--structure-width) minmax(0, 1fr) var(--inspector-width);
     transition: grid-template-columns 220ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  .editor-workspace-grid.is-structure-collapsed {
+    --structure-width: 0px;
+  }
+
   .editor-workspace-grid.is-inspector-collapsed {
-    grid-template-columns: 260px minmax(0, 1fr) 0px;
+    --inspector-width: 0px;
   }
 
   .editor-workspace-grid.is-resizing iframe { pointer-events: none; }
