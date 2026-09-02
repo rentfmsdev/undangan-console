@@ -4,6 +4,7 @@ import { db } from "@/db/client";
 import { invitationCollaborators } from "@/db/schema";
 import { getDraftAccess } from "@/modules/drafts/access";
 import { logInvitationActivity } from "@/modules/collaboration/invitation";
+import { broadcastRevokeToUser } from "@/modules/collaboration/server/presence-store";
 import { z } from "zod";
 
 const updateRoleSchema = z.object({
@@ -113,6 +114,11 @@ export async function DELETE(
     metadata: { targetEmail: collab.email },
   });
 
+  if (collab.userId) {
+    broadcastRevokeToUser(draftId, collab.userId);
+  }
+
   return NextResponse.json({ ok: true, revokedId: collaboratorId });
 }
+
 

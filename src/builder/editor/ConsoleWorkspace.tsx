@@ -23,6 +23,9 @@ import { useAutoSave } from "./hooks/useAutoSave";
 import { AutoSaveStatusBadge } from "./components/AutoSaveStatusBadge";
 import { BulkGuestManager } from "./components/BulkGuestManager";
 import { InviteCollaboratorModal } from "./components/InviteCollaboratorModal";
+import { usePresence } from "@/modules/collaboration/client/usePresence";
+import { CollaboratorAvatarStack } from "./collaboration/CollaboratorAvatarStack";
+import { CollaborationStatus } from "./collaboration/CollaborationStatus";
 
 type View = "editor" | "generator" | "wishes";
 type EditableSection = TemplateSection & { id: string; enabled: boolean };
@@ -474,6 +477,25 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
     },
   });
 
+  const presence = usePresence({
+    draftId: draftId ?? undefined,
+    enabled: Boolean(draftId && currentUser),
+    currentUser: currentUser
+      ? {
+          id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          avatarUrl: currentUser.avatarUrl,
+        }
+      : null,
+  });
+
+  useEffect(() => {
+    if (selectedId && presence.connectionStatus === "connected") {
+      presence.updateActiveSurface({ surface: "canvas", sectionId: selectedId });
+    }
+  }, [selectedId, presence.connectionStatus]);
+
   useEffect(() => {
     if (!previewReadyRef.current) return;
     previewFrameRef.current?.contentWindow?.postMessage({ source: EDITOR_MESSAGE_SOURCE, type: "preview-state", sections: previewSections, themeId, settings: previewSettings }, "*");
@@ -881,8 +903,19 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
           ))}
         </nav>
 
-        {/* Right Actions: User Profile Dropdown, Collaboration & Publish Button */}
+        {/* Right Actions: Presence, User Profile Dropdown, Collaboration & Publish Button */}
         <div className="flex items-center gap-2">
+          {currentUser && draftId && (
+            <div className="flex items-center gap-1.5 mr-1">
+              <CollaborationStatus status={presence.connectionStatus} onlineCount={presence.onlineCount} />
+              <CollaboratorAvatarStack
+                onlineUsers={presence.onlineUsers}
+                currentUserId={currentUser?.id}
+                onOpenInviteModal={() => setIsInviteModalOpen(true)}
+              />
+            </div>
+          )}
+
           {/* Quick Invite Team Button */}
           <button
             type="button"

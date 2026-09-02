@@ -523,11 +523,11 @@ Kriteria selesai: undangan hanya diterima secara eksplisit oleh akun dengan emai
 
 ### Fase 2 — Presence dan avatar navbar
 
-- [ ] Pilih dan implementasikan realtime adapter.
-- [ ] Endpoint short-lived realtime credential.
-- [ ] Presence heartbeat, reconnect, idle, multi-tab dedupe.
-- [ ] Avatar stack, popover anggota, status koneksi.
-- [ ] Revoke event memutus user aktif.
+- [x] Pilih dan implementasikan realtime presence adapter (unified heartbeat sync).
+- [x] Endpoint presence sync terproteksi hak akses role draft.
+- [x] Presence heartbeat (10s interval), idle detection (>30s), visibility pause, multi-tab dedupe.
+- [x] Avatar stack, popover anggota online, status koneksi di navbar.
+- [x] Revoke event memutus user aktif secara otomatis.
 
 Kriteria selesai: dua browser menampilkan status online/offline yang benar tanpa reload.
 
