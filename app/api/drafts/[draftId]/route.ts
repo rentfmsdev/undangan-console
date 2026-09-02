@@ -54,9 +54,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ dr
   }
 
   const parsed = updateDraftSchema.safeParse(await request.json());
-  if (!parsed.success) return NextResponse.json({ error: "Format draft tidak valid." }, { status: 400 });
+  if (!parsed.success) {
+    console.error("[PATCH /api/drafts safeParse FAILED]", JSON.stringify(parsed.error.format()));
+    return NextResponse.json({ error: "Format draft tidak valid.", details: parsed.error.format() }, { status: 400 });
+  }
   const error = validateDraftForTemplate(access.draft.templateId, parsed.data);
-  if (error) return NextResponse.json({ error }, { status: 400 });
+  if (error) {
+    console.error("[PATCH /api/drafts template validation FAILED]", error);
+    return NextResponse.json({ error }, { status: 400 });
+  }
 
   await db.transaction(async (tx) => {
     await tx

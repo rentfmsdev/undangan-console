@@ -18,7 +18,7 @@ export const updateDraftSchema = z.object({
     }).optional(),
   }).optional(),
   sections: z.array(z.object({
-    id: z.string().uuid(),
+    id: z.string().min(1).max(64),
     type: z.string().min(1),
     order: z.number().int().nonnegative(),
     enabled: z.boolean(),

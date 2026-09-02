@@ -427,55 +427,6 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
     })),
   }), [themeId, musicUrl, musicVolume, customThemeColors, sections]);
 
-  const { status: autoSaveStatus, flush: flushAutoSave } = useAutoSave({
-    data: autoSaveData,
-    enabled: authResolved && draftReady,
-    debounceMs: 1800, // 1.8 detik jeda debounce yang bijak dan umum
-    maxWaitMs: 6000,
-    onSave: async (dataToSave) => {
-      const snapshot: LocalDraftSnapshot = {
-        version: 1,
-        themeId: dataToSave.themeId,
-        musicUrl: dataToSave.musicUrl,
-        musicVolume: dataToSave.musicVolume,
-        customColors: dataToSave.customColors,
-        sections: dataToSave.sections,
-      };
-
-      if (!currentUser || !draftId) {
-        window.localStorage.setItem(localDraftKey, JSON.stringify(snapshot));
-        return;
-      }
-
-      setIsSaving(true);
-      try {
-        const response = await fetch(`/api/drafts/${draftId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            themeId: dataToSave.themeId,
-            settings: {
-              musicUrl: dataToSave.musicUrl,
-              musicVolume: dataToSave.musicVolume,
-              customColors: dataToSave.customColors,
-            },
-            sections: dataToSave.sections.map((section, order) => ({ ...section, order })),
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Gagal menyimpan ke server");
-        }
-        setUploadError("");
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    onError: () => {
-      setUploadError("Gagal menyimpan perubahan ke server. Periksa koneksi Anda.");
-    },
-  });
-
   const collabDoc = useCollaborationDocument({
     draftId: draftId ?? undefined,
     enabled: Boolean(draftId && currentUser),
@@ -548,6 +499,66 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   useEffect(() => {
     collabDoc.setBroadcastHandler(presence.broadcastDocUpdate);
   }, [presence.broadcastDocUpdate, collabDoc]);
+
+  // Clear legacy upload error when WebSocket connects successfully
+  useEffect(() => {
+    if (presence.connectionStatus === "connected") {
+      setUploadError("");
+    }
+  }, [presence.connectionStatus]);
+
+  // Legacy HTTP auto-save: acts strictly as a FALLBACK callback when WebSocket is disconnected/offline
+  const isWsConnected = presence.connectionStatus === "connected";
+  const { status: autoSaveStatus, flush: flushAutoSave } = useAutoSave({
+    data: autoSaveData,
+    enabled: authResolved && draftReady && !isWsConnected,
+    debounceMs: 2500,
+    maxWaitMs: 8000,
+    onSave: async (dataToSave) => {
+      const snapshot: LocalDraftSnapshot = {
+        version: 1,
+        themeId: dataToSave.themeId,
+        musicUrl: dataToSave.musicUrl,
+        musicVolume: dataToSave.musicVolume,
+        customColors: dataToSave.customColors,
+        sections: dataToSave.sections,
+      };
+
+      if (!currentUser || !draftId) {
+        window.localStorage.setItem(localDraftKey, JSON.stringify(snapshot));
+        return;
+      }
+
+      setIsSaving(true);
+      try {
+        const response = await fetch(`/api/drafts/${draftId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            themeId: dataToSave.themeId,
+            settings: {
+              musicUrl: dataToSave.musicUrl,
+              musicVolume: dataToSave.musicVolume,
+              customColors: dataToSave.customColors,
+            },
+            sections: dataToSave.sections.map((section, order) => ({ ...section, order })),
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Gagal menyimpan ke server");
+        }
+        setUploadError("");
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    onError: () => {
+      if (presence.connectionStatus !== "connected") {
+        setUploadError("Gagal menyimpan perubahan ke server. Periksa koneksi Anda.");
+      }
+    },
+  });
 
   useEffect(() => {
     if (selectedId && presence.connectionStatus === "connected") {
