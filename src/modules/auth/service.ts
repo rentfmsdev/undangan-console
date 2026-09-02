@@ -1,6 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { eq, gt, and, or } from "drizzle-orm";
+import { eq, gt, and } from "drizzle-orm";
 import { db } from "@/db/client";
 import { users, sessions, invitationCollaborators } from "@/db/schema";
 
@@ -129,23 +129,21 @@ export async function findOrCreateGoogleUser(payload: {
     };
   }
 
-  // Auto-link and accept collaboration invitations for this email upon login
+  // Link a previously accepted invitation to this account. A pending invite
+  // must never become accepted merely because its recipient signs in: that
+  // would bypass the explicit accept action and let a stale email invitation
+  // grant access without the invite token being opened.
   try {
     await db
       .update(invitationCollaborators)
       .set({
         userId: userId,
-        status: "accepted",
-        acceptedAt: new Date(),
         lastSeenAt: new Date(),
       })
       .where(
         and(
           eq(invitationCollaborators.email, cleanEmail),
-          or(
-            eq(invitationCollaborators.status, "pending"),
-            eq(invitationCollaborators.status, "accepted")
-          )
+          eq(invitationCollaborators.status, "accepted")
         )
       );
   } catch {
@@ -159,4 +157,3 @@ export async function findOrCreateGoogleUser(payload: {
     sessionToken,
   };
 }
-

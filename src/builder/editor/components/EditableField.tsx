@@ -15,6 +15,9 @@ type EditableFieldProps = {
   field: TemplateEditorField;
   value: string;
   textStyle?: EditableTextStyle;
+  activeCollaborator?: { name: string; color: string } | null;
+  onFocus?: () => void;
+  onBlur?: () => void;
   onValueChange: (value: string) => void;
   onTextStyleChange: (style: Partial<EditableTextStyle>, replace?: boolean) => void;
 };
@@ -31,27 +34,61 @@ export function EditableField({
   field,
   value,
   textStyle = {},
+  activeCollaborator,
+  onFocus,
+  onBlur,
   onValueChange,
   onTextStyleChange,
 }: EditableFieldProps) {
   const supportsTypography = field.control === "text" || field.control === "textarea";
-  const inputClass =
-    "mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition focus:border-emerald-600 focus:ring-3 focus:ring-emerald-100 placeholder:text-slate-400";
+  const isCollaborating = Boolean(activeCollaborator);
+  const collaboratorColor = activeCollaborator?.color || "#10B981";
+
+  const dynamicStyle = isCollaborating
+    ? {
+        borderColor: collaboratorColor,
+        boxShadow: `0 0 0 3px ${collaboratorColor}26`,
+      }
+    : undefined;
+
+  const inputClass = `mt-1.5 w-full rounded-xl border bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 ${
+    isCollaborating
+      ? ""
+      : "border-slate-300 focus:border-emerald-600 focus:ring-3 focus:ring-emerald-100"
+  }`;
   const updateStyle = <Key extends keyof EditableTextStyle>(key: Key, next: EditableTextStyle[Key]) =>
     onTextStyleChange({ [key]: next });
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs transition hover:border-slate-300">
+    <div
+      className={`rounded-2xl border bg-white p-3.5 shadow-xs transition ${
+        isCollaborating ? "border-amber-300/80 bg-amber-50/10" : "border-slate-200 hover:border-slate-300"
+      }`}
+    >
       {/* Field Label (Noticeable, Prominent & High-Contrast) */}
       <label className="block">
-        <span className="block text-sm font-bold text-slate-900 tracking-tight leading-snug">
-          {field.label}
-        </span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="block text-sm font-bold text-slate-900 tracking-tight leading-snug">
+            {field.label}
+          </span>
+          {activeCollaborator && (
+            <span
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs animate-in fade-in zoom-in-95 duration-150"
+              style={{ backgroundColor: activeCollaborator.color }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              {activeCollaborator.name} sedang mengedit
+            </span>
+          )}
+        </div>
         {field.control === "textarea" ? (
           <textarea
             value={value}
             onChange={(event) => onValueChange(event.target.value)}
+            onFocus={onFocus}
+            onBlur={onBlur}
             rows={field.rows ?? 3}
+            style={dynamicStyle}
             className={`${inputClass} resize-y`}
           />
         ) : (
@@ -59,6 +96,9 @@ export function EditableField({
             type={field.control}
             value={value}
             onChange={(event) => onValueChange(event.target.value)}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            style={dynamicStyle}
             className={inputClass}
           />
         )}

@@ -11,6 +11,8 @@ export type CollaborativeContextValue = {
   updateTextStyle: (sectionId: string, key: string, style: Partial<EditableTextStyle>, replace?: boolean) => void;
   updateGlobalSetting: (key: "themeId" | "musicUrl" | "musicVolume" | "customColors", value: unknown) => void;
   toggleSection: (sectionId: string) => void;
+  activeFieldCollaborator?: (sectionId: string, fieldKey: string) => { name: string; color: string } | null;
+  broadcastFieldFocus?: (sectionId: string, fieldKey: string | null) => void;
 };
 
 const CollaborativeContext = createContext<CollaborativeContextValue | null>(null);

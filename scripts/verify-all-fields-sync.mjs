@@ -2,6 +2,14 @@ import WebSocket from "ws";
 import * as Y from "yjs";
 import mysql from "mysql2/promise";
 
+// This audit script creates and deletes fixture rows. Keep it opt-in so it
+// cannot accidentally mutate a developer's real local invitations.
+if (process.env.COLLAB_AUDIT_ALLOW_DESTRUCTIVE !== "true") {
+  throw new Error(
+    "Refusing to run destructive collaboration audit. Set COLLAB_AUDIT_ALLOW_DESTRUCTIVE=true and use a disposable database."
+  );
+}
+
 const WS_BASE = "ws://localhost:3001";
 const DRAFT_ID = "00000000-0000-4000-a000-000000000045";
 const USER_45 = "acc6d7ce-c2eb-4c1c-ae6b-11e63d0cdcfa";
@@ -193,22 +201,21 @@ applyAndSendUpdate(clientA, (doc) => {
     styles = new Y.Map();
     secCover.set("textStyles", styles);
   }
-  styles.set("title", {
-    fontFamily: "Playfair Display",
-    fontSize: 32,
-    color: "#d97706",
-    bold: true,
-    italic: true,
-  });
+  const titleStyle = new Y.Map();
+  titleStyle.set("fontFamily", "Playfair Display");
+  titleStyle.set("fontSize", 32);
+  titleStyle.set("color", "#d97706");
+  titleStyle.set("bold", true);
+  titleStyle.set("italic", true);
+  styles.set("title", titleStyle);
 });
 await waitFor(() => {
   const secCover = clientB.ydoc.getMap("sections").get("sec-cover");
   const titleStyle = secCover?.get("textStyles")?.get("title");
-  return (
-    titleStyle?.fontFamily === "Playfair Display" &&
-    titleStyle?.fontSize === 32 &&
-    titleStyle?.bold === true
-  );
+  return titleStyle instanceof Y.Map &&
+    titleStyle.get("fontFamily") === "Playfair Display" &&
+    titleStyle.get("fontSize") === 32 &&
+    titleStyle.get("bold") === true;
 }, 3000, "Client B textStyle sync");
 console.log("PASS: Client B received Typography TextStyle changes");
 

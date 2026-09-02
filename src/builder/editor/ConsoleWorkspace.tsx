@@ -34,6 +34,7 @@ import { SharedDraftState } from "@/modules/collaboration/domain/crdt-mapper";
 import { CollaborativeProvider, type CollaborativeContextValue } from "./components/collaborative/CollaborativeContext";
 import { CollaborativeGlobalEditor } from "./components/collaborative/CollaborativeGlobalEditor";
 import { CollaborativeSectionInspector } from "./components/collaborative/CollaborativeSectionInspector";
+import { compressImage } from "@/lib/image-compressor";
 import * as Y from "yjs";
 
 type View = "editor" | "generator" | "wishes";
@@ -480,6 +481,9 @@ export function ConsoleWorkspace({
       const localSnapshot = readLocalSnapshot();
       if (!currentUser) {
         setDraftId(null);
+        if (requestedDraftId) {
+          requestLogin("Masuk dengan Google untuk membuka dan mengedit draft kolaborasi ini.");
+        }
         if (localSnapshot) applyState(localSnapshot.themeId, localSnapshot.musicUrl, localSnapshot.sections, localSnapshot.customColors, localSnapshot.musicVolume);
         else setDraftReady(true);
         return;
@@ -832,6 +836,27 @@ export function ConsoleWorkspace({
     updateSectionTextStyle(selected.id, key, style, replace);
   }, [selected, updateSectionTextStyle]);
 
+  const broadcastFieldFocus = useCallback((sectionId: string, fieldKey: string | null) => {
+    presence.updateActiveSurface({
+      surface: "right-sidebar",
+      sectionId: fieldKey ? sectionId : null,
+      fieldPath: fieldKey,
+    });
+  }, [presence]);
+
+  const activeFieldCollaborator = useCallback((sectionId: string, fieldKey: string) => {
+    const now = Date.now();
+    const match = presence.allPresences.find(
+      (p) =>
+        p.userId !== currentUser?.id &&
+        p.sectionId === sectionId &&
+        p.fieldPath === fieldKey &&
+        p.state === "active" &&
+        now - p.lastSeenAt < 25_000
+    );
+    return match ? { name: match.name, color: match.color } : null;
+  }, [presence.allPresences, currentUser?.id]);
+
   const collaborativeContextValue: CollaborativeContextValue = useMemo(() => ({
     isViewer,
     disabled: !authResolved || Boolean(currentUser && !draftReady),
@@ -840,6 +865,8 @@ export function ConsoleWorkspace({
     updateTextStyle: updateSectionTextStyle,
     updateGlobalSetting,
     toggleSection: handleSectionToggle,
+    activeFieldCollaborator,
+    broadcastFieldFocus,
   }), [
     isViewer,
     authResolved,
@@ -850,6 +877,8 @@ export function ConsoleWorkspace({
     updateSectionTextStyle,
     updateGlobalSetting,
     handleSectionToggle,
+    activeFieldCollaborator,
+    broadcastFieldFocus,
   ]);
 
   function selectEditorSection(section: EditableSection) {
@@ -890,13 +919,14 @@ export function ConsoleWorkspace({
   }
 
   async function uploadAsset(file: File, sectionId: string, currentDraftId: string) {
+    const processedFile = file.type.startsWith("image/") ? await compressImage(file) : file;
     const form = new FormData();
-    form.set("file", file);
+    form.set("file", processedFile);
     form.set("sectionId", sectionId);
     const response = await fetch(`/api/drafts/${currentDraftId}/assets`, { method: "POST", body: form });
     const payload = await response.json().catch(() => ({ error: "Respons upload tidak valid." }));
     if (!response.ok || !payload.url) throw new Error(payload.error ?? "Upload foto gagal.");
-    return { url: payload.url as string, name: file.name };
+    return { url: payload.url as string, name: processedFile.name };
   }
 
   async function uploadSelectedImages(files: File[], target: "content" | "background") {

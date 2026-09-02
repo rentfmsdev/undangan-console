@@ -24,7 +24,7 @@ export function CollaborativeSectionInspector({
   onOpenContentLibrary,
   onOpenBackgroundLibrary,
 }: Props) {
-  const { isViewer, updateField, updateFields, updateTextStyle } = useCollaborative();
+  const { isViewer, updateField, updateFields, updateTextStyle, activeFieldCollaborator, broadcastFieldFocus } = useCollaborative();
 
   if (!selected) {
     return (
@@ -66,6 +66,7 @@ export function CollaborativeSectionInspector({
               ? (defaultData.fontStyles as Record<string, string>)
               : {};
           const style = textStyles[field.key] ?? (legacyFonts[field.key] ? { fontFamily: legacyFonts[field.key] } : {});
+          const collaborator = activeFieldCollaborator?.(selected.id, field.key) ?? null;
 
           return (
             <EditableField
@@ -73,6 +74,9 @@ export function CollaborativeSectionInspector({
               field={field}
               value={value}
               textStyle={style}
+              activeCollaborator={collaborator}
+              onFocus={() => broadcastFieldFocus?.(selected.id, field.key)}
+              onBlur={() => broadcastFieldFocus?.(selected.id, null)}
               onValueChange={(nextValue) => {
                 updateField(selected.id, field.key, nextValue);
               }}

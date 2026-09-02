@@ -22,6 +22,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { stockMusicLibrary, type StockMusicTrack } from "@/config/stock-music";
 import { ImageCropModal } from "./ImageCropModal";
+import { compressImage } from "@/lib/image-compressor";
 
 export type UserAsset = {
   id: string;
@@ -126,8 +127,9 @@ export function AssetLibraryModal({
           throw new Error("Hanya file gambar (JPG, PNG, WebP, AVIF) yang diperbolehkan untuk foto.");
         }
 
+        const processedFile = currentTab === "image" ? await compressImage(file) : file;
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", processedFile);
         if (draftId) formData.append("draftId", draftId);
 
         const res = await fetch(draftId ? `/api/drafts/${draftId}/assets` : "/api/assets", {

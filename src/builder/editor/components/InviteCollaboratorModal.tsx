@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Crown, LoaderCircle, Mail, Shield, Trash2, UserCheck, UserPlus, Users, X } from "lucide-react";
+import { Check, Copy, Crown, LoaderCircle, Mail, MessageCircle, Shield, Trash2, UserCheck, UserPlus, Users, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 export type CollaboratorItem = {
@@ -202,6 +202,27 @@ export function InviteCollaboratorModal({
     setTimeout(() => setCopiedLink(false), 2000);
   }
 
+  // Share via WhatsApp directly
+  function handleShareWhatsApp() {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const shareLink = `${origin}/editor/${templateCode}/${draftId}`;
+    const text = encodeURIComponent(
+      `Halo! Saya mengundang kamu untuk bersama-sama mengedit draft undangan pernikahan di Undangan Studio.\n\nKlik link berikut dan masuk dengan akun Google kamu untuk mulai mengedit bersama:\n${shareLink}`
+    );
+    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+  }
+
+  // Share specific collaborator invitation via WhatsApp
+  function handleShareCollaboratorWhatsApp(email: string, role: "editor" | "viewer") {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const shareLink = `${origin}/editor/${templateCode}/${draftId}`;
+    const roleLabel = role === "editor" ? "Editor (bisa mengedit)" : "Viewer (hanya melihat)";
+    const text = encodeURIComponent(
+      `Halo! Saya telah mengundang email kamu (${email}) sebagai ${roleLabel} di Undangan Studio.\n\nBuka link berikut dan masuk menggunakan akun Google tersebut untuk mulai berkolaborasi:\n${shareLink}`
+    );
+    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+  }
+
   if (!open) return null;
 
   return (
@@ -307,7 +328,7 @@ export function InviteCollaboratorModal({
             </div>
           )}
 
-          {/* Quick Share Link */}
+          {/* Quick Share Link & WhatsApp Direct Share */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3.5">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="grid h-8 w-8 place-items-center rounded-xl bg-slate-100 text-slate-600 shrink-0">
@@ -318,14 +339,25 @@ export function InviteCollaboratorModal({
                 <p className="text-[10px] text-slate-400 truncate">Bagi link ini ke kolaborator yang sudah diundang</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={handleCopyShareLink}
-              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 active:scale-95 transition"
-            >
-              {copiedLink ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-              <span>{copiedLink ? "Link Disalin!" : "Salin Link Editor"}</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleShareWhatsApp}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 active:scale-95 transition"
+                title="Buka WhatsApp untuk membagikan link ke tim"
+              >
+                <MessageCircle size={14} className="text-emerald-600" />
+                <span>Bagi via WA</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyShareLink}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 active:scale-95 transition"
+              >
+                {copiedLink ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                <span>{copiedLink ? "Link Disalin!" : "Salin Link"}</span>
+              </button>
+            </div>
           </div>
 
           {/* Active Team List */}
@@ -438,6 +470,19 @@ export function InviteCollaboratorModal({
                       >
                         {c.role === "editor" ? "Editor" : "Viewer"}
                       </span>
+                    )}
+
+                    {/* Send via WA button if pending */}
+                    {isOwner && c.status !== "accepted" && (
+                      <button
+                        type="button"
+                        onClick={() => handleShareCollaboratorWhatsApp(c.email, c.role)}
+                        className="rounded-xl border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100 transition inline-flex items-center gap-1"
+                        title="Kirim link undangan ke kolaborator ini via WhatsApp"
+                      >
+                        <MessageCircle size={11} className="text-emerald-600" />
+                        <span>Kirim WA</span>
+                      </button>
                     )}
 
                     {/* Resend button if pending or revoked */}
