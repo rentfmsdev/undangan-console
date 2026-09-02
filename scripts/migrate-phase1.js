@@ -11,6 +11,7 @@ async function run() {
     await conn.query(`
       ALTER TABLE invitation_collaborators
         MODIFY COLUMN status ENUM('pending', 'accepted', 'declined', 'expired', 'revoked') NOT NULL DEFAULT 'pending',
+        MODIFY COLUMN invite_token VARCHAR(64) NULL,
         ADD COLUMN IF NOT EXISTS invite_token_hash VARCHAR(64) NULL AFTER role,
         ADD COLUMN IF NOT EXISTS expires_at DATETIME NULL AFTER invited_by,
         ADD COLUMN IF NOT EXISTS accepted_at DATETIME NULL AFTER expires_at,
