@@ -108,6 +108,15 @@ wss.on("connection", (ws, req) => {
           type: "update",
           presence: msg.presence,
         }, ws);
+      } else if (msg.type === "cursor") {
+        if (!currentDraftId) return;
+        broadcastToRoom(currentDraftId, {
+          type: "cursor",
+          connectionId: currentConnectionId,
+          userId: currentUserId,
+          cursor: msg.cursor,
+          updatedAt: Date.now(),
+        }, ws);
       } else if (msg.type === "revoke") {
         if (!currentDraftId) return;
         broadcastToRoom(currentDraftId, {

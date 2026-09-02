@@ -26,6 +26,9 @@ import { InviteCollaboratorModal } from "./components/InviteCollaboratorModal";
 import { usePresence } from "@/modules/collaboration/client/usePresence";
 import { CollaboratorAvatarStack } from "./collaboration/CollaboratorAvatarStack";
 import { CollaborationStatus } from "./collaboration/CollaborationStatus";
+import { RemoteCursorLayer } from "./collaboration/RemoteCursorLayer";
+import { CollaboratorSectionBadge } from "./collaboration/CollaboratorSectionBadge";
+import { CollaborationPresence } from "@/modules/collaboration/domain/presence";
 
 type View = "editor" | "generator" | "wishes";
 type EditableSection = TemplateSection & { id: string; enabled: boolean };
@@ -49,7 +52,21 @@ function hydrateSections(template: TemplateKit, records: Array<{ id: string; typ
   });
 }
 
-function SortableSectionRow({ section, active, onSelect, onToggle }: { section: EditableSection; active: boolean; onSelect: () => void; onToggle: () => void }) {
+function SortableSectionRow({
+  section,
+  active,
+  onSelect,
+  onToggle,
+  onlineUsers = [],
+  currentUserId,
+}: {
+  section: EditableSection;
+  active: boolean;
+  onSelect: () => void;
+  onToggle: () => void;
+  onlineUsers?: CollaborationPresence[];
+  currentUserId?: string;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id, disabled: !section.reorderable });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
@@ -58,9 +75,12 @@ function SortableSectionRow({ section, active, onSelect, onToggle }: { section: 
       <button type="button" className={`grid h-7 w-5 place-items-center ${section.reorderable ? "cursor-grab text-[#a49488] active:cursor-grabbing" : "cursor-not-allowed text-[#d5c8bd]"}`} aria-label={`Geser ${section.label}`} disabled={!section.reorderable} {...attributes} {...listeners}>
         <GripVertical size={16} />
       </button>
-      <button type="button" onClick={onSelect} className="min-w-0 flex-1 text-left">
-        <span className="block truncate text-xs font-bold text-[#473234]">{section.label}</span>
-        <span className="block truncate text-[10px] text-[#95827a]">{section.required ? "Wajib" : "Opsional"}</span>
+      <button type="button" onClick={onSelect} className="min-w-0 flex-1 text-left flex items-center justify-between gap-1.5">
+        <div className="min-w-0">
+          <span className="block truncate text-xs font-bold text-[#473234]">{section.label}</span>
+          <span className="block truncate text-[10px] text-[#95827a]">{section.required ? "Wajib" : "Opsional"}</span>
+        </div>
+        <CollaboratorSectionBadge sectionId={section.id} onlineUsers={onlineUsers} currentUserId={currentUserId} />
       </button>
       <button type="button" onClick={onToggle} className={`h-5 w-9 rounded-full p-0.5 transition ${section.enabled ? "bg-emerald-600" : "bg-[#ded5cc]"}`} aria-label={`${section.enabled ? "Sembunyikan" : "Tampilkan"} ${section.label}`}>
         <span className={`block h-4 w-4 rounded-full bg-white shadow transition ${section.enabled ? "translate-x-4" : ""}`} />
@@ -509,10 +529,18 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
           });
         }
       }
+      if (event.data.type === "preview-pointer") {
+        presence.broadcastCursor({
+          surface: "preview",
+          x: event.data.x,
+          y: event.data.y,
+          sectionId: selectedId,
+        });
+      }
     };
     window.addEventListener("message", receivePreviewMessage);
     return () => window.removeEventListener("message", receivePreviewMessage);
-  }, [previewSections, previewSettings, sections, themeId]);
+  }, [previewSections, previewSettings, sections, themeId, presence.broadcastCursor, selectedId]);
 
   useEffect(() => {
     if (view !== "wishes" || !draftId) return;
@@ -962,7 +990,22 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
 
       {view === "editor" && (
         <div className={`editor-workspace-grid grid min-h-[calc(100vh-64px)] grid-cols-1 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:[overflow-anchor:none] ${isInspectorResizing ? "is-resizing" : ""}`} style={{ "--inspector-width": `${inspectorWidth}px` } as CSSProperties}>
-          <aside ref={structurePanelRef} className="console-scrollbar max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain border-b border-slate-200 bg-white p-4 lg:h-full lg:max-h-none lg:border-r lg:border-b-0">
+          <aside
+            ref={structurePanelRef}
+            onPointerMove={(e) => {
+              if (e.pointerType === "touch") return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              presence.broadcastCursor({
+                surface: "left-sidebar",
+                x: Math.round(e.clientX - rect.left),
+                y: Math.round(e.clientY - rect.top),
+                sectionId: selectedId,
+              });
+            }}
+            className="console-scrollbar relative max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain border-b border-slate-200 bg-white p-4 lg:h-full lg:max-h-none lg:border-r lg:border-b-0"
+          >
+            <RemoteCursorLayer cursors={presence.remoteCursors} surface="left-sidebar" />
+
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-xs font-extrabold text-slate-900">Struktur Undangan</p>
@@ -1013,10 +1056,13 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                       <button
                         type="button"
                         onClick={() => selectEditorSection(section)}
-                        className="min-w-0 flex-1 text-left"
+                        className="min-w-0 flex-1 text-left flex items-center justify-between gap-1.5"
                       >
-                        <span className="block truncate text-xs font-bold text-slate-800">{section.label}</span>
-                        <span className="block truncate text-[10px] text-slate-500">{section.required ? "Wajib" : "Opsional"}</span>
+                        <div className="min-w-0">
+                          <span className="block truncate text-xs font-bold text-slate-800">{section.label}</span>
+                          <span className="block truncate text-[10px] text-slate-500">{section.required ? "Wajib" : "Opsional"}</span>
+                        </div>
+                        <CollaboratorSectionBadge sectionId={section.id} onlineUsers={presence.onlineUsers} currentUserId={currentUser?.id} />
                       </button>
                       <button
                         type="button"
@@ -1038,6 +1084,8 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                         key={section.id}
                         section={section}
                         active={section.id === selectedId}
+                        onlineUsers={presence.onlineUsers}
+                        currentUserId={currentUser?.id}
                         onSelect={() => selectEditorSection(section)}
                         onToggle={() => setSections((items) => items.map((item) => item.id === section.id ? { ...item, enabled: !item.enabled } : item))}
                       />
@@ -1048,7 +1096,22 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
             )}
           </aside>
 
-          <section ref={previewPanelRef} className="console-scrollbar relative min-h-[680px] overflow-y-auto overscroll-contain bg-slate-100 p-5 md:p-8 lg:h-full lg:min-h-0 lg:[overflow-anchor:none]">
+          <section
+            ref={previewPanelRef}
+            onPointerMove={(e) => {
+              if (e.pointerType === "touch") return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              presence.broadcastCursor({
+                surface: "canvas",
+                x: Math.round(e.clientX - rect.left),
+                y: Math.round(e.clientY - rect.top),
+                sectionId: selectedId,
+              });
+            }}
+            className="console-scrollbar relative min-h-[680px] overflow-y-auto overscroll-contain bg-slate-100 p-5 md:p-8 lg:h-full lg:min-h-0 lg:[overflow-anchor:none]"
+          >
+            <RemoteCursorLayer cursors={presence.remoteCursors} surface="canvas" />
+
             {/* Canvas Toolbar: Zoom & Device Frame Switcher */}
             <div className={`mx-auto mb-3 flex max-w-full items-center justify-between gap-2 ${frameMode === "desktop" ? "w-[min(1100px,100%)]" : "w-[500px]"}`}>
               {/* Left: Refresh & Zoom Controls */}
@@ -1178,21 +1241,24 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                   <span className="mx-auto pr-10 text-[10px] font-semibold uppercase tracking-[.12em]">Desktop viewport</span>
                 </div>
               )}
-              <iframe
-                ref={previewFrameRef}
-                title="Live preview Wedding Lampung"
-                src={`/template-preview?template=${encodeURIComponent(template.code)}&for=Bapak%2FIbu%2FSaudara%2Fi`}
-                style={{ height: frameMode === "desktop" ? "clamp(640px, calc(100dvh - 210px), 900px)" : "720px" }}
-                className={`block w-full border-0 bg-white ${
-                  frameMode === "desktop"
-                    ? "rounded-b-2xl"
-                    : frameMode === "clean"
-                    ? "rounded-2xl"
-                    : frameMode === "ios"
-                    ? "rounded-[34px]"
-                    : "rounded-[23px]"
-                }`}
-              />
+              <div className="relative">
+                <RemoteCursorLayer cursors={presence.remoteCursors} surface="preview" />
+                <iframe
+                  ref={previewFrameRef}
+                  title="Live preview Wedding Lampung"
+                  src={`/template-preview?template=${encodeURIComponent(template.code)}&for=Bapak%2FIbu%2FSaudara%2Fi`}
+                  style={{ height: frameMode === "desktop" ? "clamp(640px, calc(100dvh - 210px), 900px)" : "720px" }}
+                  className={`block w-full border-0 bg-white ${
+                    frameMode === "desktop"
+                      ? "rounded-b-2xl"
+                      : frameMode === "clean"
+                      ? "rounded-2xl"
+                      : frameMode === "ios"
+                      ? "rounded-[34px]"
+                      : "rounded-[23px]"
+                  }`}
+                />
+              </div>
               {isPreviewLoading && (
                 <div
                   data-preview-loading

@@ -57,6 +57,20 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
       if (sectionType) postToEditor({ type: "section-selected", sectionType });
     };
 
+    let lastPointerTime = 0;
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      const now = Date.now();
+      if (now - lastPointerTime < 45) return;
+      lastPointerTime = now;
+      postToEditor({
+        type: "preview-pointer" as any,
+        x: Math.round(event.clientX),
+        y: Math.round(event.clientY),
+      });
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("message", handleMessage);
     window.addEventListener(TEMPLATE_ACTIVE_EVENT, handleActiveSection);
     window.addEventListener(TEMPLATE_NAVIGATION_EVENT, handleNavigationEvent);
@@ -74,6 +88,7 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
     readyFrame = window.requestAnimationFrame(announceReady);
 
     return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("message", handleMessage);
       window.removeEventListener(TEMPLATE_ACTIVE_EVENT, handleActiveSection);
       window.removeEventListener(TEMPLATE_NAVIGATION_EVENT, handleNavigationEvent);

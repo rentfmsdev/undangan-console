@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { CollaborationPresence, getDeterministicUserColor } from "../domain/presence";
+import { CollaborationPresence, RemoteCursor, getDeterministicUserColor } from "../domain/presence";
 
 type CurrentUserProps = {
   id: string;
@@ -28,12 +28,14 @@ export function usePresence({
 }: UsePresenceOptions) {
   const router = useRouter();
   const [onlinePresences, setOnlinePresences] = useState<CollaborationPresence[]>([]);
+  const [remoteCursors, setRemoteCursors] = useState<RemoteCursor[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("disconnected");
 
   const socketRef = useRef<WebSocket | null>(null);
   const connectionIdRef = useRef<string>("");
   const isIdleRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
+  const lastCursorSentRef = useRef(0);
 
   // Store user & role in stable refs to avoid tearing down WebSocket on re-renders
   const userRef = useRef(currentUser);
@@ -82,7 +84,7 @@ export function usePresence({
 
   const currentUserId = currentUser?.id;
 
-  // Single WebSocket connection lifecycle - ONLY re-runs if draftId or currentUserId changes
+  // Single WebSocket connection lifecycle
   useEffect(() => {
     if (!enabled || !draftId || !currentUserId) {
       if (socketRef.current) {
@@ -92,6 +94,7 @@ export function usePresence({
       }
       setConnectionStatus("disconnected");
       setOnlinePresences([]);
+      setRemoteCursors([]);
       return;
     }
 
@@ -136,8 +139,29 @@ export function usePresence({
                 map.set(data.presence.connectionId, data.presence);
                 return Array.from(map.values());
               });
+            } else if (data.type === "cursor") {
+              // Ignore own cursor reflections
+              if (data.connectionId !== connectionIdRef.current) {
+                setRemoteCursors((prev) => {
+                  const map = new Map(prev.map((c) => [c.connectionId, c]));
+                  map.set(data.connectionId, {
+                    connectionId: data.connectionId,
+                    userId: data.userId,
+                    name: data.cursor.name,
+                    color: data.cursor.color,
+                    surface: data.cursor.surface,
+                    x: data.cursor.x,
+                    y: data.cursor.y,
+                    sectionId: data.cursor.sectionId ?? null,
+                    fieldPath: data.cursor.fieldPath ?? null,
+                    updatedAt: data.updatedAt || Date.now(),
+                  });
+                  return Array.from(map.values());
+                });
+              }
             } else if (data.type === "leave") {
               setOnlinePresences((prev) => prev.filter((p) => p.connectionId !== data.connectionId));
+              setRemoteCursors((prev) => prev.filter((c) => c.connectionId !== data.connectionId));
             } else if (data.type === "revoked") {
               if (data.userId === currentUserId) {
                 setConnectionStatus("disconnected");
@@ -152,11 +176,10 @@ export function usePresence({
           } catch {}
         };
 
-        ws.onclose = (e) => {
+        ws.onclose = () => {
           if (isDisposed) return;
           setConnectionStatus("disconnected");
           socketRef.current = null;
-          // Reconnect after 3s only if not cleanly closed
           if (!isDisposed) {
             reconnectTimeout = setTimeout(connect, 3000);
           }
@@ -177,18 +200,25 @@ export function usePresence({
 
     connect();
 
+    // Periodic cleanup of stale cursors (> 4s without movement)
+    const cursorPruner = setInterval(() => {
+      const now = Date.now();
+      setRemoteCursors((prev) => prev.filter((c) => now - c.updatedAt < 4000));
+    }, 1000);
+
     return () => {
       isDisposed = true;
+      clearInterval(cursorPruner);
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (ws) {
-        ws.onclose = null; // Prevent reconnect callback on cleanup
+        ws.onclose = null;
         ws.close();
         socketRef.current = null;
       }
     };
   }, [enabled, draftId, currentUserId, buildCurrentPresence, router]);
 
-  // Handle User Activity (Idle Detection - sends only on actual state transition)
+  // Handle User Activity (Idle Detection)
   useEffect(() => {
     if (!enabled || !draftId || !currentUserId) return;
 
@@ -226,7 +256,36 @@ export function usePresence({
     };
   }, [enabled, draftId, currentUserId, buildCurrentPresence]);
 
-  // Method to report active editing section (sent over WebSocket without re-render)
+  // Method to broadcast cursor movement (throttled to 40ms)
+  const broadcastCursor = useCallback((params: {
+    surface: "canvas" | "preview" | "left-sidebar" | "right-sidebar";
+    x: number;
+    y: number;
+    sectionId?: string | null;
+    fieldPath?: string | null;
+  }) => {
+    const now = Date.now();
+    if (now - lastCursorSentRef.current < 40) return; // 40ms throttle
+    lastCursorSentRef.current = now;
+
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      const user = userRef.current;
+      socketRef.current.send(JSON.stringify({
+        type: "cursor",
+        cursor: {
+          name: user?.name ?? "User",
+          color: user ? getDeterministicUserColor(user.id) : "#10B981",
+          surface: params.surface,
+          x: params.x,
+          y: params.y,
+          sectionId: params.sectionId ?? activeSurfaceRef.current.sectionId,
+          fieldPath: params.fieldPath ?? activeSurfaceRef.current.fieldPath,
+        },
+      }));
+    }
+  }, []);
+
+  // Method to report active surface / section (without cursor move)
   const updateActiveSurface = useCallback((params: {
     surface?: "canvas" | "preview" | "left-sidebar" | "right-sidebar";
     sectionId?: string | null;
@@ -261,6 +320,8 @@ export function usePresence({
     allPresences: onlinePresences,
     onlineUsers: uniqueOnlineUsers,
     onlineCount: uniqueOnlineUsers.length,
+    remoteCursors,
+    broadcastCursor,
     updateActiveSurface,
   };
 }

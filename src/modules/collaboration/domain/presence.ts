@@ -15,10 +15,24 @@ export type CollaborationPresence = {
   lastSeenAt: number;
 };
 
+export type RemoteCursor = {
+  connectionId: string;
+  userId: string;
+  name: string;
+  color: string;
+  surface: "canvas" | "preview" | "left-sidebar" | "right-sidebar";
+  x: number;
+  y: number;
+  sectionId?: string | null;
+  fieldPath?: string | null;
+  updatedAt: number;
+};
+
 export type PresenceBroadcastEvent =
   | { type: "sync"; presences: CollaborationPresence[] }
   | { type: "join"; presence: CollaborationPresence }
   | { type: "update"; presence: CollaborationPresence }
+  | { type: "cursor"; connectionId: string; userId: string; cursor: RemoteCursor }
   | { type: "leave"; connectionId: string; userId: string }
   | { type: "revoked"; userId: string; reason?: string };
 

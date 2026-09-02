@@ -533,10 +533,10 @@ Kriteria selesai: dua browser menampilkan status online/offline yang benar tanpa
 
 ### Fase 3 — Cursor dan selection awareness
 
-- [ ] Cursor layer untuk canvas dan sidebar.
-- [ ] Preview iframe bridge dengan origin validation.
-- [ ] Field focus, selected section, dan viewport presence.
-- [ ] Throttling, interpolation, cleanup, mobile behavior.
+- [x] Cursor layer untuk canvas dan sidebar (RemoteCursorLayer non-interactive overlay).
+- [x] Preview iframe bridge dengan origin validation dan postMessage protocol.
+- [x] Field focus, selected section badge di structure panel, dan viewport presence.
+- [x] Throttling (40ms), smooth CSS translate3d interpolation, auto cleanup stale cursors, mobile touch ignore.
 
 Kriteria selesai: cursor tidak memengaruhi layout/scroll, tidak menangkap klik, dan posisi tetap benar pada zoom/resize preview.
 

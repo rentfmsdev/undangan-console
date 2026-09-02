@@ -11,7 +11,8 @@ export type PreviewToEditorMessage =
   | { source: typeof PREVIEW_MESSAGE_SOURCE; type: "ready" }
   | { source: typeof PREVIEW_MESSAGE_SOURCE; type: "state-applied" }
   | { source: typeof PREVIEW_MESSAGE_SOURCE; type: "navigation-start" | "navigation-complete" | "navigation-cancelled"; sectionType: string; requestId: string }
-  | { source: typeof PREVIEW_MESSAGE_SOURCE; type: "active-section" | "section-selected"; sectionType: string };
+  | { source: typeof PREVIEW_MESSAGE_SOURCE; type: "active-section" | "section-selected"; sectionType: string }
+  | { source: typeof PREVIEW_MESSAGE_SOURCE; type: "preview-pointer"; x: number; y: number };
 
 export function isEditorMessage(value: unknown): value is EditorToPreviewMessage {
   return Boolean(value && typeof value === "object" && (value as { source?: string }).source === EDITOR_MESSAGE_SOURCE);
