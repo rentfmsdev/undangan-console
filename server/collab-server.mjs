@@ -63,7 +63,7 @@ async function loadRoomSnapshot(draftId, ydoc) {
     const [invRows] = await dbPool.query("SELECT * FROM invitations WHERE id = ? LIMIT 1", [draftId]);
     if (invRows && invRows.length > 0) {
       const inv = invRows[0];
-      const [secRows] = await dbPool.query("SELECT * FROM invitation_sections WHERE invitation_id = ? ORDER BY `order` ASC", [draftId]);
+      const [secRows] = await dbPool.query("SELECT * FROM invitation_sections WHERE invitation_id = ? ORDER BY section_order ASC", [draftId]);
 
       ydoc.transact(() => {
         const metadata = ydoc.getMap("metadata");
@@ -124,8 +124,14 @@ async function flushRoomSnapshot(room, draftId, createdBy = null) {
       [snapId, draftId, currentRevision, stateUpdate, createdBy]
     );
 
-    // Keep invitations.updated_at fresh
-    await dbPool.query("UPDATE invitations SET updated_at = NOW() WHERE id = ?", [draftId]);
+    // Keep invitations.theme_id and invitations.updated_at synchronized
+    const globalSettings = room.ydoc.getMap("globalSettings");
+    const themeId = globalSettings.get("themeId");
+    if (themeId) {
+      await dbPool.query("UPDATE invitations SET theme_id = ?, updated_at = NOW() WHERE id = ?", [themeId, draftId]);
+    } else {
+      await dbPool.query("UPDATE invitations SET updated_at = NOW() WHERE id = ?", [draftId]);
+    }
 
     console.log(`[Collab Server] Persisted durable snapshot for ${draftId} (rev ${currentRevision})`);
   } catch (err) {

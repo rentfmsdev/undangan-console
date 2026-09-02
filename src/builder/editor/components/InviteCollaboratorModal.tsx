@@ -7,7 +7,7 @@ export type CollaboratorItem = {
   id: string;
   email: string;
   role: "editor" | "viewer";
-  status: "pending" | "accepted";
+  status: "pending" | "accepted" | "declined" | "revoked";
   inviteToken?: string;
   createdAt: string;
   user: {

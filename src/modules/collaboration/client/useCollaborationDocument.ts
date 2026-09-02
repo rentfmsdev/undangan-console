@@ -6,8 +6,16 @@ import {
   extractStateFromYDoc,
   initYDocFromState,
   SharedDraftState,
-  SharedSectionRecord,
 } from "../domain/crdt-mapper";
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
 
 type UseCollaborationDocumentOptions = {
   draftId?: string | null;
@@ -25,7 +33,13 @@ export function useCollaborationDocument({
   broadcastDocUpdate,
 }: UseCollaborationDocumentOptions) {
   const ydocRef = useRef<Y.Doc>(new Y.Doc());
+  const localOriginRef = useRef<object>({}); // Unique reference object per client instance
+  const undoManagerRef = useRef<Y.UndoManager | null>(null);
+
   const [syncStatus, setSyncStatus] = useState<"synced" | "saving" | "offline">("synced");
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
   const isApplyingRemoteRef = useRef(false);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const broadcastDocUpdateRef = useRef(broadcastDocUpdate);
@@ -35,7 +49,7 @@ export function useCollaborationDocument({
     broadcastDocUpdateRef.current = fn;
   }, []);
 
-  // Initialize from initial state or offline storage
+  // Initialize from initial state or offline storage & setup UndoManager
   useEffect(() => {
     if (!enabled || !draftId) return;
 
@@ -55,6 +69,36 @@ export function useCollaborationDocument({
     if (initialState) {
       initYDocFromState(initialState, doc);
     }
+
+    // Create UndoManager specifically tracking this client's local origin
+    const undoManager = new Y.UndoManager(
+      [
+        doc.getMap("metadata"),
+        doc.getMap("globalSettings"),
+        doc.getArray("sectionOrder"),
+        doc.getMap("sections"),
+      ],
+      {
+        trackedOrigins: new Set([localOriginRef.current]),
+      }
+    );
+
+    undoManager.on("stack-item-added", () => {
+      setCanUndo(undoManager.undoStack.length > 0);
+      setCanRedo(undoManager.redoStack.length > 0);
+    });
+
+    undoManager.on("stack-item-popped", () => {
+      setCanUndo(undoManager.undoStack.length > 0);
+      setCanRedo(undoManager.redoStack.length > 0);
+    });
+
+    undoManagerRef.current = undoManager;
+
+    return () => {
+      undoManager.destroy();
+      undoManagerRef.current = null;
+    };
   }, [enabled, draftId, initialState]);
 
   // Handle incoming remote update from peer via WebSocket
@@ -63,12 +107,13 @@ export function useCollaborationDocument({
     try {
       isApplyingRemoteRef.current = true;
       const update = Uint8Array.from(atob(updateBase64), (c) => c.charCodeAt(0));
+      // Applied without localOrigin, so it is NOT tracked by this client's undoManager!
       Y.applyUpdate(ydocRef.current, update);
 
       // Cache offline
       if (typeof window !== "undefined" && draftId) {
         try {
-          const fullSnap = btoa(String.fromCharCode(...Y.encodeStateAsUpdate(ydocRef.current)));
+          const fullSnap = uint8ArrayToBase64(Y.encodeStateAsUpdate(ydocRef.current));
           window.localStorage.setItem(`undangan_crdt_snap_${draftId}`, fullSnap);
         } catch {}
       }
@@ -92,21 +137,22 @@ export function useCollaborationDocument({
     };
 
     doc.once("update", onUpdate);
+    // Execute transaction with localOrigin so it's isolated to this client's UndoManager
     doc.transact(() => {
       updater(doc);
-    });
+    }, localOriginRef.current);
 
     if (updateBytes && broadcastDocUpdateRef.current && !isApplyingRemoteRef.current) {
       setSyncStatus("saving");
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
 
-      const b64 = btoa(String.fromCharCode(...updateBytes));
+      const b64 = uint8ArrayToBase64(updateBytes);
       broadcastDocUpdateRef.current(b64);
 
       // Cache offline
       if (typeof window !== "undefined" && draftId) {
         try {
-          const fullSnap = btoa(String.fromCharCode(...Y.encodeStateAsUpdate(doc)));
+          const fullSnap = uint8ArrayToBase64(Y.encodeStateAsUpdate(doc));
           window.localStorage.setItem(`undangan_crdt_snap_${draftId}`, fullSnap);
         } catch {}
       }
@@ -117,9 +163,65 @@ export function useCollaborationDocument({
     }
   }, [draftId]);
 
+  // Isolated Undo: undoes ONLY changes made by this local user
+  const undo = useCallback(() => {
+    const um = undoManagerRef.current;
+    if (!um || um.undoStack.length === 0) return null;
+
+    const doc = ydocRef.current;
+    let updateBytes: Uint8Array | null = null;
+    const onUpdate = (u: Uint8Array) => {
+      updateBytes = u;
+    };
+
+    doc.once("update", onUpdate);
+    um.undo();
+
+    setCanUndo(um.undoStack.length > 0);
+    setCanRedo(um.redoStack.length > 0);
+
+    if (updateBytes && broadcastDocUpdateRef.current) {
+      const b64 = uint8ArrayToBase64(updateBytes);
+      broadcastDocUpdateRef.current(b64);
+    }
+
+    const state = extractStateFromYDoc(doc);
+    return state;
+  }, []);
+
+  // Isolated Redo: redoes ONLY changes made by this local user
+  const redo = useCallback(() => {
+    const um = undoManagerRef.current;
+    if (!um || um.redoStack.length === 0) return null;
+
+    const doc = ydocRef.current;
+    let updateBytes: Uint8Array | null = null;
+    const onUpdate = (u: Uint8Array) => {
+      updateBytes = u;
+    };
+
+    doc.once("update", onUpdate);
+    um.redo();
+
+    setCanUndo(um.undoStack.length > 0);
+    setCanRedo(um.redoStack.length > 0);
+
+    if (updateBytes && broadcastDocUpdateRef.current) {
+      const b64 = uint8ArrayToBase64(updateBytes);
+      broadcastDocUpdateRef.current(b64);
+    }
+
+    const state = extractStateFromYDoc(doc);
+    return state;
+  }, []);
+
   return {
     ydoc: ydocRef.current,
     syncStatus,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
     applyRemoteUpdate,
     updateLocalState,
     setBroadcastHandler,

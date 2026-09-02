@@ -36,7 +36,7 @@ export async function GET(
       // Subscribe to server room
       cleanupSubscription = subscribeToPresenceRoom(draftId, {
         connectionId,
-        userId: access.user.id,
+        userId: access.user?.id || "anonymous",
         send: sendEvent,
         close: () => {
           try {

@@ -4,7 +4,7 @@ import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useS
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Check, ChevronDown, Copy, ExternalLink, Eye, FolderOpen, GripVertical, ImagePlus, LayoutPanelTop, Library, LoaderCircle, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, Plus, Redo2, RotateCw, Save, Search, Send, Settings2, Share2, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, X, ZoomIn, ZoomOut } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { TemplateKit, TemplateSection } from "@/templates/contracts";
 import { getTemplateRuntime } from "@/templates/runtime-registry";
 import { EDITOR_MESSAGE_SOURCE, isPreviewMessage, type NavigationSource } from "@/templates/navigation/protocol";
@@ -30,6 +30,7 @@ import { RemoteCursorLayer } from "./collaboration/RemoteCursorLayer";
 import { CollaboratorSectionBadge } from "./collaboration/CollaboratorSectionBadge";
 import { CollaborationPresence } from "@/modules/collaboration/domain/presence";
 import { useCollaborationDocument } from "@/modules/collaboration/client/useCollaborationDocument";
+import { SharedDraftState } from "@/modules/collaboration/domain/crdt-mapper";
 import * as Y from "yjs";
 
 type View = "editor" | "generator" | "wishes";
@@ -162,10 +163,155 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   const [sectionSearchQuery, setSectionSearchQuery] = useState("");
   const [waPreset, setWaPreset] = useState<"formal" | "islami" | "casual" | "english">("formal");
 
-  // History State for Undo / Redo (max 10 turns)
-  const [history, setHistory] = useState<HistorySnapshot[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
-  const isHistoryActionRef = useRef(false);
+  const applySharedState = useCallback((remoteState: SharedDraftState) => {
+    if (remoteState.globalSettings?.themeId) {
+      setThemeId(remoteState.globalSettings.themeId);
+    }
+    if (remoteState.globalSettings?.musicUrl) {
+      setMusicUrl(remoteState.globalSettings.musicUrl);
+    }
+    if (typeof remoteState.globalSettings?.musicVolume === "number") {
+      setMusicVolume(remoteState.globalSettings.musicVolume);
+    }
+    if (remoteState.globalSettings?.customColors) {
+      setCustomThemeColors(remoteState.globalSettings.customColors);
+    }
+
+    if (remoteState.sections && Object.keys(remoteState.sections).length > 0) {
+      setSections((current) => {
+        const remoteSecMap = remoteState.sections;
+        const order = remoteState.sectionOrder || [];
+
+        const updated = current.map((sec) => {
+          const remote = remoteSecMap[sec.id];
+          if (remote) {
+            return {
+              ...sec,
+              enabled: remote.enabled,
+              defaultData: {
+                ...sec.defaultData,
+                ...remote.data,
+                textStyles: remote.textStyles || sec.defaultData.textStyles,
+              },
+            };
+          }
+          return sec;
+        });
+
+        if (order.length > 0) {
+          updated.sort((a, b) => {
+            const idxA = order.indexOf(a.id);
+            const idxB = order.indexOf(b.id);
+            if (idxA === -1) return 1;
+            if (idxB === -1) return -1;
+            return idxA - idxB;
+          });
+        }
+
+        return updated;
+      });
+    }
+  }, []);
+
+  const collabDoc = useCollaborationDocument({
+    draftId: draftId ?? undefined,
+    enabled: Boolean(draftId && currentUser),
+    onRemoteStateChange: applySharedState,
+  });
+
+  const canUndo = collabDoc.canUndo;
+  const canRedo = collabDoc.canRedo;
+
+  function handleUndo() {
+    const nextState = collabDoc.undo();
+    if (nextState) {
+      applySharedState(nextState);
+    }
+  }
+
+  function handleRedo() {
+    const nextState = collabDoc.redo();
+    if (nextState) {
+      applySharedState(nextState);
+    }
+  }
+
+  function handleThemeSelect(newThemeId: string) {
+    setThemeId(newThemeId);
+    setCustomThemeColors({});
+    collabDoc.updateLocalState((doc) => {
+      const globalSettings = doc.getMap("globalSettings");
+      globalSettings.set("themeId", newThemeId);
+      const customColorsMap = globalSettings.get("customColors");
+      if (customColorsMap instanceof Y.Map) {
+        Array.from(customColorsMap.keys()).forEach((k) => customColorsMap.delete(k));
+      }
+    });
+  }
+
+  function handleCustomColorChange(colorKey: "primary" | "accent" | "background", value: string) {
+    setCustomThemeColors((prev) => {
+      const next = { ...prev, [colorKey]: value };
+      collabDoc.updateLocalState((doc) => {
+        const globalSettings = doc.getMap("globalSettings");
+        let customColorsMap = globalSettings.get("customColors");
+        if (!(customColorsMap instanceof Y.Map)) {
+          customColorsMap = new Y.Map();
+          globalSettings.set("customColors", customColorsMap);
+        }
+        (customColorsMap as Y.Map<string>).set(colorKey, value);
+      });
+      return next;
+    });
+  }
+
+  function handleCustomColorReset() {
+    setCustomThemeColors({});
+    collabDoc.updateLocalState((doc) => {
+      const globalSettings = doc.getMap("globalSettings");
+      const customColorsMap = globalSettings.get("customColors");
+      if (customColorsMap instanceof Y.Map) {
+        Array.from(customColorsMap.keys()).forEach((k) => customColorsMap.delete(k));
+      }
+    });
+  }
+
+  function handleMusicUrlChange(url: string) {
+    setMusicUrl(url);
+    collabDoc.updateLocalState((doc) => {
+      const globalSettings = doc.getMap("globalSettings");
+      globalSettings.set("musicUrl", url);
+    });
+  }
+
+  function handleMusicVolumeChange(vol: number) {
+    setMusicVolume(vol);
+    collabDoc.updateLocalState((doc) => {
+      const globalSettings = doc.getMap("globalSettings");
+      globalSettings.set("musicVolume", vol);
+    });
+  }
+
+  function handleSectionToggle(sectionId: string) {
+    setSections((items) => {
+      const next = items.map((sec) => sec.id === sectionId ? { ...sec, enabled: !sec.enabled } : sec);
+      const target = next.find((sec) => sec.id === sectionId);
+      if (target) {
+        collabDoc.updateLocalState((doc) => {
+          const sectionsMap = doc.getMap("sections");
+          let secMap = sectionsMap.get(sectionId) as Y.Map<unknown> | undefined;
+          if (!secMap) {
+            secMap = new Y.Map();
+            secMap.set("id", target.id);
+            secMap.set("type", target.type);
+            sectionsMap.set(sectionId, secMap);
+          }
+          secMap.set("enabled", target.enabled);
+        });
+      }
+      return next;
+    });
+  }
 
   const previewFrameRef = useRef<HTMLIFrameElement>(null);
   const previewReadyRef = useRef(false);
@@ -191,57 +337,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
     return sections.filter((s) => s.label.toLowerCase().includes(q) || (s.description ?? "").toLowerCase().includes(q));
   }, [sections, sectionSearchQuery]);
 
-  // History tracking (Max 10 turns)
-  useEffect(() => {
-    if (isHistoryActionRef.current) {
-      isHistoryActionRef.current = false;
-      return;
-    }
-    const currentSnapshot: HistorySnapshot = {
-      sections,
-      themeId,
-      musicUrl,
-      musicVolume,
-      customColors: customThemeColors,
-    };
-    setHistory((prev) => {
-      const upToCurrent = prev.slice(0, historyIndex + 1);
-      const nextHistory = [...upToCurrent, currentSnapshot].slice(-10);
-      return nextHistory;
-    });
-    setHistoryIndex((prev) => Math.min(prev + 1, 9));
-  }, [sections, themeId, musicUrl, musicVolume, customThemeColors]);
-
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
-
-  function handleUndo() {
-    if (!canUndo) return;
-    const targetSnapshot = history[historyIndex - 1];
-    if (!targetSnapshot) return;
-    isHistoryActionRef.current = true;
-    setSections(targetSnapshot.sections);
-    setThemeId(targetSnapshot.themeId);
-    setMusicUrl(targetSnapshot.musicUrl);
-    setMusicVolume(typeof targetSnapshot.musicVolume === "number" ? targetSnapshot.musicVolume : 0.6);
-    setCustomThemeColors(targetSnapshot.customColors ?? {});
-    setHistoryIndex(historyIndex - 1);
-  }
-
-  function handleRedo() {
-    if (!canRedo) return;
-    const targetSnapshot = history[historyIndex + 1];
-    if (!targetSnapshot) return;
-    isHistoryActionRef.current = true;
-    setSections(targetSnapshot.sections);
-    setThemeId(targetSnapshot.themeId);
-    setMusicUrl(targetSnapshot.musicUrl);
-    setMusicVolume(typeof targetSnapshot.musicVolume === "number" ? targetSnapshot.musicVolume : 0.6);
-    setCustomThemeColors(targetSnapshot.customColors ?? {});
-    setHistoryIndex(historyIndex + 1);
-  }
-
-  // Keyboard shortcuts (Ctrl+Z / Ctrl+Y)
+  // Keyboard shortcuts (Ctrl+Z / Ctrl+Y) for isolated undo/redo
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
@@ -259,7 +355,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canUndo, canRedo, history, historyIndex]);
+  }, [canUndo, canRedo, collabDoc, applySharedState]);
 
   useEffect(() => {
     const savedWidth = Number(window.localStorage.getItem(`undangan-console:inspector-width:${template.code}`));
@@ -426,60 +522,6 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
       data: section.defaultData,
     })),
   }), [themeId, musicUrl, musicVolume, customThemeColors, sections]);
-
-  const collabDoc = useCollaborationDocument({
-    draftId: draftId ?? undefined,
-    enabled: Boolean(draftId && currentUser),
-    onRemoteStateChange: (remoteState) => {
-      if (remoteState.globalSettings?.themeId && remoteState.globalSettings.themeId !== themeId) {
-        setThemeId(remoteState.globalSettings.themeId);
-      }
-      if (remoteState.globalSettings?.musicUrl && remoteState.globalSettings.musicUrl !== musicUrl) {
-        setMusicUrl(remoteState.globalSettings.musicUrl);
-      }
-      if (typeof remoteState.globalSettings?.musicVolume === "number" && remoteState.globalSettings.musicVolume !== musicVolume) {
-        setMusicVolume(remoteState.globalSettings.musicVolume);
-      }
-      if (remoteState.globalSettings?.customColors) {
-        setCustomThemeColors(remoteState.globalSettings.customColors);
-      }
-
-      if (remoteState.sections && Object.keys(remoteState.sections).length > 0) {
-        setSections((current) => {
-          const remoteSecMap = remoteState.sections;
-          const order = remoteState.sectionOrder || [];
-
-          const updated = current.map((sec) => {
-            const remote = remoteSecMap[sec.id];
-            if (remote) {
-              return {
-                ...sec,
-                enabled: remote.enabled,
-                defaultData: {
-                  ...sec.defaultData,
-                  ...remote.data,
-                  textStyles: remote.textStyles || sec.defaultData.textStyles,
-                },
-              };
-            }
-            return sec;
-          });
-
-          if (order.length > 0) {
-            updated.sort((a, b) => {
-              const idxA = order.indexOf(a.id);
-              const idxB = order.indexOf(b.id);
-              if (idxA === -1) return 1;
-              if (idxB === -1) return -1;
-              return idxA - idxB;
-            });
-          }
-
-          return updated;
-        });
-      }
-    },
-  });
 
   const presence = usePresence({
     draftId: draftId ?? undefined,
@@ -1184,7 +1226,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                       </button>
                       <button
                         type="button"
-                        onClick={() => setSections((items) => items.map((item) => item.id === section.id ? { ...item, enabled: !item.enabled } : item))}
+                        onClick={() => handleSectionToggle(section.id)}
                         className={`h-5 w-9 rounded-full p-0.5 transition ${section.enabled ? "bg-emerald-600" : "bg-slate-200"}`}
                       >
                         <span className={`block h-4 w-4 rounded-full bg-white shadow transition ${section.enabled ? "translate-x-4" : ""}`} />
@@ -1205,7 +1247,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                         onlineUsers={presence.onlineUsers}
                         currentUserId={currentUser?.id}
                         onSelect={() => selectEditorSection(section)}
-                        onToggle={() => setSections((items) => items.map((item) => item.id === section.id ? { ...item, enabled: !item.enabled } : item))}
+                        onToggle={() => handleSectionToggle(section.id)}
                       />
                     ))}
                   </div>
@@ -1505,9 +1547,9 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                     if (!authResolved) return;
                     if (!currentUser) requestLogin("Masuk dengan Google untuk memilih musik undangan.");
                     else if (!draftReady) setUploadError("Draft akun sedang disiapkan. Tunggu sebentar lalu coba lagi.");
-                    else setMusicUrl(nextUrl);
+                    else handleMusicUrlChange(nextUrl);
                   }}
-                  onVolumeChange={(nextVol) => setMusicVolume(nextVol)}
+                  onVolumeChange={(nextVol) => handleMusicVolumeChange(nextVol)}
                   onOpenLibrary={() => openAssetLibrary("audio", "music")}
                 />
                 {uploadError && <p role="alert" className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-semibold leading-4 text-rose-700">{uploadError}</p>}
@@ -1521,10 +1563,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => {
-                          setThemeId(item.id);
-                          setCustomThemeColors({});
-                        }}
+                        onClick={() => handleThemeSelect(item.id)}
                         className={`min-w-0 rounded-xl border p-2.5 text-left transition ${
                           themeId === item.id && !customThemeColors.primary && !customThemeColors.accent && !customThemeColors.background
                             ? "border-emerald-600 bg-emerald-50 shadow-sm"
@@ -1553,7 +1592,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                     {(customThemeColors.primary || customThemeColors.accent || customThemeColors.background) && (
                       <button
                         type="button"
-                        onClick={() => setCustomThemeColors({})}
+                        onClick={handleCustomColorReset}
                         className="text-[10px] font-bold text-emerald-700 hover:underline"
                       >
                         Reset ke tema
@@ -1572,7 +1611,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                         <input
                           type="color"
                           value={customThemeColors.primary || theme.colors.primary}
-                          onChange={(e) => setCustomThemeColors((prev) => ({ ...prev, primary: e.target.value }))}
+                          onChange={(e) => handleCustomColorChange("primary", e.target.value)}
                           className="h-7 w-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
                         />
                       </span>
@@ -1588,7 +1627,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                         <input
                           type="color"
                           value={customThemeColors.accent || theme.colors.accent}
-                          onChange={(e) => setCustomThemeColors((prev) => ({ ...prev, accent: e.target.value }))}
+                          onChange={(e) => handleCustomColorChange("accent", e.target.value)}
                           className="h-7 w-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
                         />
                       </span>
@@ -1604,7 +1643,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
                         <input
                           type="color"
                           value={customThemeColors.background || theme.colors.background}
-                          onChange={(e) => setCustomThemeColors((prev) => ({ ...prev, background: e.target.value }))}
+                          onChange={(e) => handleCustomColorChange("background", e.target.value)}
                           className="h-7 w-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
                         />
                       </span>
