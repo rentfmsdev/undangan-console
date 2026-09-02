@@ -28,6 +28,14 @@ type Props = {
   open: boolean;
   draftId: string | null;
   templateCode: string;
+  collaborators?: CollaboratorItem[];
+  owner?: OwnerItem | null;
+  isOwner?: boolean;
+  collaboratorsLoaded?: boolean;
+  onRequestCollaborators?: () => void;
+  onSendInvite?: (email: string, role: "editor" | "viewer") => Promise<{ success: boolean; message?: string; error?: string }>;
+  onUpdateRole?: (collaboratorId: string, role: "editor" | "viewer") => Promise<boolean>;
+  onRemoveCollaborator?: (collaboratorId: string) => Promise<boolean>;
   onClose: () => void;
   onRequireLogin: (reason: string) => void;
 };
@@ -36,6 +44,14 @@ export function InviteCollaboratorModal({
   open,
   draftId,
   templateCode,
+  collaborators: collaboratorsProp,
+  owner: ownerProp,
+  isOwner: isOwnerProp,
+  collaboratorsLoaded = false,
+  onRequestCollaborators,
+  onSendInvite,
+  onUpdateRole,
+  onRemoveCollaborator,
   onClose,
   onRequireLogin,
 }: Props) {
@@ -46,19 +62,39 @@ export function InviteCollaboratorModal({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [owner, setOwner] = useState<OwnerItem | null>(null);
-  const [collaborators, setCollaborators] = useState<CollaboratorItem[]>([]);
-  const [isOwner, setIsOwner] = useState(true);
+  const [localOwner, setLocalOwner] = useState<OwnerItem | null>(null);
+  const [localCollaborators, setLocalCollaborators] = useState<CollaboratorItem[]>([]);
+  const [localIsOwner, setLocalIsOwner] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Fetch collaborators list
+  const owner = ownerProp ?? localOwner;
+  const collaborators = collaboratorsProp ?? localCollaborators;
+  const isOwner = isOwnerProp !== undefined ? isOwnerProp : localIsOwner;
+
+  // Fetch collaborators list via WS first, HTTP fallback
   useEffect(() => {
     if (!open || !draftId) return;
 
-    let active = true;
-    setIsLoading(true);
     setError("");
     setSuccess("");
+
+    // If WebSocket already synced collaborators, no network request needed!
+    if (collaboratorsLoaded) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Request via WebSocket (0 HTTP requests!)
+    if (onRequestCollaborators) {
+      setIsLoading(true);
+      onRequestCollaborators();
+      const timer = setTimeout(() => setIsLoading(false), 1500);
+      return () => clearTimeout(timer);
+    }
+
+    // Fallback only if no WebSocket is available
+    let active = true;
+    setIsLoading(true);
 
     async function loadCollaborators() {
       try {
@@ -71,9 +107,9 @@ export function InviteCollaboratorModal({
         if (res.ok) {
           const data = await res.json();
           if (active) {
-            setOwner(data.owner);
-            setCollaborators(data.collaborators || []);
-            setIsOwner(Boolean(data.isOwner));
+            setLocalOwner(data.owner);
+            setLocalCollaborators(data.collaborators || []);
+            setLocalIsOwner(Boolean(data.isOwner));
           }
         }
       } catch {
@@ -88,9 +124,9 @@ export function InviteCollaboratorModal({
     return () => {
       active = false;
     };
-  }, [open, draftId, onClose, onRequireLogin]);
+  }, [open, draftId, collaboratorsLoaded, onRequestCollaborators, onClose, onRequireLogin]);
 
-  // Handle Invite Form Submit
+  // Handle Invite Form Submit (WebSocket-first)
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     if (!draftId) return;
@@ -102,23 +138,34 @@ export function InviteCollaboratorModal({
     setSuccess("");
 
     try {
-      const res = await fetch(`/api/drafts/${draftId}/collaborators`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: targetEmail, role: roleInput }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Gagal mengundang kolaborator.");
+      if (onSendInvite) {
+        // Fast WebSocket path: 0 HTTP requests!
+        const res = await onSendInvite(targetEmail, roleInput);
+        if (!res.success) {
+          setError(res.error || "Gagal mengundang kolaborator.");
+        } else {
+          setSuccess(res.message || `Undangan berhasil dikirim ke ${targetEmail}!`);
+          setEmailInput("");
+        }
       } else {
-        setSuccess(data.message || `Undangan berhasil dikirim ke ${targetEmail}!`);
-        setEmailInput("");
-        // Reload list
-        const listRes = await fetch(`/api/drafts/${draftId}/collaborators`);
-        if (listRes.ok) {
-          const listData = await listRes.json();
-          setCollaborators(listData.collaborators || []);
+        // HTTP fallback
+        const res = await fetch(`/api/drafts/${draftId}/collaborators`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: targetEmail, role: roleInput }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error || "Gagal mengundang kolaborator.");
+        } else {
+          setSuccess(data.message || `Undangan berhasil dikirim ke ${targetEmail}!`);
+          setEmailInput("");
+          const listRes = await fetch(`/api/drafts/${draftId}/collaborators`);
+          if (listRes.ok) {
+            const listData = await listRes.json();
+            setLocalCollaborators(listData.collaborators || []);
+          }
         }
       }
     } catch {
@@ -128,23 +175,34 @@ export function InviteCollaboratorModal({
     }
   }
 
-  // Handle Role Change
+  // Handle Role Change (WebSocket-first)
   async function handleChangeRole(collaboratorId: string, newRole: "editor" | "viewer") {
     if (!draftId) return;
     try {
-      const res = await fetch(`/api/drafts/${draftId}/collaborators/${collaboratorId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: newRole }),
-      });
-      if (res.ok) {
-        setCollaborators((prev) =>
-          prev.map((c) => (c.id === collaboratorId ? { ...c, role: newRole } : c))
-        );
-        setSuccess("Peran kolaborator berhasil diperbarui.");
+      if (onUpdateRole) {
+        // Fast WebSocket path: 0 HTTP requests!
+        const ok = await onUpdateRole(collaboratorId, newRole);
+        if (ok) {
+          setSuccess("Peran kolaborator berhasil diperbarui.");
+        } else {
+          setError("Gagal mengubah peran.");
+        }
       } else {
-        const data = await res.json();
-        setError(data.error || "Gagal mengubah peran.");
+        // HTTP fallback
+        const res = await fetch(`/api/drafts/${draftId}/collaborators/${collaboratorId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: newRole }),
+        });
+        if (res.ok) {
+          setLocalCollaborators((prev) =>
+            prev.map((c) => (c.id === collaboratorId ? { ...c, role: newRole } : c))
+          );
+          setSuccess("Peran kolaborator berhasil diperbarui.");
+        } else {
+          const data = await res.json();
+          setError(data.error || "Gagal mengubah peran.");
+        }
       }
     } catch {
       setError("Gagal menghubungi server.");
@@ -172,21 +230,32 @@ export function InviteCollaboratorModal({
     }
   }
 
-  // Handle Delete / Revoke Collaborator
+  // Handle Delete / Revoke Collaborator (WebSocket-first)
   async function handleDeleteCollaborator(collaboratorId: string, email: string) {
     if (!draftId) return;
     if (!window.confirm(`Cabut akses kolaborasi untuk ${email}?`)) return;
 
     try {
-      const res = await fetch(`/api/drafts/${draftId}/collaborators/${collaboratorId}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setCollaborators((prev) => prev.filter((c) => c.id !== collaboratorId));
-        setSuccess(`Akses untuk ${email} berhasil dicabut.`);
+      if (onRemoveCollaborator) {
+        // Fast WebSocket path: 0 HTTP requests!
+        const ok = await onRemoveCollaborator(collaboratorId);
+        if (ok) {
+          setSuccess(`Akses untuk ${email} berhasil dicabut.`);
+        } else {
+          setError("Gagal mencabut akses kolaborator.");
+        }
       } else {
-        const data = await res.json();
-        setError(data.error || "Gagal mencabut akses kolaborator.");
+        // HTTP fallback
+        const res = await fetch(`/api/drafts/${draftId}/collaborators/${collaboratorId}`, {
+          method: "DELETE",
+        });
+        if (res.ok) {
+          setLocalCollaborators((prev) => prev.filter((c) => c.id !== collaboratorId));
+          setSuccess(`Akses untuk ${email} berhasil dicabut.`);
+        } else {
+          const data = await res.json();
+          setError(data.error || "Gagal mencabut akses kolaborator.");
+        }
       }
     } catch {
       setError("Gagal menghubungi server.");

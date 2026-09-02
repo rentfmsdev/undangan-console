@@ -4,6 +4,27 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CollaborationPresence, RemoteCursor, getDeterministicUserColor } from "../domain/presence";
 
+export type CollaboratorItem = {
+  id: string;
+  email: string;
+  role: "editor" | "viewer";
+  status: "pending" | "accepted" | "declined" | "revoked";
+  inviteToken?: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+  } | null;
+};
+
+export type OwnerItem = {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+};
+
 type CurrentUserProps = {
   id: string;
   name: string;
@@ -36,6 +57,11 @@ export function usePresence({
   const [onlinePresences, setOnlinePresences] = useState<CollaborationPresence[]>([]);
   const [remoteCursors, setRemoteCursors] = useState<RemoteCursor[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("disconnected");
+  const [collaborators, setCollaborators] = useState<CollaboratorItem[]>([]);
+  const [owner, setOwner] = useState<OwnerItem | null>(null);
+  const [isOwner, setIsOwner] = useState(true);
+  const [collaboratorsLoaded, setCollaboratorsLoaded] = useState(false);
+  const ackResolversRef = useRef<Map<string, (val: any) => void>>(new Map());
 
   const onDocInitRef = useRef(onDocInit);
   const onDocUpdateRef = useRef(onDocUpdate);
@@ -195,6 +221,21 @@ export function usePresence({
             } else if (data.type === "leave") {
               setOnlinePresences((prev) => prev.filter((p) => p.connectionId !== data.connectionId));
               setRemoteCursors((prev) => prev.filter((c) => c.connectionId !== data.connectionId));
+            } else if (data.type === "collaborators.sync") {
+              setOwner(data.owner);
+              setCollaborators(data.collaborators || []);
+              setIsOwner(Boolean(data.isOwner));
+              setCollaboratorsLoaded(true);
+            } else if (
+              data.type === "collaborator.invite.ack" ||
+              data.type === "collaborator.updateRole.ack" ||
+              data.type === "collaborator.remove.ack"
+            ) {
+              if (data.reqId && ackResolversRef.current.has(data.reqId)) {
+                const resolver = ackResolversRef.current.get(data.reqId)!;
+                ackResolversRef.current.delete(data.reqId);
+                resolver(data);
+              }
             } else if (data.type === "revoked") {
               if (data.userId === currentUserId) {
                 setConnectionStatus("disconnected");
@@ -368,12 +409,143 @@ export function usePresence({
     }
   }, []);
 
+  // Request fresh collaborators list via WebSocket
+  const requestCollaborators = useCallback(() => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ type: "collaborators.get" }));
+    }
+  }, []);
+
+  // Send collaborator invite via WebSocket with HTTP fallback
+  const sendCollaboratorInvite = useCallback(
+    async (email: string, role: "editor" | "viewer"): Promise<{ success: boolean; message?: string; error?: string }> => {
+      if (socketRef.current?.readyState !== WebSocket.OPEN) {
+        try {
+          const res = await fetch(`/api/drafts/${draftId}/collaborators`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, role }),
+          });
+          const data = await res.json();
+          if (!res.ok) return { success: false, error: data.error || "Gagal mengundang kolaborator." };
+          return { success: true, message: data.message };
+        } catch {
+          return { success: false, error: "Terjadi kesalahan jaringan." };
+        }
+      }
+
+      return new Promise((resolve) => {
+        const reqId = crypto.randomUUID();
+        const timeout = setTimeout(() => {
+          ackResolversRef.current.delete(reqId);
+          resolve({ success: false, error: "Permintaan invite timeout." });
+        }, 8000);
+
+        ackResolversRef.current.set(reqId, (response) => {
+          clearTimeout(timeout);
+          resolve(response);
+        });
+
+        socketRef.current?.send(JSON.stringify({
+          type: "collaborator.invite",
+          reqId,
+          email,
+          role,
+        }));
+      });
+    },
+    [draftId]
+  );
+
+  // Update collaborator role via WebSocket with HTTP fallback
+  const updateCollaboratorRole = useCallback(
+    async (collaboratorId: string, nextRole: "editor" | "viewer"): Promise<boolean> => {
+      if (socketRef.current?.readyState !== WebSocket.OPEN) {
+        try {
+          const res = await fetch(`/api/drafts/${draftId}/collaborators/${collaboratorId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role: nextRole }),
+          });
+          return res.ok;
+        } catch {
+          return false;
+        }
+      }
+
+      return new Promise((resolve) => {
+        const reqId = crypto.randomUUID();
+        const timeout = setTimeout(() => {
+          ackResolversRef.current.delete(reqId);
+          resolve(false);
+        }, 5000);
+
+        ackResolversRef.current.set(reqId, (resp) => {
+          clearTimeout(timeout);
+          resolve(Boolean(resp.success));
+        });
+
+        socketRef.current?.send(JSON.stringify({
+          type: "collaborator.updateRole",
+          reqId,
+          collaboratorId,
+          role: nextRole,
+        }));
+      });
+    },
+    [draftId]
+  );
+
+  // Remove collaborator via WebSocket with HTTP fallback
+  const removeCollaborator = useCallback(
+    async (collaboratorId: string): Promise<boolean> => {
+      if (socketRef.current?.readyState !== WebSocket.OPEN) {
+        try {
+          const res = await fetch(`/api/drafts/${draftId}/collaborators/${collaboratorId}`, {
+            method: "DELETE",
+          });
+          return res.ok;
+        } catch {
+          return false;
+        }
+      }
+
+      return new Promise((resolve) => {
+        const reqId = crypto.randomUUID();
+        const timeout = setTimeout(() => {
+          ackResolversRef.current.delete(reqId);
+          resolve(false);
+        }, 5000);
+
+        ackResolversRef.current.set(reqId, (resp) => {
+          clearTimeout(timeout);
+          resolve(Boolean(resp.success));
+        });
+
+        socketRef.current?.send(JSON.stringify({
+          type: "collaborator.remove",
+          reqId,
+          collaboratorId,
+        }));
+      });
+    },
+    [draftId]
+  );
+
   return {
     connectionStatus,
     allPresences: onlinePresences,
     onlineUsers: uniqueOnlineUsers,
     onlineCount: uniqueOnlineUsers.length,
     remoteCursors,
+    collaborators,
+    owner,
+    isOwner,
+    collaboratorsLoaded,
+    requestCollaborators,
+    sendCollaboratorInvite,
+    updateCollaboratorRole,
+    removeCollaborator,
     broadcastCursor,
     broadcastDocUpdate,
     updateActiveSurface,

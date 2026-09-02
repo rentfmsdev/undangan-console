@@ -2001,6 +2001,14 @@ export function ConsoleWorkspace({
         open={isInviteModalOpen}
         draftId={draftId}
         templateCode={template.code}
+        collaborators={presence.collaborators}
+        owner={presence.owner}
+        isOwner={presence.isOwner}
+        collaboratorsLoaded={presence.collaboratorsLoaded}
+        onRequestCollaborators={presence.requestCollaborators}
+        onSendInvite={presence.sendCollaboratorInvite}
+        onUpdateRole={presence.updateCollaboratorRole}
+        onRemoveCollaborator={presence.removeCollaborator}
         onClose={() => setIsInviteModalOpen(false)}
         onRequireLogin={(reason) => requestLogin(reason)}
       />

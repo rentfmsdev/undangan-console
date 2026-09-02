@@ -3,7 +3,8 @@ import { createServer } from "http";
 import * as Y from "yjs";
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
-import { randomUUID } from "crypto";
+import { randomUUID, randomBytes, createHash } from "crypto";
+import { createClient } from "redis";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
@@ -14,6 +15,7 @@ const SESSION_COOKIE_NAME = "undangan_session";
 const MAX_DOCUMENT_UPDATE_BYTES = 1_000_000;
 const VALID_SURFACES = new Set(["canvas", "preview", "left-sidebar", "right-sidebar"]);
 const DRAFT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const REDIS_CHANNEL = "undangan:collaboration:events";
 
 const dbPool = mysql.createPool(DB_URL);
 const server = createServer((req, res) => {
@@ -28,6 +30,8 @@ const server = createServer((req, res) => {
 
 const wss = new WebSocketServer({ server });
 const rooms = new Map();
+const socketPrincipals = new WeakMap();
+let redisSubscriber = null;
 
 function parseCookies(header = "") {
   return Object.fromEntries(
@@ -114,6 +118,73 @@ function createPresence(principal, connectionId, input = {}) {
   };
 }
 
+async function getRoomCollaborators(draftId) {
+  const [draftRows] = await dbPool.query(
+    "SELECT user_id AS userId FROM invitations WHERE id = ? LIMIT 1",
+    [draftId]
+  );
+  if (!draftRows.length) return null;
+  const ownerId = draftRows[0].userId;
+
+  let owner = null;
+  if (ownerId) {
+    const [ownerRows] = await dbPool.query(
+      "SELECT id, name, email, avatar_url AS avatarUrl FROM users WHERE id = ? LIMIT 1",
+      [ownerId]
+    );
+    if (ownerRows.length) owner = ownerRows[0];
+  }
+
+  const [collabRows] = await dbPool.query(
+    `SELECT c.id, c.email, c.role, c.status, c.expires_at AS expiresAt,
+            c.accepted_at AS acceptedAt, c.created_at AS createdAt,
+            c.user_id AS userId, u.name AS userName, u.avatar_url AS userAvatar
+     FROM invitation_collaborators c
+     LEFT JOIN users u ON u.id = c.user_id
+     WHERE c.invitation_id = ?
+     ORDER BY c.created_at DESC`,
+    [draftId]
+  );
+
+  const collaborators = collabRows.map((c) => ({
+    id: c.id,
+    email: c.email,
+    role: c.role,
+    status: c.status,
+    expiresAt: c.expiresAt ? new Date(c.expiresAt).toISOString() : null,
+    acceptedAt: c.acceptedAt ? new Date(c.acceptedAt).toISOString() : null,
+    createdAt: c.createdAt ? new Date(c.createdAt).toISOString() : new Date().toISOString(),
+    user: c.userId
+      ? {
+          id: c.userId,
+          name: c.userName ?? c.email,
+          avatarUrl: c.userAvatar ?? null,
+        }
+      : null,
+  }));
+
+  return { owner, collaborators };
+}
+
+async function broadcastCollaborators(draftId) {
+  const data = await getRoomCollaborators(draftId).catch(() => null);
+  if (!data) return;
+  const room = rooms.get(draftId);
+  if (!room) return;
+
+  for (const client of room.clients) {
+    if (client.readyState === WebSocket.OPEN) {
+      const p = socketPrincipals.get(client);
+      client.send(JSON.stringify({
+        type: "collaborators.sync",
+        owner: data.owner,
+        collaborators: data.collaborators,
+        isOwner: p?.role === "owner",
+      }));
+    }
+  }
+}
+
 async function loadRoomSnapshot(draftId, ydoc) {
   const [snapRows] = await dbPool.query(
     "SELECT revision, snapshot FROM invitation_collaboration_snapshots WHERE invitation_id = ? ORDER BY revision DESC LIMIT 1",
@@ -195,6 +266,61 @@ function broadcastToRoom(draftId, message, excludedClient = null) {
   const payload = JSON.stringify(message);
   for (const client of room.clients) {
     if (client !== excludedClient && client.readyState === WebSocket.OPEN) client.send(payload);
+  }
+}
+
+function applyRealtimeAccessEvent(event) {
+  if (!event || typeof event !== "object" || typeof event.draftId !== "string" || typeof event.userId !== "string") return;
+  const room = rooms.get(event.draftId);
+  if (!room) return;
+
+  for (const client of room.clients) {
+    const principal = socketPrincipals.get(client);
+    if (!principal || principal.id !== event.userId) continue;
+
+    if (event.type === "collaborator.revoked") {
+      client.close(1008, "Access revoked");
+      continue;
+    }
+    if (event.type === "collaborator.role-changed" && ["editor", "viewer"].includes(event.role)) {
+      principal.role = event.role;
+      if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify({ type: "permission.update", role: event.role }));
+    }
+  }
+}
+
+async function startRedisSubscriber() {
+  const host = process.env.COLLAB_REDIS_HOST?.trim();
+  if (!host) {
+    console.log("[Collab Server] Redis pub/sub disabled; MySQL permission fallback is active.");
+    return;
+  }
+
+  const portValue = Number.parseInt(process.env.COLLAB_REDIS_PORT || "6379", 10);
+  const databaseValue = Number.parseInt(process.env.COLLAB_REDIS_DATABASE || "0", 10);
+
+  const subscriber = createClient({
+    username: process.env.COLLAB_REDIS_USERNAME || undefined,
+    password: process.env.COLLAB_REDIS_PASSWORD || undefined,
+    database: Number.isInteger(databaseValue) && databaseValue >= 0 ? databaseValue : 0,
+    socket: {
+      host,
+      port: Number.isInteger(portValue) && portValue > 0 ? portValue : 6379,
+      tls: process.env.COLLAB_REDIS_TLS === "true",
+      reconnectStrategy: (retries) => Math.min(1_000 * 2 ** retries, 15_000),
+    },
+  });
+  subscriber.on("error", (error) => console.warn("[Collab Server] Redis subscriber unavailable; MySQL fallback remains active.", error.message));
+  try {
+    await subscriber.connect();
+    await subscriber.subscribe(REDIS_CHANNEL, (payload) => {
+      try { applyRealtimeAccessEvent(JSON.parse(payload)); } catch { /* Ignore malformed external event. */ }
+    });
+    redisSubscriber = subscriber;
+    console.log("[Collab Server] Redis pub/sub connected for instant access updates.");
+  } catch (error) {
+    console.warn("[Collab Server] Redis unavailable at startup; MySQL fallback remains active.", error.message);
+    try { await subscriber.quit(); } catch { /* Connection was never established. */ }
   }
 }
 
@@ -286,10 +412,22 @@ wss.on("connection", async (ws, req) => {
   const room = await getOrCreateRoom(draftId);
   const connectionId = randomUUID();
   let joined = false;
+  socketPrincipals.set(ws, principal);
   room.clients.add(ws);
   ws.send(JSON.stringify({ type: "connection.ready", connectionId, role: principal.role }));
   ws.send(JSON.stringify({ type: "doc.init", update: Buffer.from(Y.encodeStateAsUpdate(room.ydoc)).toString("base64"), revision: room.revision }));
   ws.send(JSON.stringify({ type: "sync", presences: Array.from(room.presences.values()) }));
+
+  getRoomCollaborators(draftId).then((collabData) => {
+    if (collabData && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: "collaborators.sync",
+        owner: collabData.owner,
+        collaborators: collabData.collaborators,
+        isOwner: principal.role === "owner",
+      }));
+    }
+  }).catch(() => {});
 
   const accessCheck = setInterval(async () => {
     const refreshed = await resolvePrincipal(req.headers.cookie, draftId).catch(() => null);
@@ -297,6 +435,7 @@ wss.on("connection", async (ws, req) => {
     else {
       const roleChanged = refreshed.role !== principal.role;
       principal = refreshed;
+      socketPrincipals.set(ws, principal);
       if (roleChanged) {
         ws.send(JSON.stringify({ type: "permission.update", role: principal.role }));
         const existing = room.presences.get(connectionId);
@@ -320,6 +459,7 @@ wss.on("connection", async (ws, req) => {
       const refreshed = await resolvePrincipal(req.headers.cookie, draftId).catch(() => null);
       if (!refreshed) { ws.close(1008, "Access revoked"); return; }
       principal = refreshed;
+      socketPrincipals.set(ws, principal);
     }
 
     if (message.type === "join" || message.type === "presence.update") {
@@ -360,6 +500,148 @@ wss.on("connection", async (ws, req) => {
       } catch {
         ws.close(1008, "Invalid document update");
       }
+      return;
+    }
+
+    if (message.type === "collaborators.get") {
+      const collabData = await getRoomCollaborators(draftId).catch(() => null);
+      if (collabData && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: "collaborators.sync",
+          owner: collabData.owner,
+          collaborators: collabData.collaborators,
+          isOwner: principal.role === "owner",
+        }));
+      }
+      return;
+    }
+
+    if (message.type === "collaborator.invite") {
+      if (principal.role !== "owner") {
+        ws.send(JSON.stringify({
+          type: "collaborator.invite.ack",
+          reqId: message.reqId,
+          success: false,
+          error: "Hanya pemilik (owner) undangan yang dapat mengundang kolaborator.",
+        }));
+        return;
+      }
+
+      const email = typeof message.email === "string" ? message.email.toLowerCase().trim() : "";
+      const role = message.role === "viewer" ? "viewer" : "editor";
+      if (!email || !email.includes("@")) {
+        ws.send(JSON.stringify({
+          type: "collaborator.invite.ack",
+          reqId: message.reqId,
+          success: false,
+          error: "Format email tidak valid.",
+        }));
+        return;
+      }
+
+      if (email === principal.email.toLowerCase().trim()) {
+        ws.send(JSON.stringify({
+          type: "collaborator.invite.ack",
+          reqId: message.reqId,
+          success: false,
+          error: "Anda adalah pemilik undangan ini.",
+        }));
+        return;
+      }
+
+      try {
+        const [existingUsers] = await dbPool.query("SELECT id FROM users WHERE email = ? LIMIT 1", [email]);
+        const targetUserId = existingUsers.length ? existingUsers[0].id : null;
+        const rawToken = randomBytes(32).toString("hex");
+        const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        const [existingCollab] = await dbPool.query(
+          "SELECT id FROM invitation_collaborators WHERE invitation_id = ? AND email = ? LIMIT 1",
+          [draftId, email]
+        );
+
+        if (existingCollab.length) {
+          await dbPool.query(
+            `UPDATE invitation_collaborators
+             SET role = ?, status = 'pending', invite_token_hash = ?, expires_at = ?, user_id = COALESCE(user_id, ?), updated_at = NOW()
+             WHERE id = ?`,
+            [role, tokenHash, expiresAt, targetUserId, existingCollab[0].id]
+          );
+        } else {
+          await dbPool.query(
+            `INSERT INTO invitation_collaborators
+             (id, invitation_id, email, user_id, role, status, invite_token_hash, expires_at, invited_by, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, NOW(), NOW())`,
+            [randomUUID(), draftId, email, targetUserId, role, tokenHash, expiresAt, principal.id]
+          );
+        }
+
+        await broadcastCollaborators(draftId);
+
+        ws.send(JSON.stringify({
+          type: "collaborator.invite.ack",
+          reqId: message.reqId,
+          success: true,
+          message: `Undangan berhasil dikirim ke ${email}!`,
+        }));
+      } catch (err) {
+        console.error("[Collab Server] Error inviting collaborator:", err.message);
+        ws.send(JSON.stringify({
+          type: "collaborator.invite.ack",
+          reqId: message.reqId,
+          success: false,
+          error: "Gagal memproses undangan di database.",
+        }));
+      }
+      return;
+    }
+
+    if (message.type === "collaborator.updateRole") {
+      if (principal.role !== "owner") return;
+      const { collaboratorId, role } = message;
+      if (!collaboratorId || !["editor", "viewer"].includes(role)) return;
+
+      try {
+        await dbPool.query(
+          "UPDATE invitation_collaborators SET role = ?, updated_at = NOW() WHERE id = ? AND invitation_id = ?",
+          [role, collaboratorId, draftId]
+        );
+        await broadcastCollaborators(draftId);
+        ws.send(JSON.stringify({
+          type: "collaborator.updateRole.ack",
+          reqId: message.reqId,
+          success: true,
+          collaboratorId,
+          role,
+        }));
+      } catch (err) {
+        console.error("[Collab Server] Error updating role:", err.message);
+      }
+      return;
+    }
+
+    if (message.type === "collaborator.remove") {
+      if (principal.role !== "owner") return;
+      const { collaboratorId } = message;
+      if (!collaboratorId) return;
+
+      try {
+        await dbPool.query(
+          "DELETE FROM invitation_collaborators WHERE id = ? AND invitation_id = ?",
+          [collaboratorId, draftId]
+        );
+        await broadcastCollaborators(draftId);
+        ws.send(JSON.stringify({
+          type: "collaborator.remove.ack",
+          reqId: message.reqId,
+          success: true,
+          collaboratorId,
+        }));
+      } catch (err) {
+        console.error("[Collab Server] Error removing collaborator:", err.message);
+      }
+      return;
     }
   });
 
@@ -398,8 +680,10 @@ async function gracefulShutdown(signal) {
   wss.close(() => {
     server.close(() => {
       dbPool.end().then(() => {
-        console.log("[Collab Server] Database pool closed. Graceful shutdown complete.");
-        process.exit(0);
+        Promise.resolve(redisSubscriber?.quit()).catch(() => {}).finally(() => {
+          console.log("[Collab Server] Database pool closed. Graceful shutdown complete.");
+          process.exit(0);
+        });
       });
     });
   });
@@ -414,4 +698,7 @@ async function gracefulShutdown(signal) {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-server.listen(PORT, () => console.log(`[Collab Server] ws://localhost:${PORT}`));
+server.listen(PORT, () => {
+  console.log(`[Collab Server] ws://localhost:${PORT}`);
+  void startRedisSubscriber();
+});

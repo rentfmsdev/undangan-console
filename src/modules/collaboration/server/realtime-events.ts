@@ -11,21 +11,33 @@ export type CollaborationRealtimeEvent =
 let publisher: RedisClientType | null = null;
 let attemptedConnection = false;
 
-function getRedisUrl() {
-  return process.env.COLLAB_REDIS_URL?.trim();
+function getRedisOptions() {
+  const host = process.env.COLLAB_REDIS_HOST?.trim();
+  if (!host) return null;
+
+  const port = Number.parseInt(process.env.COLLAB_REDIS_PORT || "6379", 10);
+  const database = Number.parseInt(process.env.COLLAB_REDIS_DATABASE || "0", 10);
+  const safePort = Number.isInteger(port) && port > 0 ? port : 6379;
+  const reconnectStrategy = (retries: number) => Math.min(1_000 * 2 ** retries, 15_000);
+  const socket = process.env.COLLAB_REDIS_TLS === "true"
+    ? { host, port: safePort, tls: true as const, reconnectStrategy }
+    : { host, port: safePort, reconnectStrategy };
+  return {
+    database: Number.isInteger(database) && database >= 0 ? database : 0,
+    password: process.env.COLLAB_REDIS_PASSWORD || undefined,
+    socket: {
+      ...socket,
+    },
+    username: process.env.COLLAB_REDIS_USERNAME || undefined,
+  };
 }
 
 async function getPublisher() {
-  const url = getRedisUrl();
-  if (!url) return null;
+  const options = getRedisOptions();
+  if (!options) return null;
 
   if (!publisher) {
-    publisher = createClient({
-      url,
-      socket: {
-        reconnectStrategy: (retries) => Math.min(1_000 * 2 ** retries, 15_000),
-      },
-    });
+    publisher = createClient(options);
     publisher.on("error", (error) => {
       console.warn("[Collaboration Redis] Publisher unavailable; database access checks remain active.", error.message);
     });
@@ -61,4 +73,3 @@ export async function publishCollaborationRealtimeEvent(event: CollaborationReal
     return false;
   }
 }
-
