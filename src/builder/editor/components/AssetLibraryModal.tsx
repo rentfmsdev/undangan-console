@@ -20,7 +20,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { stockMusicLibrary, type StockMusicTrack } from "@/config/stock-music";
+import {
+  stockMusicLibrary,
+  normalizeMusicCategory,
+  INVITATION_MUSIC_CATEGORIES,
+  type StockMusicTrack,
+} from "@/config/stock-music";
 import { ImageCropModal } from "./ImageCropModal";
 import { compressImage } from "@/lib/image-compressor";
 
@@ -38,6 +43,7 @@ type Props = {
   kind?: "image" | "audio";
   mode?: "select" | "manage"; // default "select"
   draftId?: string | null;
+  category?: string; // template category: "wedding", "birthday", "khitanan", "aqiqah"
   onClose: () => void;
   onSelect?: (asset: UserAsset) => void;
 };
@@ -47,6 +53,7 @@ export function AssetLibraryModal({
   kind = "image",
   mode = "select",
   draftId,
+  category = "wedding",
   onClose,
   onSelect,
 }: Props) {
@@ -58,6 +65,7 @@ export function AssetLibraryModal({
   const [successMsg, setSuccessMsg] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [audioSourceTab, setAudioSourceTab] = useState<"stock" | "uploads">("stock");
+  const [musicCategoryFilter, setMusicCategoryFilter] = useState<string>("recommended");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Audio preview state
@@ -230,13 +238,39 @@ export function AssetLibraryModal({
     }
   }
 
+  const normCategory = normalizeMusicCategory(category);
+  const categoryLabels: Record<string, string> = {
+    wedding: "Pernikahan",
+    birthday: "Ulang Tahun",
+    khitanan: "Khitanan",
+    aqiqah: "Aqiqah",
+  };
+  const currentCategoryLabel = categoryLabels[normCategory] || normCategory;
+
   const filteredStockMusic = useMemo(() => {
-    if (!searchQuery.trim()) return stockMusicLibrary;
+    let list = stockMusicLibrary;
+
+    if (musicCategoryFilter === "recommended") {
+      list = stockMusicLibrary.filter(
+        (m) => m.category === normCategory || m.categories?.includes(normCategory)
+      );
+    } else if (musicCategoryFilter !== "all") {
+      list = stockMusicLibrary.filter(
+        (m) => m.category === musicCategoryFilter || m.categories?.includes(musicCategoryFilter)
+      );
+    }
+
+    if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase();
-    return stockMusicLibrary.filter(
-      (m) => m.title.toLowerCase().includes(q) || m.artist.toLowerCase().includes(q) || m.category.toLowerCase().includes(q)
+    return list.filter(
+      (m) =>
+        m.title.toLowerCase().includes(q) ||
+        m.artist.toLowerCase().includes(q) ||
+        (m.genre && m.genre.toLowerCase().includes(q)) ||
+        (m.categoryLabel && m.categoryLabel.toLowerCase().includes(q)) ||
+        m.category.toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, musicCategoryFilter, normCategory]);
 
   const filteredAssets = useMemo(() => {
     if (!searchQuery.trim()) return assets;
@@ -446,6 +480,36 @@ export function AssetLibraryModal({
             {currentTab === "audio" && audioSourceTab === "stock" ? (
               /* Built-in Stock Music Library */
               <div className="space-y-3">
+                {/* Category Filter Pills */}
+                <div className="flex flex-wrap items-center gap-1.5 pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setMusicCategoryFilter("recommended")}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition active:scale-95 ${
+                      musicCategoryFilter === "recommended"
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <Sparkles size={12} className={musicCategoryFilter === "recommended" ? "text-amber-300" : "text-amber-500"} />
+                    <span>⭐ Rekomendasi ({currentCategoryLabel})</span>
+                  </button>
+                  {INVITATION_MUSIC_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setMusicCategoryFilter(cat.id)}
+                      className={`rounded-xl px-3 py-1.5 text-xs font-bold transition active:scale-95 ${
+                        musicCategoryFilter === cat.id
+                          ? "bg-slate-900 text-white shadow-xs"
+                          : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="grid gap-2.5 sm:grid-cols-2">
                   {filteredStockMusic.map((track) => {
                     const isPlaying = playingAudioUrl === track.url;
@@ -474,13 +538,18 @@ export function AssetLibraryModal({
                           </button>
 
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="inline-block truncate text-xs font-extrabold text-slate-800 group-hover:text-emerald-950">
                                 {track.title}
                               </span>
                               <span className="shrink-0 rounded-md bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">
-                                {track.category}
+                                {track.categoryLabel || track.category}
                               </span>
+                              {track.genre && (
+                                <span className="shrink-0 rounded-md bg-slate-100 border border-slate-200/60 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">
+                                  {track.genre}
+                                </span>
+                              )}
                             </div>
                             <p className="truncate text-[11px] text-slate-500 mt-0.5">{track.artist}</p>
                             <p className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-1">

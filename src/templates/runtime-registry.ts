@@ -5,6 +5,10 @@ import { WeddingLampungNavigationAdapter } from "./wedding-lampung-elegance/navi
 import { normalizeWeddingSectionState } from "./wedding-lampung-elegance/normalize-section-state";
 import { applyWeddingTemplateState, watchWeddingTemplateState, type WeddingGlobalSettings, type WeddingPreviewSection } from "./wedding-lampung-elegance/source/template-bridge";
 import type { TemplateKit } from "./contracts";
+import BirthdayCelestialSource from "./birthday-celestial/source/BirthdayCelestialSource";
+import { BirthdayCelestialNavigationAdapter } from "./birthday-celestial/navigation-adapter";
+import { normalizeBirthdaySectionState } from "./birthday-celestial/normalize-section-state";
+import { applyBirthdayTemplateState, watchBirthdayTemplateState, type BirthdayPreviewSection } from "./birthday-celestial/source/template-bridge";
 
 export type RuntimeState = { sections: unknown[]; themeId: string; settings: Record<string, unknown> };
 export type StoredTemplateSection = { id: string; type: string; enabled: boolean; data: Record<string, unknown> };
@@ -30,7 +34,17 @@ const weddingLampungRuntime: TemplateRuntime = {
   watchState: ({ sections, themeId, settings }) => watchWeddingTemplateState(sections as WeddingPreviewSection[], themeId, settings as WeddingGlobalSettings),
 };
 
-export const templateRuntimeRegistry: TemplateRuntime[] = [weddingLampungRuntime];
+const birthdayCelestialRuntime: TemplateRuntime = {
+  templateId: "birthday-celestial",
+  code: "bdcel",
+  Renderer: BirthdayCelestialSource,
+  createNavigationAdapter: () => new BirthdayCelestialNavigationAdapter(),
+  normalizeSections: normalizeBirthdaySectionState,
+  applyState: ({ sections, themeId, settings }) => applyBirthdayTemplateState(sections as BirthdayPreviewSection[], themeId, (settings ?? {}) as Parameters<typeof applyBirthdayTemplateState>[2]),
+  watchState: ({ sections, themeId, settings }) => watchBirthdayTemplateState(sections as BirthdayPreviewSection[], themeId, (settings ?? {}) as Parameters<typeof watchBirthdayTemplateState>[2]),
+};
+
+export const templateRuntimeRegistry: TemplateRuntime[] = [weddingLampungRuntime, birthdayCelestialRuntime];
 
 export function getTemplateRuntime(code: string) {
   return templateRuntimeRegistry.find((runtime) => runtime.code === code || runtime.templateId === code) ?? weddingLampungRuntime;

@@ -1,14 +1,20 @@
 "use client";
 
-import { FolderOpen, Music2, Pause, Play, Volume1, Volume2, VolumeX } from "lucide-react";
+import { FolderOpen, Music2, Pause, Play, Sparkles, Volume1, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { stockMusicLibrary, type StockMusicTrack } from "@/config/stock-music";
+import {
+  stockMusicLibrary,
+  normalizeMusicCategory,
+  getStockMusicByUrl,
+  type StockMusicTrack,
+} from "@/config/stock-music";
 import { EditorSelect, type SelectOption } from "./EditorSelect";
 
 type Props = {
   musicUrl: string;
   volume?: number; // 0 to 1, default 0.60
   disabled?: boolean;
+  category?: string; // template category: "wedding", "birthday", "khitanan", "aqiqah", etc.
   onChange: (url: string) => void;
   onVolumeChange?: (volume: number) => void;
   onOpenLibrary: () => void;
@@ -18,6 +24,7 @@ export function MusicSelectorField({
   musicUrl,
   volume = 0.6,
   disabled = false,
+  category = "wedding",
   onChange,
   onVolumeChange,
   onOpenLibrary,
@@ -49,16 +56,49 @@ export function MusicSelectorField({
     };
   }, []);
 
+  const normCategory = normalizeMusicCategory(category);
+  const categoryLabels: Record<string, string> = {
+    wedding: "Pernikahan",
+    birthday: "Ulang Tahun",
+    khitanan: "Khitanan",
+    aqiqah: "Aqiqah",
+  };
+  const currentCategoryLabel = categoryLabels[normCategory] || normCategory;
+
   const selectedTrack = useMemo(() => {
-    return stockMusicLibrary.find((t) => t.url === musicUrl);
+    return getStockMusicByUrl(musicUrl);
   }, [musicUrl]);
 
   const selectOptions: SelectOption[] = useMemo(() => {
-    const list: SelectOption[] = stockMusicLibrary.map((track) => ({
-      value: track.url,
-      label: `${track.title} — ${track.artist}`,
-      subtitle: `${track.category} · ${track.duration}`,
-    }));
+    // 1. Tracks matching this category
+    const recommended = stockMusicLibrary.filter((track) => {
+      if (track.category === normCategory) return true;
+      if (track.categories?.includes(normCategory)) return true;
+      return false;
+    });
+
+    // 2. Tracks for other categories
+    const others = stockMusicLibrary.filter((track) => !recommended.some((r) => r.id === track.id));
+
+    const list: SelectOption[] = [];
+
+    // Recommended section for current template category
+    recommended.forEach((track) => {
+      list.push({
+        value: track.url,
+        label: `⭐ [${currentCategoryLabel}] ${track.title} — ${track.artist}`,
+        subtitle: `${track.genre || track.categoryLabel || track.category} · ${track.duration}`,
+      });
+    });
+
+    // Other categories section
+    others.forEach((track) => {
+      list.push({
+        value: track.url,
+        label: `[${track.categoryLabel || track.category}] ${track.title} — ${track.artist}`,
+        subtitle: `${track.genre || ""} · ${track.duration}`,
+      });
+    });
 
     list.push({
       value: "",
@@ -75,7 +115,7 @@ export function MusicSelectorField({
     }
 
     return list;
-  }, [musicUrl]);
+  }, [musicUrl, normCategory, currentCategoryLabel]);
 
   function togglePlayPreview() {
     if (!musicUrl) return;
@@ -113,23 +153,29 @@ export function MusicSelectorField({
           <Music2 size={14} className="text-emerald-600" />
           <span>Musik undangan</span>
         </label>
-        <span
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold ${
-            hasMusic ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
-          }`}
-        >
-          {hasMusic ? (
-            <>
-              <Volume2 size={10} />
-              <span>Aktif</span>
-            </>
-          ) : (
-            <>
-              <VolumeX size={10} />
-              <span>Mati</span>
-            </>
-          )}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">
+            <Sparkles size={10} className="text-amber-500" />
+            <span>{currentCategoryLabel}</span>
+          </span>
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold ${
+              hasMusic ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
+            }`}
+          >
+            {hasMusic ? (
+              <>
+                <Volume2 size={10} />
+                <span>Aktif</span>
+              </>
+            ) : (
+              <>
+                <VolumeX size={10} />
+                <span>Mati</span>
+              </>
+            )}
+          </span>
+        </div>
       </div>
 
       {/* Custom Reusable Select Dropdown with Integrated Play/Pause Button */}
@@ -160,16 +206,13 @@ export function MusicSelectorField({
         </button>
       </div>
 
-      {/* Track Info Badge when playing */}
-      {isPlaying && (
-        <div className="flex items-center gap-2 rounded-xl bg-emerald-50/80 border border-emerald-200/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 animate-in fade-in duration-150">
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
-          </span>
+      {/* Track Info Badge when playing or selected */}
+      {selectedTrack && (
+        <div className="flex items-center justify-between rounded-xl bg-slate-100/80 border border-slate-200/80 px-2.5 py-1.5 text-[10px] text-slate-600">
           <span className="truncate">
-            Memutar: {selectedTrack ? `${selectedTrack.title} (${selectedTrack.duration})` : "Musik kustom"}
+            Genre: <strong className="text-slate-800">{selectedTrack.genre || selectedTrack.categoryLabel}</strong>
           </span>
+          <span className="shrink-0 text-slate-400 font-mono">{selectedTrack.duration}</span>
         </div>
       )}
 

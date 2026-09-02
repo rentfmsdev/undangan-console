@@ -16,7 +16,7 @@ import { AssetUploadField } from "./components/AssetUploadField";
 import { AssetLibraryModal, type UserAsset } from "./components/AssetLibraryModal";
 import { MyInvitationsModal } from "@/components/invitations/MyInvitationsModal";
 import { MusicSelectorField } from "./components/MusicSelectorField";
-import { stockMusicLibrary } from "@/config/stock-music";
+import { stockMusicLibrary, getDefaultStockMusic } from "@/config/stock-music";
 import { makeAdminWhatsAppUrl } from "@/config/contact";
 import { PublishModal, type PublishResult } from "./components/PublishModal";
 import { useAutoSave } from "./hooks/useAutoSave";
@@ -143,7 +143,7 @@ export function ConsoleWorkspace({
   const [sections, setSections] = useState<EditableSection[]>(() => makeSections(template));
   const [selectedId, setSelectedId] = useState(sections[0]?.id ?? "");
   const [themeId, setThemeId] = useState(template.themes[0].id);
-  const [musicUrl, setMusicUrl] = useState("/assets/audio/easy-on-me.webm");
+  const [musicUrl, setMusicUrl] = useState(() => getDefaultStockMusic(template.category).url);
   const [musicVolume, setMusicVolume] = useState<number>(0.6);
   const [customThemeColors, setCustomThemeColors] = useState<{ primary?: string; accent?: string; background?: string }>({});
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -200,51 +200,70 @@ export function ConsoleWorkspace({
     }
 
     if (remoteState.sections && Object.keys(remoteState.sections).length > 0) {
-      setSections((current) => {
+      setSections(() => {
         const remoteSecMap = remoteState.sections;
-        const currentById = new Map(current.map((section) => [section.id, section]));
         const orderedIds = [
           ...(remoteState.sectionOrder ?? []),
           ...Object.keys(remoteSecMap).filter((id) => !(remoteState.sectionOrder ?? []).includes(id)),
         ];
 
-        // Build from the template definition for sections created by another
-        // collaborator. The old implementation only updated existing local
-        // sections, so remote add-section never appeared in the editor/preview.
-        return orderedIds.flatMap((id) => {
+        // Always normalize the complete remote document through the template
+        // contract. Besides keeping new collaborator sections, this migrates
+        // old drafts when a template introduces a required default section
+        // (for example the opening envelope).
+        const records = orderedIds.flatMap((id) => {
           const remote = remoteSecMap[id];
           if (!remote) return [];
-          const definition = template.sections.find((item) => item.type === remote.type);
-          const currentSection = currentById.get(id);
-          if (!definition && !currentSection) return [];
-
-          const base = currentSection ?? {
-            ...definition!,
-            id,
-            enabled: true,
-            defaultData: { ...definition!.defaultData },
-          };
-
           return [{
-            ...base,
             id,
+            type: remote.type,
             enabled: remote.enabled,
-            defaultData: {
-              ...base.defaultData,
+            data: {
               ...remote.data,
-              textStyles: remote.textStyles ?? remote.data.textStyles ?? base.defaultData.textStyles,
+              textStyles: remote.textStyles ?? remote.data.textStyles,
             },
           }];
         });
+        return hydrateSections(template, records);
       });
     }
-  }, [template.sections]);
+  }, [template]);
 
   const collabDoc = useCollaborationDocument({
     draftId: draftId ?? undefined,
     enabled: Boolean(draftId && currentUser),
     onRemoteStateChange: applySharedState,
   });
+
+  // Persist migrations produced by a template normalizer into the shared
+  // document. Without this, an old draft can look correct temporarily but
+  // lose newly-required sections again when a collaborator reconnects.
+  useEffect(() => {
+    if (!draftReady || !currentUser || isViewer) return;
+    collabDoc.updateLocalState((doc) => {
+      const sectionsMap = doc.getMap("sections");
+      const orderArray = doc.getArray<string>("sectionOrder");
+      // Wait for the initial server/CRDT document. An empty map is a new
+      // document and is initialized by the normal draft flow.
+      if (!sectionsMap.size) return;
+      const existingTypes = new Set(Array.from(sectionsMap.values()).flatMap((value) => value instanceof Y.Map && typeof value.get("type") === "string" ? [value.get("type") as string] : []));
+      const additions = template.defaultSections.flatMap((type) => {
+        const definition = template.sections.find((section) => section.type === type);
+        return definition && !existingTypes.has(type) ? [{ id: crypto.randomUUID(), definition }] : [];
+      });
+      additions.forEach(({ id, definition }) => {
+        const sectionMap = new Y.Map<unknown>();
+        sectionMap.set("id", id);
+        sectionMap.set("type", definition.type);
+        sectionMap.set("enabled", true);
+        const dataMap = new Y.Map<unknown>();
+        Object.entries(definition.defaultData).forEach(([key, value]) => dataMap.set(key, value));
+        sectionMap.set("data", dataMap);
+        sectionsMap.set(id, sectionMap);
+        orderArray.push([id]);
+      });
+    });
+  }, [collabDoc, currentUser, draftReady, isViewer, sections, template]);
 
   const canUndo = collabDoc.canUndo;
   const canRedo = collabDoc.canRedo;
@@ -517,7 +536,7 @@ export function ConsoleWorkspace({
       } else {
         setPublishNotice(null);
       }
-      applyState(payload.draft.themeId, payload.draft.styleOverrides?.musicUrl ?? "/assets/audio/easy-on-me.webm", payload.sections, payload.draft.styleOverrides?.customColors, payload.draft.styleOverrides?.musicVolume);
+      applyState(payload.draft.themeId, payload.draft.styleOverrides?.musicUrl ?? getDefaultStockMusic(template.category).url, payload.sections, payload.draft.styleOverrides?.customColors, payload.draft.styleOverrides?.musicVolume);
       return true;
     }
 
@@ -2156,6 +2175,7 @@ export function ConsoleWorkspace({
         kind={assetTarget?.kind ?? "image"}
         mode={assetTarget?.target === "manager" ? "manage" : "select"}
         draftId={draftId}
+        category={template.category}
         onClose={() => setAssetTarget(null)}
         onSelect={selectLibraryAsset}
       />

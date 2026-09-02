@@ -45,6 +45,7 @@ export function CollaborativeGlobalEditor({
       <MusicSelectorField
         musicUrl={musicUrl}
         volume={musicVolume}
+        category={template.category}
         disabled={disabled || !authResolved || (isLoggedIn && !draftReady)}
         onChange={(nextUrl) => {
           if (!authResolved) return;
