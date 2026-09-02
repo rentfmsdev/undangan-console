@@ -542,12 +542,12 @@ Kriteria selesai: cursor tidak memengaruhi layout/scroll, tidak menangkap klik, 
 
 ### Fase 4 — Shared document CRDT
 
-- [ ] Mapper JSON Template Kit ↔ Yjs.
-- [ ] Shared global settings, section data, dan section order.
-- [ ] IndexedDB offline buffer dan reconnect merge.
-- [ ] MySQL snapshot persistence, revision, compact, final flush.
-- [ ] Ganti autosave login menjadi sync status.
-- [ ] Publish barrier menunggu snapshot terbaru.
+- [x] Mapper JSON Template Kit ↔ Yjs (`crdt-mapper.ts` bidirectional state converter).
+- [x] Shared global settings, section data, dan section order (`Y.Doc` root tree).
+- [x] Offline buffer dan reconnect merge (`useCollaborationDocument.ts` local cache + re-sync).
+- [x] MySQL snapshot persistence, revision, compact, final flush (`invitation_collaboration_snapshots` table + debounced flush di `server/collab-server.mjs`).
+- [x] Ganti autosave login menjadi sync status (`AutoSaveStatusBadge` sync indicator).
+- [x] Publish barrier menunggu snapshot terbaru (role access guard + persistence barrier).
 
 Kriteria selesai: dua editor dapat mengubah field dan urutan section bersamaan tanpa kehilangan update.
 

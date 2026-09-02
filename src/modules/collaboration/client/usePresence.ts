@@ -17,6 +17,8 @@ type UsePresenceOptions = {
   currentUser?: CurrentUserProps;
   role?: "owner" | "editor" | "viewer";
   onRevoked?: () => void;
+  onDocInit?: (updateBase64: string) => void;
+  onDocUpdate?: (updateBase64: string) => void;
 };
 
 export function usePresence({
@@ -25,11 +27,19 @@ export function usePresence({
   currentUser,
   role = "editor",
   onRevoked,
+  onDocInit,
+  onDocUpdate,
 }: UsePresenceOptions) {
   const router = useRouter();
   const [onlinePresences, setOnlinePresences] = useState<CollaborationPresence[]>([]);
   const [remoteCursors, setRemoteCursors] = useState<RemoteCursor[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("disconnected");
+
+  const onDocInitRef = useRef(onDocInit);
+  onDocInitRef.current = onDocInit;
+
+  const onDocUpdateRef = useRef(onDocUpdate);
+  onDocUpdateRef.current = onDocUpdate;
 
   const socketRef = useRef<WebSocket | null>(null);
   const connectionIdRef = useRef<string>("");
@@ -133,6 +143,14 @@ export function usePresence({
 
             if (data.type === "sync" && Array.isArray(data.presences)) {
               setOnlinePresences(data.presences);
+            } else if (data.type === "doc.init") {
+              if (data.update && onDocInitRef.current) {
+                onDocInitRef.current(data.update);
+              }
+            } else if (data.type === "doc.update") {
+              if (data.update && onDocUpdateRef.current && data.originConnectionId !== connectionIdRef.current) {
+                onDocUpdateRef.current(data.update);
+              }
             } else if (data.type === "join" || data.type === "update") {
               setOnlinePresences((prev) => {
                 const map = new Map(prev.map((p) => [p.connectionId, p]));
@@ -315,6 +333,16 @@ export function usePresence({
     return Array.from(userMap.values());
   }, [onlinePresences]);
 
+  // Method to broadcast Yjs CRDT document binary update
+  const broadcastDocUpdate = useCallback((updateBase64: string) => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({
+        type: "doc.update",
+        update: updateBase64,
+      }));
+    }
+  }, []);
+
   return {
     connectionStatus,
     allPresences: onlinePresences,
@@ -322,6 +350,7 @@ export function usePresence({
     onlineCount: uniqueOnlineUsers.length,
     remoteCursors,
     broadcastCursor,
+    broadcastDocUpdate,
     updateActiveSurface,
   };
 }

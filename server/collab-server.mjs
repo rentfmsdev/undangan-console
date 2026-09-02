@@ -1,12 +1,27 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
+import * as Y from "yjs";
+import mysql from "mysql2/promise";
+import dotenv from "dotenv";
+import { randomUUID } from "crypto";
+
+dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env" });
 
 const PORT = parseInt(process.env.COLLAB_PORT || "3001", 10);
+const DB_URL = process.env.DATABASE_URL || "mysql://root@127.0.0.1:3306/undangan_console";
 
-const server = createServer((req, res) => {
+let dbPool = null;
+try {
+  dbPool = mysql.createPool(DB_URL);
+} catch (e) {
+  console.warn("[Collab Server] MySQL connection pool initialization warning:", e.message);
+}
+
+const server = createServer(async (req, res) => {
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", service: "undangan-collab-ws" }));
+    res.end(JSON.stringify({ status: "ok", service: "undangan-collab-ws", time: Date.now() }));
     return;
   }
   res.writeHead(404);
@@ -18,17 +33,137 @@ const wss = new WebSocketServer({ server });
 /**
  * Room Map: draftId -> {
  *   clients: Set<WebSocket>,
- *   presences: Map<connectionId, Presence>
+ *   presences: Map<connectionId, Presence>,
+ *   ydoc: Y.Doc,
+ *   revision: number,
+ *   isDirty: boolean,
+ *   debounceTimer: NodeJS.Timeout | null,
+ *   forcedTimer: NodeJS.Timeout | null
  * }
  */
 const rooms = new Map();
 
-function getOrCreateRoom(draftId) {
+async function loadRoomSnapshot(draftId, ydoc) {
+  if (!dbPool) return 1;
+  try {
+    // 1. Try to load newest snapshot from invitation_collaboration_snapshots
+    const [snapRows] = await dbPool.query(
+      "SELECT revision, snapshot FROM invitation_collaboration_snapshots WHERE invitation_id = ? ORDER BY revision DESC LIMIT 1",
+      [draftId]
+    );
+
+    if (snapRows && snapRows.length > 0) {
+      const snap = snapRows[0];
+      const updateBuffer = Buffer.from(snap.snapshot, "base64");
+      Y.applyUpdate(ydoc, updateBuffer);
+      return Number(snap.revision) + 1;
+    }
+
+    // 2. Fallback: load from invitations and invitation_sections
+    const [invRows] = await dbPool.query("SELECT * FROM invitations WHERE id = ? LIMIT 1", [draftId]);
+    if (invRows && invRows.length > 0) {
+      const inv = invRows[0];
+      const [secRows] = await dbPool.query("SELECT * FROM invitation_sections WHERE invitation_id = ? ORDER BY `order` ASC", [draftId]);
+
+      ydoc.transact(() => {
+        const metadata = ydoc.getMap("metadata");
+        metadata.set("templateId", inv.template_id || "hjydg");
+        metadata.set("schemaVersion", 1);
+        metadata.set("updatedAt", Date.now());
+
+        const globalSettings = ydoc.getMap("globalSettings");
+        globalSettings.set("themeId", inv.theme_id || "royal-blue-gold");
+        globalSettings.set("musicUrl", "/assets/audio/easy-on-me.webm");
+        globalSettings.set("musicVolume", 0.6);
+
+        const sectionOrder = ydoc.getArray("sectionOrder");
+        const sectionsMap = ydoc.getMap("sections");
+
+        for (const sec of secRows) {
+          sectionOrder.push([sec.id]);
+          const secMap = new Y.Map();
+          secMap.set("id", sec.id);
+          secMap.set("type", sec.type);
+          secMap.set("enabled", Boolean(sec.enabled));
+
+          let parsedData = {};
+          try {
+            parsedData = typeof sec.data === "string" ? JSON.parse(sec.data) : (sec.data || {});
+          } catch {}
+
+          const dataMap = new Y.Map();
+          Object.entries(parsedData).forEach(([k, v]) => dataMap.set(k, v));
+          secMap.set("data", dataMap);
+          sectionsMap.set(sec.id, secMap);
+        }
+      });
+    }
+    return 1;
+  } catch (err) {
+    console.error(`[Collab Server] Error loading snapshot for ${draftId}:`, err.message);
+    return 1;
+  }
+}
+
+async function flushRoomSnapshot(room, draftId, createdBy = null) {
+  if (!dbPool || !room.isDirty) return;
+  room.isDirty = false;
+
+  if (room.debounceTimer) clearTimeout(room.debounceTimer);
+  if (room.forcedTimer) clearTimeout(room.forcedTimer);
+  room.debounceTimer = null;
+  room.forcedTimer = null;
+
+  try {
+    const currentRevision = room.revision++;
+    const stateUpdate = Buffer.from(Y.encodeStateAsUpdate(room.ydoc)).toString("base64");
+    const snapId = randomUUID();
+
+    await dbPool.query(
+      "INSERT INTO invitation_collaboration_snapshots (id, invitation_id, revision, schema_version, snapshot, created_by) VALUES (?, ?, ?, 1, ?, ?)",
+      [snapId, draftId, currentRevision, stateUpdate, createdBy]
+    );
+
+    // Keep invitations.updated_at fresh
+    await dbPool.query("UPDATE invitations SET updated_at = NOW() WHERE id = ?", [draftId]);
+
+    console.log(`[Collab Server] Persisted durable snapshot for ${draftId} (rev ${currentRevision})`);
+  } catch (err) {
+    console.error(`[Collab Server] Failed to flush snapshot for ${draftId}:`, err.message);
+  }
+}
+
+function scheduleSnapshotFlush(room, draftId, userId) {
+  room.isDirty = true;
+
+  // 2-second debounce
+  if (room.debounceTimer) clearTimeout(room.debounceTimer);
+  room.debounceTimer = setTimeout(() => {
+    void flushRoomSnapshot(room, draftId, userId);
+  }, 2000);
+
+  // 10-second forced flush limit
+  if (!room.forcedTimer) {
+    room.forcedTimer = setTimeout(() => {
+      void flushRoomSnapshot(room, draftId, userId);
+    }, 10_000);
+  }
+}
+
+async function getOrCreateRoom(draftId) {
   let room = rooms.get(draftId);
   if (!room) {
+    const ydoc = new Y.Doc();
+    const initialRev = await loadRoomSnapshot(draftId, ydoc);
+
     room = {
       clients: new Set(),
       presences: new Map(),
+      ydoc,
+      revision: initialRev,
+      isDirty: false,
+      debounceTimer: null,
+      forcedTimer: null,
     };
     rooms.set(draftId, room);
   }
@@ -47,7 +182,7 @@ function broadcastToRoom(draftId, message, senderWs = null) {
   }
 }
 
-wss.on("connection", (ws, req) => {
+wss.on("connection", async (ws, req) => {
   let currentDraftId = null;
   let currentConnectionId = null;
   let currentUserId = null;
@@ -57,7 +192,6 @@ wss.on("connection", (ws, req) => {
     isAlive = true;
   });
 
-  // Extract query parameters: /?draftId=...&connectionId=...
   try {
     const url = new URL(req.url, "http://localhost");
     currentDraftId = url.searchParams.get("draftId");
@@ -65,17 +199,25 @@ wss.on("connection", (ws, req) => {
   } catch {}
 
   if (currentDraftId) {
-    const room = getOrCreateRoom(currentDraftId);
+    const room = await getOrCreateRoom(currentDraftId);
     room.clients.add(ws);
 
-    // Send immediate sync snapshot of current online users in room
+    // Send immediate sync snapshot of presence
     ws.send(JSON.stringify({
       type: "sync",
       presences: Array.from(room.presences.values()),
     }));
+
+    // Send initial Yjs document state
+    const docState = Buffer.from(Y.encodeStateAsUpdate(room.ydoc)).toString("base64");
+    ws.send(JSON.stringify({
+      type: "doc.init",
+      update: docState,
+      revision: room.revision,
+    }));
   }
 
-  ws.on("message", (raw) => {
+  ws.on("message", async (raw) => {
     try {
       const msg = JSON.parse(raw.toString());
 
@@ -84,24 +226,32 @@ wss.on("connection", (ws, req) => {
         currentConnectionId = msg.presence.connectionId;
         currentUserId = msg.presence.userId;
 
-        const room = getOrCreateRoom(currentDraftId);
+        const room = await getOrCreateRoom(currentDraftId);
         room.clients.add(ws);
         room.presences.set(currentConnectionId, msg.presence);
 
-        // Send full sync to new joiner
+        // Send full presence sync
         ws.send(JSON.stringify({
           type: "sync",
           presences: Array.from(room.presences.values()),
         }));
 
-        // Broadcast join to other peers
+        // Send full Yjs document snapshot
+        const docState = Buffer.from(Y.encodeStateAsUpdate(room.ydoc)).toString("base64");
+        ws.send(JSON.stringify({
+          type: "doc.init",
+          update: docState,
+          revision: room.revision,
+        }));
+
+        // Broadcast join to peers
         broadcastToRoom(currentDraftId, {
           type: "join",
           presence: msg.presence,
         }, ws);
       } else if (msg.type === "presence.update") {
         if (!currentDraftId) return;
-        const room = getOrCreateRoom(currentDraftId);
+        const room = await getOrCreateRoom(currentDraftId);
         room.presences.set(msg.presence.connectionId, msg.presence);
 
         broadcastToRoom(currentDraftId, {
@@ -117,6 +267,23 @@ wss.on("connection", (ws, req) => {
           cursor: msg.cursor,
           updatedAt: Date.now(),
         }, ws);
+      } else if (msg.type === "doc.update") {
+        if (!currentDraftId || !msg.update) return;
+        const room = await getOrCreateRoom(currentDraftId);
+
+        // Apply incoming Yjs binary update to room's shared document
+        const updateBuffer = Buffer.from(msg.update, "base64");
+        Y.applyUpdate(room.ydoc, updateBuffer);
+
+        // Schedule debounced MySQL snapshot persistence
+        scheduleSnapshotFlush(room, currentDraftId, currentUserId);
+
+        // Broadcast update to all other collaborators in this draft room
+        broadcastToRoom(currentDraftId, {
+          type: "doc.update",
+          update: msg.update,
+          originConnectionId: currentConnectionId,
+        }, ws);
       } else if (msg.type === "revoke") {
         if (!currentDraftId) return;
         broadcastToRoom(currentDraftId, {
@@ -130,7 +297,7 @@ wss.on("connection", (ws, req) => {
     }
   });
 
-  ws.on("close", () => {
+  ws.on("close", async () => {
     if (currentDraftId && currentConnectionId) {
       const room = rooms.get(currentDraftId);
       if (room) {
@@ -143,7 +310,9 @@ wss.on("connection", (ws, req) => {
           userId: currentUserId,
         });
 
+        // If everyone left the room -> immediate final snapshot flush!
         if (room.clients.size === 0) {
+          await flushRoomSnapshot(room, currentDraftId, currentUserId);
           rooms.delete(currentDraftId);
         }
       }
@@ -155,7 +324,7 @@ wss.on("connection", (ws, req) => {
   });
 });
 
-// Ping-pong interval to clean dead connections
+// Clean dead connections
 const pingInterval = setInterval(() => {
   wss.clients.forEach((ws) => {
     ws.ping();
@@ -167,5 +336,5 @@ wss.on("close", () => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[Collab WebSocket Server] Running on ws://localhost:${PORT}`);
+  console.log(`[Collab WebSocket Server with Yjs CRDT] Running on ws://localhost:${PORT}`);
 });

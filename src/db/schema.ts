@@ -1,4 +1,4 @@
-import { char, datetime, index, int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import { bigint, char, datetime, index, int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: char("id", { length: 36 }).primaryKey(),
@@ -175,6 +175,16 @@ export const emailOutbox = mysqlTable("email_outbox", {
   index("email_outbox_status_idx").on(table.status),
   index("email_outbox_recipient_idx").on(table.recipient),
 ]);
-
-
+export const invitationCollaborationSnapshots = mysqlTable("invitation_collaboration_snapshots", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  invitationId: varchar("invitation_id", { length: 36 }).notNull(),
+  revision: bigint("revision", { mode: "number" }).notNull().default(1),
+  schemaVersion: int("schema_version").notNull().default(1),
+  snapshot: text("snapshot").notNull(),
+  createdBy: varchar("created_by", { length: 36 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("snap_invitation_idx").on(table.invitationId),
+  index("snap_revision_idx").on(table.invitationId, table.revision),
+]);
 

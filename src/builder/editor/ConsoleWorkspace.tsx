@@ -29,6 +29,8 @@ import { CollaborationStatus } from "./collaboration/CollaborationStatus";
 import { RemoteCursorLayer } from "./collaboration/RemoteCursorLayer";
 import { CollaboratorSectionBadge } from "./collaboration/CollaboratorSectionBadge";
 import { CollaborationPresence } from "@/modules/collaboration/domain/presence";
+import { useCollaborationDocument } from "@/modules/collaboration/client/useCollaborationDocument";
+import * as Y from "yjs";
 
 type View = "editor" | "generator" | "wishes";
 type EditableSection = TemplateSection & { id: string; enabled: boolean };
@@ -464,12 +466,67 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
         if (!response.ok) {
           throw new Error("Gagal menyimpan ke server");
         }
+        setUploadError("");
       } finally {
         setIsSaving(false);
       }
     },
     onError: () => {
       setUploadError("Gagal menyimpan perubahan ke server. Periksa koneksi Anda.");
+    },
+  });
+
+  const collabDoc = useCollaborationDocument({
+    draftId: draftId ?? undefined,
+    enabled: Boolean(draftId && currentUser),
+    onRemoteStateChange: (remoteState) => {
+      if (remoteState.globalSettings?.themeId && remoteState.globalSettings.themeId !== themeId) {
+        setThemeId(remoteState.globalSettings.themeId);
+      }
+      if (remoteState.globalSettings?.musicUrl && remoteState.globalSettings.musicUrl !== musicUrl) {
+        setMusicUrl(remoteState.globalSettings.musicUrl);
+      }
+      if (typeof remoteState.globalSettings?.musicVolume === "number" && remoteState.globalSettings.musicVolume !== musicVolume) {
+        setMusicVolume(remoteState.globalSettings.musicVolume);
+      }
+      if (remoteState.globalSettings?.customColors) {
+        setCustomThemeColors(remoteState.globalSettings.customColors);
+      }
+
+      if (remoteState.sections && Object.keys(remoteState.sections).length > 0) {
+        setSections((current) => {
+          const remoteSecMap = remoteState.sections;
+          const order = remoteState.sectionOrder || [];
+
+          const updated = current.map((sec) => {
+            const remote = remoteSecMap[sec.id];
+            if (remote) {
+              return {
+                ...sec,
+                enabled: remote.enabled,
+                defaultData: {
+                  ...sec.defaultData,
+                  ...remote.data,
+                  textStyles: remote.textStyles || sec.defaultData.textStyles,
+                },
+              };
+            }
+            return sec;
+          });
+
+          if (order.length > 0) {
+            updated.sort((a, b) => {
+              const idxA = order.indexOf(a.id);
+              const idxB = order.indexOf(b.id);
+              if (idxA === -1) return 1;
+              if (idxB === -1) return -1;
+              return idxA - idxB;
+            });
+          }
+
+          return updated;
+        });
+      }
     },
   });
 
@@ -484,7 +541,13 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
           avatarUrl: currentUser.avatarUrl,
         }
       : null,
+    onDocInit: collabDoc.applyRemoteUpdate,
+    onDocUpdate: collabDoc.applyRemoteUpdate,
   });
+
+  useEffect(() => {
+    collabDoc.setBroadcastHandler(presence.broadcastDocUpdate);
+  }, [presence.broadcastDocUpdate, collabDoc]);
 
   useEffect(() => {
     if (selectedId && presence.connectionStatus === "connected") {
@@ -559,13 +622,40 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
       const oldIndex = items.findIndex((item) => item.id === active.id);
       const newIndex = items.findIndex((item) => item.id === over.id);
       if (oldIndex < 0 || newIndex < 0 || !items[oldIndex].reorderable) return items;
-      return arrayMove(items, oldIndex, newIndex);
+      const reordered = arrayMove(items, oldIndex, newIndex);
+
+      collabDoc.updateLocalState((doc) => {
+        const orderArray = doc.getArray<string>("sectionOrder");
+        orderArray.delete(0, orderArray.length);
+        orderArray.push(reordered.map((s) => s.id));
+      });
+
+      return reordered;
     });
   }
 
   function updateSelected(key: string, value: unknown) {
     if (!selected) return;
     setSections((items) => items.map((section) => section.id === selected.id ? { ...section, defaultData: { ...section.defaultData, [key]: value } } : section));
+
+    collabDoc.updateLocalState((doc) => {
+      const sectionsMap = doc.getMap("sections");
+      let secMap = sectionsMap.get(selected.id) as Y.Map<unknown> | undefined;
+      if (!secMap) {
+        secMap = new Y.Map();
+        secMap.set("id", selected.id);
+        secMap.set("type", selected.type);
+        secMap.set("enabled", selected.enabled);
+        secMap.set("data", new Y.Map());
+        sectionsMap.set(selected.id, secMap);
+      }
+      let dataMap = secMap.get("data") as Y.Map<unknown> | undefined;
+      if (!dataMap) {
+        dataMap = new Y.Map();
+        secMap.set("data", dataMap);
+      }
+      dataMap.set(key, value);
+    });
   }
 
   function updateSelectedTextStyle(key: string, style: Partial<EditableTextStyle>, replace = false) {
@@ -575,6 +665,19 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
       const current = section.defaultData.textStyles && typeof section.defaultData.textStyles === "object" ? section.defaultData.textStyles as Record<string, EditableTextStyle> : {};
       return { ...section, defaultData: { ...section.defaultData, textStyles: { ...current, [key]: replace ? {} : { ...(current[key] ?? {}), ...style } } } };
     }));
+
+    collabDoc.updateLocalState((doc) => {
+      const sectionsMap = doc.getMap("sections");
+      const secMap = sectionsMap.get(selected.id) as Y.Map<unknown> | undefined;
+      if (secMap) {
+        let stylesMap = secMap.get("textStyles") as Y.Map<unknown> | undefined;
+        if (!stylesMap) {
+          stylesMap = new Y.Map();
+          secMap.set("textStyles", stylesMap);
+        }
+        stylesMap.set(key, style);
+      }
+    });
   }
 
   function selectEditorSection(section: EditableSection) {
@@ -881,7 +984,11 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
               {draftReady && (
                 <>
                   <span className="text-slate-300">·</span>
-                  <AutoSaveStatusBadge status={autoSaveStatus} isCloud={Boolean(currentUser)} onRetry={flushAutoSave} />
+                  <AutoSaveStatusBadge
+                    status={collabDoc.syncStatus === "saving" ? "saving" : autoSaveStatus}
+                    isCloud={Boolean(currentUser)}
+                    onRetry={flushAutoSave}
+                  />
                 </>
               )}
             </div>

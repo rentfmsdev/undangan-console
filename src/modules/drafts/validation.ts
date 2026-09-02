@@ -10,6 +10,7 @@ export const updateDraftSchema = z.object({
   themeId: z.string().min(1),
   settings: z.object({
     musicUrl: z.string().max(1024).optional(),
+    musicVolume: z.number().min(0).max(1).optional(),
     customColors: z.object({
       primary: z.string().max(32).optional(),
       accent: z.string().max(32).optional(),
