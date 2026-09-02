@@ -29,5 +29,13 @@ export default async function DraftEditorPage({
   }
 
   const templatePrice = getTemplateCatalogItem(template.code)?.price ?? template.price ?? 0;
-  return <ConsoleWorkspace template={template} templatePrice={templatePrice} requestedDraftId={draftId} />;
+  return (
+    <ConsoleWorkspace
+      template={template}
+      templatePrice={templatePrice}
+      requestedDraftId={draftId}
+      isOwner={access.ownedByUser}
+      userRole={access.role}
+    />
+  );
 }

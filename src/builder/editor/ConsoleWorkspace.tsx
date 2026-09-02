@@ -3,7 +3,7 @@
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, ChevronDown, Copy, ExternalLink, Eye, FolderOpen, GripVertical, ImagePlus, LayoutPanelTop, Library, LoaderCircle, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, Plus, Redo2, RotateCw, Save, Search, Send, Settings2, Share2, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, Eye, FolderOpen, GripVertical, ImagePlus, LayoutPanelTop, Library, LoaderCircle, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, Plus, Redo2, RotateCw, Save, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useCallback, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { TemplateKit, TemplateSection } from "@/templates/contracts";
 import { getTemplateRuntime } from "@/templates/runtime-registry";
@@ -120,7 +120,20 @@ type HistorySnapshot = {
   customColors?: { primary?: string; accent?: string; background?: string };
 };
 
-export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = null }: { template: TemplateKit; templatePrice: number; requestedDraftId?: string | null }) {
+export function ConsoleWorkspace({
+  template,
+  templatePrice,
+  requestedDraftId = null,
+  isOwner = true,
+  userRole = "owner",
+}: {
+  template: TemplateKit;
+  templatePrice: number;
+  requestedDraftId?: string | null;
+  isOwner?: boolean;
+  userRole?: string | null;
+}) {
+  const isViewer = userRole === "viewer";
   const [view, setView] = useState<View>("editor");
   const [sections, setSections] = useState<EditableSection[]>(() => makeSections(template));
   const [selectedId, setSelectedId] = useState(sections[0]?.id ?? "");
@@ -223,6 +236,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   const canRedo = collabDoc.canRedo;
 
   function handleUndo() {
+    if (isViewer) return;
     const nextState = collabDoc.undo();
     if (nextState) {
       applySharedState(nextState);
@@ -230,6 +244,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function handleRedo() {
+    if (isViewer) return;
     const nextState = collabDoc.redo();
     if (nextState) {
       applySharedState(nextState);
@@ -237,6 +252,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function handleThemeSelect(newThemeId: string) {
+    if (isViewer) return;
     setThemeId(newThemeId);
     setCustomThemeColors({});
     collabDoc.updateLocalState((doc) => {
@@ -250,6 +266,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function handleCustomColorChange(colorKey: "primary" | "accent" | "background", value: string) {
+    if (isViewer) return;
     setCustomThemeColors((prev) => {
       const next = { ...prev, [colorKey]: value };
       collabDoc.updateLocalState((doc) => {
@@ -266,6 +283,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function handleCustomColorReset() {
+    if (isViewer) return;
     setCustomThemeColors({});
     collabDoc.updateLocalState((doc) => {
       const globalSettings = doc.getMap("globalSettings");
@@ -277,6 +295,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function handleMusicUrlChange(url: string) {
+    if (isViewer) return;
     setMusicUrl(url);
     collabDoc.updateLocalState((doc) => {
       const globalSettings = doc.getMap("globalSettings");
@@ -285,6 +304,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function handleMusicVolumeChange(vol: number) {
+    if (isViewer) return;
     setMusicVolume(vol);
     collabDoc.updateLocalState((doc) => {
       const globalSettings = doc.getMap("globalSettings");
@@ -293,6 +313,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function handleSectionToggle(sectionId: string) {
+    if (isViewer) return;
     setSections((items) => {
       const next = items.map((sec) => sec.id === sectionId ? { ...sec, enabled: !sec.enabled } : sec);
       const target = next.find((sec) => sec.id === sectionId);
@@ -526,6 +547,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   const presence = usePresence({
     draftId: draftId ?? undefined,
     enabled: Boolean(draftId && currentUser),
+    role: (userRole as "owner" | "editor" | "viewer") || (isOwner ? "owner" : "editor"),
     currentUser: currentUser
       ? {
           id: currentUser.id,
@@ -669,6 +691,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }, [draftId, view]);
 
   function handleDragEnd(event: DragEndEvent) {
+    if (isViewer) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     setSections((items) => {
@@ -688,7 +711,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function updateSelected(key: string, value: unknown) {
-    if (!selected) return;
+    if (isViewer || !selected) return;
     setSections((items) => items.map((section) => section.id === selected.id ? { ...section, defaultData: { ...section.defaultData, [key]: value } } : section));
 
     collabDoc.updateLocalState((doc) => {
@@ -712,7 +735,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function updateSelectedTextStyle(key: string, style: Partial<EditableTextStyle>, replace = false) {
-    if (!selected) return;
+    if (isViewer || !selected) return;
     setSections((items) => items.map((section) => {
       if (section.id !== selected.id) return section;
       const current = section.defaultData.textStyles && typeof section.defaultData.textStyles === "object" ? section.defaultData.textStyles as Record<string, EditableTextStyle> : {};
@@ -744,10 +767,28 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function addSection(definition: TemplateSection) {
+    if (isViewer) return;
     const currentCount = sectionCounts.get(definition.type) ?? 0;
     if (currentCount >= definition.maxInstances) return;
     const next = { ...definition, id: crypto.randomUUID(), enabled: true, defaultData: { ...definition.defaultData } };
-    setSections((items) => [...items, next]);
+    setSections((items) => {
+      const nextItems = [...items, next];
+      collabDoc.updateLocalState((doc) => {
+        const sectionsMap = doc.getMap("sections");
+        const secMap = new Y.Map();
+        secMap.set("id", next.id);
+        secMap.set("type", next.type);
+        secMap.set("enabled", true);
+        const dataMap = new Y.Map();
+        Object.entries(next.defaultData || {}).forEach(([k, v]) => dataMap.set(k, v));
+        secMap.set("data", dataMap);
+        sectionsMap.set(next.id, secMap);
+
+        const orderArray = doc.getArray<string>("sectionOrder");
+        orderArray.push([next.id]);
+      });
+      return nextItems;
+    });
     selectEditorSection(next);
     setIsAddOpen(false);
   }
@@ -763,7 +804,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   async function uploadSelectedImages(files: File[], target: "content" | "background") {
-    if (!files.length || !selected || !draftId) return;
+    if (isViewer || !files.length || !selected || !draftId) return;
     const targetSectionId = selected.id;
     const targetSectionType = selected.type;
     const currentDraftId = draftId;
@@ -772,12 +813,20 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
     setIsUploading(true);
     try {
       const uploaded = await Promise.all(selectedFiles.map((file) => uploadAsset(file, targetSectionId, currentDraftId)));
-      setSections((items) => items.map((section) => {
-        if (section.id !== targetSectionId) return section;
-        if (target === "background") return { ...section, defaultData: { ...section.defaultData, backgroundImageUrl: uploaded[0].url, backgroundImageLabel: uploaded[0].name } };
-        if (targetSectionType === "gallery") return { ...section, defaultData: { ...section.defaultData, imageLabel: `${uploaded.length} foto galeri`, imageUrls: uploaded.map((asset) => asset.url) } };
-        return { ...section, defaultData: { ...section.defaultData, imageLabel: uploaded[0].name, imageUrl: uploaded[0].url } };
-      }));
+      if (target === "background") {
+        updateSelected("backgroundImageUrl", uploaded[0].url);
+        updateSelected("backgroundImageLabel", uploaded[0].name);
+      } else if (targetSectionType === "gallery") {
+        const current = Array.isArray(selected.defaultData.imageUrls)
+          ? (selected.defaultData.imageUrls as string[])
+          : [];
+        const imageUrls = [...current, ...uploaded.map((a) => a.url)].slice(-4);
+        updateSelected("imageUrls", imageUrls);
+        updateSelected("imageLabel", `${imageUrls.length} foto galeri`);
+      } else {
+        updateSelected("imageUrl", uploaded[0].url);
+        updateSelected("imageLabel", uploaded[0].name);
+      }
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Upload foto gagal. Silakan coba lagi.");
     } finally {
@@ -802,6 +851,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   function canUpload(reason: string) {
+    if (isViewer) return false;
     if (!authResolved) return false;
     if (!currentUser) {
       requestLogin(reason);
@@ -815,6 +865,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }
 
   async function handleMusicSelection(event: ChangeEvent<HTMLInputElement>) {
+    if (isViewer) return;
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
     if (!file) return;
@@ -830,7 +881,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
     setIsUploading(true);
     try {
       const uploaded = await uploadAsset(file, selected.id, draftId);
-      setMusicUrl(uploaded.url);
+      handleMusicUrlChange(uploaded.url);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Upload musik gagal.");
     } finally {
@@ -851,20 +902,24 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
     const target = assetTarget;
     if (!target) return;
     if (target.target === "music") {
-      setMusicUrl(asset.url);
+      handleMusicUrlChange(asset.url);
       setAssetTarget(null);
       return;
     }
-    setSections((items) => items.map((section) => {
-      if (section.id !== target.sectionId) return section;
-      if (target.target === "background") return { ...section, defaultData: { ...section.defaultData, backgroundImageUrl: asset.url, backgroundImageLabel: asset.name ?? "Asset Saya" } };
-      if (section.type === "gallery") {
-        const current = Array.isArray(section.defaultData.imageUrls) ? section.defaultData.imageUrls.filter((url): url is string => typeof url === "string" && Boolean(url)) : [];
-        const imageUrls = [...current.filter((url) => url !== asset.url), asset.url].slice(-4);
-        return { ...section, defaultData: { ...section.defaultData, imageUrls, imageLabel: `${imageUrls.length} foto galeri` } };
-      }
-      return { ...section, defaultData: { ...section.defaultData, imageUrl: asset.url, imageLabel: asset.name ?? "Asset Saya" } };
-    }));
+    if (target.target === "background") {
+      updateSelected("backgroundImageUrl", asset.url);
+      updateSelected("backgroundImageLabel", asset.name ?? "Asset Saya");
+    } else if (selected?.type === "gallery") {
+      const current = Array.isArray(selected.defaultData.imageUrls)
+        ? (selected.defaultData.imageUrls as string[])
+        : [];
+      const imageUrls = [...current.filter((url) => url !== asset.url), asset.url].slice(-4);
+      updateSelected("imageUrls", imageUrls);
+      updateSelected("imageLabel", `${imageUrls.length} foto galeri`);
+    } else {
+      updateSelected("imageUrl", asset.url);
+      updateSelected("imageLabel", asset.name ?? "Asset Saya");
+    }
     setAssetTarget(null);
   }
 
@@ -1034,6 +1089,15 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
             <p className="truncate text-sm font-extrabold text-slate-900 leading-tight">Undangan Studio</p>
             <div className="truncate text-[10px] font-semibold text-slate-500 flex items-center gap-1.5">
               <span>{template.name} · <span className="font-mono text-slate-600">{template.code}</span></span>
+              {isViewer ? (
+                <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-extrabold text-amber-700 border border-amber-200/80">
+                  <Eye size={10} /> Viewer
+                </span>
+              ) : !isOwner ? (
+                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-extrabold text-emerald-700 border border-emerald-200/80">
+                  Editor
+                </span>
+              ) : null}
               {draftReady && (
                 <>
                   <span className="text-slate-300">·</span>
@@ -1081,21 +1145,23 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
           )}
 
           {/* Quick Invite Team Button */}
-          <button
-            type="button"
-            onClick={() => {
-              if (!currentUser) {
-                requestLogin("Masuk dengan Google untuk mengundang kolaborator.");
-              } else {
-                setIsInviteModalOpen(true);
-              }
-            }}
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-50 hover:text-emerald-700 active:scale-95"
-            title="Undang kolaborator untuk mengedit bersama"
-          >
-            <UserPlus size={14} className="text-emerald-600" />
-            <span>Undang</span>
-          </button>
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!currentUser) {
+                  requestLogin("Masuk dengan Google untuk mengundang kolaborator.");
+                } else {
+                  setIsInviteModalOpen(true);
+                }
+              }}
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-50 hover:text-emerald-700 active:scale-95"
+              title="Undang kolaborator untuk mengedit bersama"
+            >
+              <UserPlus size={14} className="text-emerald-600" />
+              <span>Undang</span>
+            </button>
+          )}
 
           <UserAuthDropdown
             user={currentUser}
@@ -1117,18 +1183,28 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
             }}
           />
 
-          <button
-            type="button"
-            disabled={!authResolved}
-            onClick={() => {
-              if (!authResolved || !currentUser) requestLogin("Masuk dengan Google untuk menyimpan dan mempublish undangan Anda.");
-              else setIsPublishOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700 active:scale-95 disabled:cursor-wait disabled:opacity-50"
-          >
-            {draftStatus === "published" ? <Check size={14} /> : draftStatus === "custom" ? <LoaderCircle size={14} /> : <Upload size={14} />}
-            <span>{draftStatus === "published" ? "Published" : draftStatus === "custom" ? "Menunggu Admin" : "Publish"}</span>
-          </button>
+          {isOwner ? (
+            <button
+              type="button"
+              disabled={!authResolved}
+              onClick={() => {
+                if (!authResolved || !currentUser) requestLogin("Masuk dengan Google untuk menyimpan dan mempublish undangan Anda.");
+                else setIsPublishOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700 active:scale-95 disabled:cursor-wait disabled:opacity-50"
+            >
+              {draftStatus === "published" ? <Check size={14} /> : draftStatus === "custom" ? <LoaderCircle size={14} /> : <Upload size={14} />}
+              <span>{draftStatus === "published" ? "Published" : draftStatus === "custom" ? "Menunggu Admin" : "Publish"}</span>
+            </button>
+          ) : (
+            <span
+              title="Hanya pemilik undangan yang dapat mempublikasikan undangan ke domain live."
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500 cursor-not-allowed"
+            >
+              <Shield size={13} className="text-slate-400" />
+              <span>{draftStatus === "published" ? "Published" : "Dibagikan"}</span>
+            </span>
+          )}
         </div>
       </header>
 

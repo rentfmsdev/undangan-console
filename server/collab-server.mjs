@@ -277,6 +277,13 @@ wss.on("connection", async (ws, req) => {
         if (!currentDraftId || !msg.update) return;
         const room = await getOrCreateRoom(currentDraftId);
 
+        // Security check: Block update if client has 'viewer' role
+        const senderPresence = room.presences.get(currentConnectionId);
+        if (senderPresence && senderPresence.role === "viewer") {
+          console.warn(`[Collab Server] Blocked doc.update from viewer (${currentUserId}) in ${currentDraftId}`);
+          return;
+        }
+
         // Apply incoming Yjs binary update to room's shared document
         const updateBuffer = Buffer.from(msg.update, "base64");
         Y.applyUpdate(room.ydoc, updateBuffer);
