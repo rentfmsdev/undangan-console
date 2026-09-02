@@ -129,15 +129,24 @@ export async function findOrCreateGoogleUser(payload: {
     };
   }
 
-  // Link userId for this email's collaboration records if not linked yet
+  // Auto-link and accept collaboration invitations for this email upon login
   try {
     await db
       .update(invitationCollaborators)
       .set({
         userId: userId,
+        status: "accepted",
+        acceptedAt: new Date(),
+        lastSeenAt: new Date(),
       })
       .where(
-        eq(invitationCollaborators.email, cleanEmail)
+        and(
+          eq(invitationCollaborators.email, cleanEmail),
+          or(
+            eq(invitationCollaborators.status, "pending"),
+            eq(invitationCollaborators.status, "accepted")
+          )
+        )
       );
   } catch {
     // Non-blocking

@@ -33,23 +33,20 @@ export async function getDraftAccess(draftId: string) {
       )
       .limit(1);
 
-    if (collab && collab.status === "accepted") {
+    if (collab && (collab.status === "accepted" || collab.status === "pending")) {
       isCollaborator = true;
       collaboratorRole = collab.role;
-      // Link userId if not linked yet
-      if (collab.userId !== user.id) {
-        await db
-          .update(invitationCollaborators)
-          .set({ userId: user.id, lastSeenAt: new Date() })
-          .where(eq(invitationCollaborators.id, collab.id))
-          .catch(() => {});
-      } else {
-        await db
-          .update(invitationCollaborators)
-          .set({ lastSeenAt: new Date() })
-          .where(eq(invitationCollaborators.id, collab.id))
-          .catch(() => {});
-      }
+      // Auto-accept and link userId when the invited user accesses the draft
+      await db
+        .update(invitationCollaborators)
+        .set({
+          userId: user.id,
+          status: "accepted",
+          acceptedAt: collab.acceptedAt ?? new Date(),
+          lastSeenAt: new Date(),
+        })
+        .where(eq(invitationCollaborators.id, collab.id))
+        .catch(() => {});
     }
   }
 

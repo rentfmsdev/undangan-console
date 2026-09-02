@@ -148,6 +148,9 @@ export async function POST(
 
   const newId = existingCollab ? existingCollab.id : crypto.randomUUID();
 
+  const initialStatus = existingUser ? "accepted" : "pending";
+  const acceptedAt = existingUser ? new Date() : null;
+
   if (existingCollab) {
     await db
       .update(invitationCollaborators)
@@ -155,8 +158,9 @@ export async function POST(
         role,
         inviteTokenHash: tokenHash,
         expiresAt,
-        status: "pending",
+        status: initialStatus,
         userId: existingUser?.id ?? existingCollab.userId,
+        acceptedAt: acceptedAt ?? existingCollab.acceptedAt,
         declinedAt: null,
         revokedAt: null,
       })
@@ -168,8 +172,9 @@ export async function POST(
       email,
       role,
       inviteTokenHash: tokenHash,
-      status: "pending",
+      status: initialStatus,
       expiresAt,
+      acceptedAt,
       userId: existingUser?.id ?? null,
       invitedBy: access.user.id,
     });
