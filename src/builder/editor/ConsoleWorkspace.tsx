@@ -31,10 +31,13 @@ import { CollaboratorSectionBadge } from "./collaboration/CollaboratorSectionBad
 import { CollaborationPresence } from "@/modules/collaboration/domain/presence";
 import { useCollaborationDocument } from "@/modules/collaboration/client/useCollaborationDocument";
 import { SharedDraftState } from "@/modules/collaboration/domain/crdt-mapper";
+import { CollaborativeProvider, type CollaborativeContextValue } from "./components/collaborative/CollaborativeContext";
+import { CollaborativeGlobalEditor } from "./components/collaborative/CollaborativeGlobalEditor";
+import { CollaborativeSectionInspector } from "./components/collaborative/CollaborativeSectionInspector";
 import * as Y from "yjs";
 
 type View = "editor" | "generator" | "wishes";
-type EditableSection = TemplateSection & { id: string; enabled: boolean };
+export type EditableSection = TemplateSection & { id: string; enabled: boolean };
 type WishRecord = { id: string; name: string; attendance: string; message: string; createdAt: string };
 type ClientUser = { id: string; email: string; name: string; avatarUrl: string | null; role: "user" | "admin" };
 type LocalDraftSnapshot = { version: 1; themeId: string; musicUrl: string; musicVolume?: number; customColors?: { primary?: string; accent?: string; background?: string }; sections: Array<{ id: string; type: string; enabled: boolean; data: Record<string, unknown> }> };
@@ -133,7 +136,8 @@ export function ConsoleWorkspace({
   isOwner?: boolean;
   userRole?: string | null;
 }) {
-  const isViewer = userRole === "viewer";
+  const [liveCollaborationRole, setLiveCollaborationRole] = useState(userRole);
+  const isViewer = liveCollaborationRole === "viewer";
   const [view, setView] = useState<View>("editor");
   const [sections, setSections] = useState<EditableSection[]>(() => makeSections(template));
   const [selectedId, setSelectedId] = useState(sections[0]?.id ?? "");
@@ -193,38 +197,43 @@ export function ConsoleWorkspace({
     if (remoteState.sections && Object.keys(remoteState.sections).length > 0) {
       setSections((current) => {
         const remoteSecMap = remoteState.sections;
-        const order = remoteState.sectionOrder || [];
+        const currentById = new Map(current.map((section) => [section.id, section]));
+        const orderedIds = [
+          ...(remoteState.sectionOrder ?? []),
+          ...Object.keys(remoteSecMap).filter((id) => !(remoteState.sectionOrder ?? []).includes(id)),
+        ];
 
-        const updated = current.map((sec) => {
-          const remote = remoteSecMap[sec.id];
-          if (remote) {
-            return {
-              ...sec,
-              enabled: remote.enabled,
-              defaultData: {
-                ...sec.defaultData,
-                ...remote.data,
-                textStyles: remote.textStyles || sec.defaultData.textStyles,
-              },
-            };
-          }
-          return sec;
+        // Build from the template definition for sections created by another
+        // collaborator. The old implementation only updated existing local
+        // sections, so remote add-section never appeared in the editor/preview.
+        return orderedIds.flatMap((id) => {
+          const remote = remoteSecMap[id];
+          if (!remote) return [];
+          const definition = template.sections.find((item) => item.type === remote.type);
+          const currentSection = currentById.get(id);
+          if (!definition && !currentSection) return [];
+
+          const base = currentSection ?? {
+            ...definition!,
+            id,
+            enabled: true,
+            defaultData: { ...definition!.defaultData },
+          };
+
+          return [{
+            ...base,
+            id,
+            enabled: remote.enabled,
+            defaultData: {
+              ...base.defaultData,
+              ...remote.data,
+              textStyles: remote.textStyles ?? remote.data.textStyles ?? base.defaultData.textStyles,
+            },
+          }];
         });
-
-        if (order.length > 0) {
-          updated.sort((a, b) => {
-            const idxA = order.indexOf(a.id);
-            const idxB = order.indexOf(b.id);
-            if (idxA === -1) return 1;
-            if (idxB === -1) return -1;
-            return idxA - idxB;
-          });
-        }
-
-        return updated;
       });
     }
-  }, []);
+  }, [template.sections]);
 
   const collabDoc = useCollaborationDocument({
     draftId: draftId ?? undefined,
@@ -251,68 +260,69 @@ export function ConsoleWorkspace({
     }
   }
 
-  function handleThemeSelect(newThemeId: string) {
+  const updateGlobalSetting = useCallback((
+    key: "themeId" | "musicUrl" | "musicVolume" | "customColors",
+    value: unknown
+  ) => {
     if (isViewer) return;
-    setThemeId(newThemeId);
-    setCustomThemeColors({});
+    if (key === "themeId") {
+      setThemeId(value as string);
+      setCustomThemeColors({});
+    } else if (key === "musicUrl") {
+      setMusicUrl(value as string);
+    } else if (key === "musicVolume") {
+      setMusicVolume(value as number);
+    } else if (key === "customColors") {
+      setCustomThemeColors(value as Record<string, string>);
+    }
+
     collabDoc.updateLocalState((doc) => {
       const globalSettings = doc.getMap("globalSettings");
-      globalSettings.set("themeId", newThemeId);
-      const customColorsMap = globalSettings.get("customColors");
-      if (customColorsMap instanceof Y.Map) {
-        Array.from(customColorsMap.keys()).forEach((k) => customColorsMap.delete(k));
-      }
-    });
-  }
-
-  function handleCustomColorChange(colorKey: "primary" | "accent" | "background", value: string) {
-    if (isViewer) return;
-    setCustomThemeColors((prev) => {
-      const next = { ...prev, [colorKey]: value };
-      collabDoc.updateLocalState((doc) => {
-        const globalSettings = doc.getMap("globalSettings");
+      if (key === "themeId") {
+        globalSettings.set("themeId", value as string);
+        const customColorsMap = globalSettings.get("customColors");
+        if (customColorsMap instanceof Y.Map) {
+          Array.from(customColorsMap.keys()).forEach((k) => customColorsMap.delete(k));
+        }
+      } else if (key === "customColors") {
         let customColorsMap = globalSettings.get("customColors");
         if (!(customColorsMap instanceof Y.Map)) {
           customColorsMap = new Y.Map();
           globalSettings.set("customColors", customColorsMap);
         }
-        (customColorsMap as Y.Map<string>).set(colorKey, value);
-      });
-      return next;
+        Array.from((customColorsMap as Y.Map<string>).keys()).forEach((k) =>
+          (customColorsMap as Y.Map<string>).delete(k)
+        );
+        Object.entries((value as Record<string, string>) || {}).forEach(([k, v]) => {
+          if (v) (customColorsMap as Y.Map<string>).set(k, v);
+        });
+      } else {
+        globalSettings.set(key, value);
+      }
     });
+  }, [isViewer, collabDoc]);
+
+  function handleThemeSelect(newThemeId: string) {
+    updateGlobalSetting("themeId", newThemeId);
+  }
+
+  function handleCustomColorChange(colorKey: "primary" | "accent" | "background", value: string) {
+    updateGlobalSetting("customColors", { ...customThemeColors, [colorKey]: value });
   }
 
   function handleCustomColorReset() {
-    if (isViewer) return;
-    setCustomThemeColors({});
-    collabDoc.updateLocalState((doc) => {
-      const globalSettings = doc.getMap("globalSettings");
-      const customColorsMap = globalSettings.get("customColors");
-      if (customColorsMap instanceof Y.Map) {
-        Array.from(customColorsMap.keys()).forEach((k) => customColorsMap.delete(k));
-      }
-    });
+    updateGlobalSetting("customColors", {});
   }
 
   function handleMusicUrlChange(url: string) {
-    if (isViewer) return;
-    setMusicUrl(url);
-    collabDoc.updateLocalState((doc) => {
-      const globalSettings = doc.getMap("globalSettings");
-      globalSettings.set("musicUrl", url);
-    });
+    updateGlobalSetting("musicUrl", url);
   }
 
   function handleMusicVolumeChange(vol: number) {
-    if (isViewer) return;
-    setMusicVolume(vol);
-    collabDoc.updateLocalState((doc) => {
-      const globalSettings = doc.getMap("globalSettings");
-      globalSettings.set("musicVolume", vol);
-    });
+    updateGlobalSetting("musicVolume", vol);
   }
 
-  function handleSectionToggle(sectionId: string) {
+  const handleSectionToggle = useCallback((sectionId: string) => {
     if (isViewer) return;
     setSections((items) => {
       const next = items.map((sec) => sec.id === sectionId ? { ...sec, enabled: !sec.enabled } : sec);
@@ -332,7 +342,7 @@ export function ConsoleWorkspace({
       }
       return next;
     });
-  }
+  }, [isViewer, collabDoc]);
 
   const previewFrameRef = useRef<HTMLIFrameElement>(null);
   const previewReadyRef = useRef(false);
@@ -547,7 +557,7 @@ export function ConsoleWorkspace({
   const presence = usePresence({
     draftId: draftId ?? undefined,
     enabled: Boolean(draftId && currentUser),
-    role: (userRole as "owner" | "editor" | "viewer") || (isOwner ? "owner" : "editor"),
+    role: (liveCollaborationRole as "owner" | "editor" | "viewer") || (isOwner ? "owner" : "editor"),
     currentUser: currentUser
       ? {
           id: currentUser.id,
@@ -558,6 +568,7 @@ export function ConsoleWorkspace({
       : null,
     onDocInit: collabDoc.applyRemoteUpdate,
     onDocUpdate: collabDoc.applyRemoteUpdate,
+    onPermissionChange: setLiveCollaborationRole,
   });
 
   useEffect(() => {
@@ -710,41 +721,81 @@ export function ConsoleWorkspace({
     });
   }
 
-  function updateSelected(key: string, value: unknown) {
-    if (isViewer || !selected) return;
-    setSections((items) => items.map((section) => section.id === selected.id ? { ...section, defaultData: { ...section.defaultData, [key]: value } } : section));
+  const updateSectionFields = useCallback((sectionId: string, values: Record<string, unknown>) => {
+    if (isViewer) return;
+    setSections((items) =>
+      items.map((sec) =>
+        sec.id === sectionId ? { ...sec, defaultData: { ...sec.defaultData, ...values } } : sec
+      )
+    );
 
     collabDoc.updateLocalState((doc) => {
       const sectionsMap = doc.getMap("sections");
-      let secMap = sectionsMap.get(selected.id) as Y.Map<unknown> | undefined;
+      let secMap = sectionsMap.get(sectionId) as Y.Map<unknown> | undefined;
       if (!secMap) {
+        const currentSec = sections.find((s) => s.id === sectionId);
         secMap = new Y.Map();
-        secMap.set("id", selected.id);
-        secMap.set("type", selected.type);
-        secMap.set("enabled", selected.enabled);
+        secMap.set("id", sectionId);
+        secMap.set("type", currentSec?.type ?? "");
+        secMap.set("enabled", currentSec?.enabled ?? true);
         secMap.set("data", new Y.Map());
-        sectionsMap.set(selected.id, secMap);
+        sectionsMap.set(sectionId, secMap);
       }
       let dataMap = secMap.get("data") as Y.Map<unknown> | undefined;
       if (!dataMap) {
         dataMap = new Y.Map();
         secMap.set("data", dataMap);
       }
-      dataMap.set(key, value);
+      for (const [k, v] of Object.entries(values)) {
+        dataMap.set(k, v);
+      }
     });
-  }
+  }, [isViewer, sections, collabDoc]);
 
-  function updateSelectedTextStyle(key: string, style: Partial<EditableTextStyle>, replace = false) {
-    if (isViewer || !selected) return;
-    setSections((items) => items.map((section) => {
-      if (section.id !== selected.id) return section;
-      const current = section.defaultData.textStyles && typeof section.defaultData.textStyles === "object" ? section.defaultData.textStyles as Record<string, EditableTextStyle> : {};
-      return { ...section, defaultData: { ...section.defaultData, textStyles: { ...current, [key]: replace ? {} : { ...(current[key] ?? {}), ...style } } } };
-    }));
+  const updateSectionField = useCallback((sectionId: string, key: string, value: unknown) => {
+    updateSectionFields(sectionId, { [key]: value });
+  }, [updateSectionFields]);
+
+  const updateSelectedFields = useCallback((values: Record<string, unknown>) => {
+    if (!selected) return;
+    updateSectionFields(selected.id, values);
+  }, [selected, updateSectionFields]);
+
+  const updateSelected = useCallback((key: string, value: unknown) => {
+    if (!selected) return;
+    updateSectionFields(selected.id, { [key]: value });
+  }, [selected, updateSectionFields]);
+
+  const updateSectionTextStyle = useCallback((
+    sectionId: string,
+    key: string,
+    style: Partial<EditableTextStyle>,
+    replace = false
+  ) => {
+    if (isViewer) return;
+    setSections((items) =>
+      items.map((section) => {
+        if (section.id !== sectionId) return section;
+        const current =
+          section.defaultData.textStyles && typeof section.defaultData.textStyles === "object"
+            ? (section.defaultData.textStyles as Record<string, EditableTextStyle>)
+            : {};
+        return {
+          ...section,
+          defaultData: {
+            ...section.defaultData,
+            textStyles: {
+              ...current,
+              [key]: replace ? {} : { ...(current[key] ?? {}), ...style },
+            },
+          },
+        };
+      })
+    );
 
     collabDoc.updateLocalState((doc) => {
       const sectionsMap = doc.getMap("sections");
-      const secMap = sectionsMap.get(selected.id) as Y.Map<unknown> | undefined;
+      const secMap = sectionsMap.get(sectionId) as Y.Map<unknown> | undefined;
       if (secMap) {
         let stylesMap = secMap.get("textStyles") as Y.Map<unknown> | undefined;
         if (!stylesMap) {
@@ -754,7 +805,32 @@ export function ConsoleWorkspace({
         stylesMap.set(key, style);
       }
     });
-  }
+  }, [isViewer, collabDoc]);
+
+  const updateSelectedTextStyle = useCallback((key: string, style: Partial<EditableTextStyle>, replace = false) => {
+    if (!selected) return;
+    updateSectionTextStyle(selected.id, key, style, replace);
+  }, [selected, updateSectionTextStyle]);
+
+  const collaborativeContextValue: CollaborativeContextValue = useMemo(() => ({
+    isViewer,
+    disabled: !authResolved || Boolean(currentUser && !draftReady),
+    updateField: updateSectionField,
+    updateFields: updateSectionFields,
+    updateTextStyle: updateSectionTextStyle,
+    updateGlobalSetting,
+    toggleSection: handleSectionToggle,
+  }), [
+    isViewer,
+    authResolved,
+    currentUser,
+    draftReady,
+    updateSectionField,
+    updateSectionFields,
+    updateSectionTextStyle,
+    updateGlobalSetting,
+    handleSectionToggle,
+  ]);
 
   function selectEditorSection(section: EditableSection) {
     setSelectedId(section.id);
@@ -814,18 +890,24 @@ export function ConsoleWorkspace({
     try {
       const uploaded = await Promise.all(selectedFiles.map((file) => uploadAsset(file, targetSectionId, currentDraftId)));
       if (target === "background") {
-        updateSelected("backgroundImageUrl", uploaded[0].url);
-        updateSelected("backgroundImageLabel", uploaded[0].name);
+        updateSelectedFields({
+          backgroundImageUrl: uploaded[0].url,
+          backgroundImageLabel: uploaded[0].name,
+        });
       } else if (targetSectionType === "gallery") {
         const current = Array.isArray(selected.defaultData.imageUrls)
           ? (selected.defaultData.imageUrls as string[])
           : [];
         const imageUrls = [...current, ...uploaded.map((a) => a.url)].slice(-4);
-        updateSelected("imageUrls", imageUrls);
-        updateSelected("imageLabel", `${imageUrls.length} foto galeri`);
+        updateSelectedFields({
+          imageUrls,
+          imageLabel: `${imageUrls.length} foto galeri`,
+        });
       } else {
-        updateSelected("imageUrl", uploaded[0].url);
-        updateSelected("imageLabel", uploaded[0].name);
+        updateSelectedFields({
+          imageUrl: uploaded[0].url,
+          imageLabel: uploaded[0].name,
+        });
       }
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Upload foto gagal. Silakan coba lagi.");
@@ -907,18 +989,24 @@ export function ConsoleWorkspace({
       return;
     }
     if (target.target === "background") {
-      updateSelected("backgroundImageUrl", asset.url);
-      updateSelected("backgroundImageLabel", asset.name ?? "Asset Saya");
+      updateSelectedFields({
+        backgroundImageUrl: asset.url,
+        backgroundImageLabel: asset.name ?? "Asset Saya",
+      });
     } else if (selected?.type === "gallery") {
       const current = Array.isArray(selected.defaultData.imageUrls)
         ? (selected.defaultData.imageUrls as string[])
         : [];
       const imageUrls = [...current.filter((url) => url !== asset.url), asset.url].slice(-4);
-      updateSelected("imageUrls", imageUrls);
-      updateSelected("imageLabel", `${imageUrls.length} foto galeri`);
+      updateSelectedFields({
+        imageUrls,
+        imageLabel: `${imageUrls.length} foto galeri`,
+      });
     } else {
-      updateSelected("imageUrl", asset.url);
-      updateSelected("imageLabel", asset.name ?? "Asset Saya");
+      updateSelectedFields({
+        imageUrl: asset.url,
+        imageLabel: asset.name ?? "Asset Saya",
+      });
     }
     setAssetTarget(null);
   }
@@ -1079,7 +1167,8 @@ export function ConsoleWorkspace({
   }
 
   return (
-    <main className={`${view === "editor" ? "min-h-screen lg:fixed lg:inset-0 lg:flex lg:h-dvh lg:max-h-dvh lg:flex-col lg:overflow-hidden" : "min-h-screen"} bg-slate-50 text-slate-900`}>
+    <CollaborativeProvider value={collaborativeContextValue}>
+      <main className={`${view === "editor" ? "min-h-screen lg:fixed lg:inset-0 lg:flex lg:h-dvh lg:max-h-dvh lg:flex-col lg:overflow-hidden" : "min-h-screen"} bg-slate-50 text-slate-900`}>
       <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur md:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <Link href="/" className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white shadow-sm transition hover:scale-105" title="Kembali ke Beranda">
@@ -1614,182 +1703,43 @@ export function ConsoleWorkspace({
                 </div>
               </div>
 
-              <SidebarAccordion title="Custom Global" subtitle={`${theme.label} · ${musicUrl ? "Musik aktif" : "Tanpa musik"}`} icon={<Palette size={17} />} open={globalEditorOpen} onToggle={() => setGlobalEditorOpen((value) => !value)}>
-                <MusicSelectorField
+              <SidebarAccordion
+                title="Custom Global"
+                subtitle={`${theme.label} · ${musicUrl ? "Musik aktif" : "Tanpa musik"}`}
+                icon={<Palette size={17} />}
+                open={globalEditorOpen}
+                onToggle={() => setGlobalEditorOpen((value) => !value)}
+              >
+                <CollaborativeGlobalEditor
+                  template={template}
+                  themeId={themeId}
                   musicUrl={musicUrl}
-                  volume={musicVolume}
-                  disabled={!authResolved || Boolean(currentUser && !draftReady)}
-                  onChange={(nextUrl) => {
-                    if (!authResolved) return;
-                    if (!currentUser) requestLogin("Masuk dengan Google untuk memilih musik undangan.");
-                    else if (!draftReady) setUploadError("Draft akun sedang disiapkan. Tunggu sebentar lalu coba lagi.");
-                    else handleMusicUrlChange(nextUrl);
-                  }}
-                  onVolumeChange={(nextVol) => handleMusicVolumeChange(nextVol)}
-                  onOpenLibrary={() => openAssetLibrary("audio", "music")}
+                  musicVolume={musicVolume}
+                  customColors={customThemeColors}
+                  authResolved={authResolved}
+                  isLoggedIn={Boolean(currentUser)}
+                  draftReady={draftReady}
+                  uploadError={uploadError}
+                  onOpenMusicLibrary={() => openAssetLibrary("audio", "music")}
+                  onRequestLogin={requestLogin}
                 />
-                {uploadError && <p role="alert" className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-semibold leading-4 text-rose-700">{uploadError}</p>}
-                <div className="mt-4 border-t border-slate-100 pt-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="text-xs font-bold text-slate-700">Preset Theme</p>
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Global</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {template.themes.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => handleThemeSelect(item.id)}
-                        className={`min-w-0 rounded-xl border p-2.5 text-left transition ${
-                          themeId === item.id && !customThemeColors.primary && !customThemeColors.accent && !customThemeColors.background
-                            ? "border-emerald-600 bg-emerald-50 shadow-sm"
-                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                        }`}
-                      >
-                        <span className="mb-2 flex gap-1">
-                          {[item.colors.primary, item.colors.accent, item.colors.background].map((color) => (
-                            <i key={color} className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ background: color }} />
-                          ))}
-                        </span>
-                        <b className="block truncate text-[10px] text-slate-800">{item.label}</b>
-                        <small className="mt-0.5 block truncate text-[8px] text-slate-500">{item.fonts.display}</small>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Custom Color Palette (Primary, Accent, Background) */}
-                <div className="mt-4 border-t border-slate-100 pt-4">
-                  <div className="mb-2.5 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold text-slate-700">Kustom Warna Tema</p>
-                      <p className="text-[10px] text-slate-400">Sesuaikan dengan tema busana/dekorasi</p>
-                    </div>
-                    {(customThemeColors.primary || customThemeColors.accent || customThemeColors.background) && (
-                      <button
-                        type="button"
-                        onClick={handleCustomColorReset}
-                        className="text-[10px] font-bold text-emerald-700 hover:underline"
-                      >
-                        Reset ke tema
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    {/* Primary Color */}
-                    <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[11px] font-bold text-slate-700">
-                      <span>Warna Utama (Primary)</span>
-                      <span className="flex items-center gap-2">
-                        <code className="text-[9px] font-medium text-slate-500">
-                          {customThemeColors.primary || theme.colors.primary}
-                        </code>
-                        <input
-                          type="color"
-                          value={customThemeColors.primary || theme.colors.primary}
-                          onChange={(e) => handleCustomColorChange("primary", e.target.value)}
-                          className="h-7 w-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
-                        />
-                      </span>
-                    </label>
-
-                    {/* Accent Color */}
-                    <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[11px] font-bold text-slate-700">
-                      <span>Warna Aksen (Accent / Gold)</span>
-                      <span className="flex items-center gap-2">
-                        <code className="text-[9px] font-medium text-slate-500">
-                          {customThemeColors.accent || theme.colors.accent}
-                        </code>
-                        <input
-                          type="color"
-                          value={customThemeColors.accent || theme.colors.accent}
-                          onChange={(e) => handleCustomColorChange("accent", e.target.value)}
-                          className="h-7 w-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
-                        />
-                      </span>
-                    </label>
-
-                    {/* Background Color */}
-                    <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-[11px] font-bold text-slate-700">
-                      <span>Warna Latar (Background)</span>
-                      <span className="flex items-center gap-2">
-                        <code className="text-[9px] font-medium text-slate-500">
-                          {customThemeColors.background || theme.colors.background}
-                        </code>
-                        <input
-                          type="color"
-                          value={customThemeColors.background || theme.colors.background}
-                          onChange={(e) => handleCustomColorChange("background", e.target.value)}
-                          className="h-7 w-8 cursor-pointer rounded-lg border-0 bg-transparent p-0"
-                        />
-                      </span>
-                    </label>
-                  </div>
-                </div>
               </SidebarAccordion>
 
-              <SidebarAccordion title="Custom Section" subtitle={selected ? `${selected.label} · ${selected.fields?.length ?? 0} field` : "Pilih section pada struktur"} icon={<Settings2 size={17} />} open={sectionEditorOpen} onToggle={() => setSectionEditorOpen((value) => !value)}>
-                {selected ? <>
-                  <div className="mb-4 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5"><div className="min-w-0"><strong className="block truncate text-sm text-slate-800">{selected.label}</strong><small className="block truncate text-[10px] text-slate-500">{selected.description}</small></div><span className={`ml-3 shrink-0 rounded-full px-2 py-1 text-[9px] font-extrabold ${selected.enabled ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>{selected.enabled ? "Tampil" : "Tersembunyi"}</span></div>
-
-                  <div className="space-y-3">
-                    {(selected.fields ?? []).map((field) => {
-                      const value = typeof selected.defaultData[field.key] === "string" ? String(selected.defaultData[field.key]) : "";
-                      const textStyles = selected.defaultData.textStyles && typeof selected.defaultData.textStyles === "object" ? selected.defaultData.textStyles as Record<string, EditableTextStyle> : {};
-                      const legacyFonts = selected.defaultData.fontStyles && typeof selected.defaultData.fontStyles === "object" ? selected.defaultData.fontStyles as Record<string, string> : {};
-                      const style = textStyles[field.key] ?? (legacyFonts[field.key] ? { fontFamily: legacyFonts[field.key] } : {});
-                      return <EditableField key={field.key} field={field} value={value} textStyle={style} onValueChange={(nextValue) => updateSelected(field.key, nextValue)} onTextStyleChange={(nextStyle, replace) => updateSelectedTextStyle(field.key, nextStyle, replace)} />;
-                    })}
-                  </div>
-
-                  {selected.defaultData.imageLabel !== undefined && (
-                    <div className="mt-5 border-t border-slate-100 pt-4">
-                      <AssetUploadField
-                        title="Foto komponen"
-                        urls={
-                          selected.type === "gallery"
-                            ? Array.isArray(selected.defaultData.imageUrls)
-                              ? selected.defaultData.imageUrls.filter((url): url is string => typeof url === "string")
-                              : []
-                            : typeof selected.defaultData.imageUrl === "string"
-                            ? [selected.defaultData.imageUrl]
-                            : []
-                        }
-                        hint={String(selected.defaultData.imageLabel || "Pilih foto dari Asset Manager")}
-                        onOpenLibrary={() => openAssetLibrary("image", "content")}
-                        onRemove={(index) => {
-                          if (selected.type === "gallery") {
-                            const current = Array.isArray(selected.defaultData.imageUrls)
-                              ? selected.defaultData.imageUrls.filter((url): url is string => typeof url === "string")
-                              : [];
-                            const imageUrls = current.filter((_, itemIndex) => itemIndex !== index);
-                            updateSelected("imageUrls", imageUrls);
-                            updateSelected("imageLabel", imageUrls.length ? `${imageUrls.length} foto galeri` : "");
-                          } else {
-                            updateSelected("imageUrl", "");
-                            updateSelected("imageLabel", "");
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  <div className="mt-5 border-t border-slate-100 pt-4">
-                    <div className="mb-3 flex items-center justify-between"><p className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-500">Background section</p><button type="button" onClick={() => updateSelected("backgroundColor", "")} className="text-[9px] font-bold text-emerald-700 hover:underline">Reset warna</button></div>
-                    <label className="mb-3 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] font-bold text-slate-700">Warna background<span className="flex items-center gap-2"><code className="text-[9px] font-medium text-slate-500">{typeof selected.defaultData.backgroundColor === "string" && selected.defaultData.backgroundColor ? selected.defaultData.backgroundColor : theme.colors.background}</code><input type="color" value={typeof selected.defaultData.backgroundColor === "string" && selected.defaultData.backgroundColor ? selected.defaultData.backgroundColor : theme.colors.background} onChange={(event) => updateSelected("backgroundColor", event.target.value)} className="h-8 w-9 cursor-pointer rounded-lg border-0 bg-transparent p-0" /></span></label>
-                    <AssetUploadField
-                      title="Background image"
-                      urls={typeof selected.defaultData.backgroundImageUrl === "string" ? [selected.defaultData.backgroundImageUrl] : []}
-                      hint={String(selected.defaultData.backgroundImageLabel || "Pilih background dari Asset Manager")}
-                      onOpenLibrary={() => openAssetLibrary("image", "background")}
-                      onRemove={() => {
-                        updateSelected("backgroundImageUrl", "");
-                        updateSelected("backgroundImageLabel", "");
-                      }}
-                    />
-                    {uploadError && <p role="alert" className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-semibold leading-4 text-rose-700">{uploadError}</p>}
-                  </div>
-                </> : <p className="rounded-xl bg-slate-50 p-4 text-center text-xs text-slate-500">Pilih section pada struktur untuk mulai mengedit.</p>}
+              <SidebarAccordion
+                title="Custom Section"
+                subtitle={selected ? `${selected.label} · ${selected.fields?.length ?? 0} field` : "Pilih section pada struktur"}
+                icon={<Settings2 size={17} />}
+                open={sectionEditorOpen}
+                onToggle={() => setSectionEditorOpen((value) => !value)}
+              >
+                <CollaborativeSectionInspector
+                  template={template}
+                  selected={selected}
+                  themeBackground={theme.colors.background}
+                  uploadError={uploadError}
+                  onOpenContentLibrary={() => openAssetLibrary("image", "content")}
+                  onOpenBackgroundLibrary={() => openAssetLibrary("image", "background")}
+                />
               </SidebarAccordion>
             </div>
           </aside>
@@ -2004,6 +1954,7 @@ export function ConsoleWorkspace({
         onClose={() => setIsInviteModalOpen(false)}
         onRequireLogin={(reason) => requestLogin(reason)}
       />
-    </main>
+      </main>
+    </CollaborativeProvider>
   );
 }

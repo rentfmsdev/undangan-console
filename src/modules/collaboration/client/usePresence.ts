@@ -17,6 +17,7 @@ type UsePresenceOptions = {
   currentUser?: CurrentUserProps;
   role?: "owner" | "editor" | "viewer";
   onRevoked?: () => void;
+  onPermissionChange?: (role: "owner" | "editor" | "viewer") => void;
   onDocInit?: (updateBase64: string) => void;
   onDocUpdate?: (updateBase64: string) => void;
 };
@@ -27,6 +28,7 @@ export function usePresence({
   currentUser,
   role = "editor",
   onRevoked,
+  onPermissionChange,
   onDocInit,
   onDocUpdate,
 }: UsePresenceOptions) {
@@ -56,6 +58,9 @@ export function usePresence({
 
   const onRevokedRef = useRef(onRevoked);
   onRevokedRef.current = onRevoked;
+
+  const onPermissionChangeRef = useRef(onPermissionChange);
+  onPermissionChangeRef.current = onPermissionChange;
 
   const activeSurfaceRef = useRef<{
     surface?: "canvas" | "preview" | "left-sidebar" | "right-sidebar";
@@ -115,9 +120,11 @@ export function usePresence({
     function connect() {
       if (isDisposed) return;
 
+      const configuredUrl = process.env.NEXT_PUBLIC_COLLAB_WS_URL?.replace(/\/$/, "");
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const host = window.location.hostname || "localhost";
-      const wsUrl = `${protocol}//${host}:3001?draftId=${encodeURIComponent(draftId!)}&connectionId=${encodeURIComponent(connectionIdRef.current)}`;
+      const wsBase = configuredUrl || `${protocol}//${host}:3001`;
+      const wsUrl = `${wsBase}?draftId=${encodeURIComponent(draftId!)}&connectionId=${encodeURIComponent(connectionIdRef.current)}`;
 
       try {
         setConnectionStatus("connecting");
@@ -141,7 +148,15 @@ export function usePresence({
           try {
             const data = JSON.parse(event.data);
 
-            if (data.type === "sync" && Array.isArray(data.presences)) {
+            if (data.type === "connection.ready" && typeof data.connectionId === "string") {
+              // The server owns connection ids. This prevents one browser tab
+              // from colliding with another tab or impersonating its presence.
+              connectionIdRef.current = data.connectionId;
+              window.sessionStorage.setItem(`collab_conn_${draftId}`, data.connectionId);
+            } else if (data.type === "permission.update" && ["owner", "editor", "viewer"].includes(data.role)) {
+              roleRef.current = data.role;
+              onPermissionChangeRef.current?.(data.role);
+            } else if (data.type === "sync" && Array.isArray(data.presences)) {
               setOnlinePresences(data.presences);
             } else if (data.type === "doc.init") {
               if (data.update && onDocInitRef.current) {
@@ -194,10 +209,20 @@ export function usePresence({
           } catch {}
         };
 
-        ws.onclose = () => {
+        ws.onclose = (closeEvent) => {
           if (isDisposed) return;
           setConnectionStatus("disconnected");
           socketRef.current = null;
+          // Policy close is deliberate: the server revalidates membership every
+          // few seconds and closes the socket when access has been revoked.
+          if (closeEvent.code === 1008) {
+            if (onRevokedRef.current) onRevokedRef.current();
+            else {
+              alert("Akses kolaborasi Anda sudah berubah atau dicabut.");
+              router.push("/");
+            }
+            return;
+          }
           if (!isDisposed) {
             reconnectTimeout = setTimeout(connect, 3000);
           }

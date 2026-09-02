@@ -1,12 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { invitations, wishes } from "@/db/schema";
-import { getSessionUser } from "@/modules/auth/service";
-import { editCookieName, isMatchingSecret } from "@/modules/anonymous-access/token";
+import { getDraftAccess } from "@/modules/drafts/access";
 
 const wishSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -35,10 +33,8 @@ async function canReadInvitation(invitationId: string) {
   const invitation = await getInvitation(invitationId);
   if (!invitation) return false;
   if (invitation.status === "published") return true;
-  const user = await getSessionUser();
-  if (user && invitation.userId === user.id) return true;
-  const token = (await cookies()).get(editCookieName(invitationId))?.value;
-  return isMatchingSecret(token, invitation.editTokenHash);
+  const access = await getDraftAccess(invitationId);
+  return access.authorized;
 }
 
 export async function GET(request: Request) {

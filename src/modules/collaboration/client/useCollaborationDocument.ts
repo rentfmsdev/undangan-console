@@ -51,22 +51,17 @@ export function useCollaborationDocument({
     broadcastDocUpdateRef.current = fn;
   }, []);
 
-  // Initialize from initial state or offline storage & setup UndoManager
+  // Initialize the local CRDT container and setup UndoManager. Do not apply a
+  // previously cached full Yjs snapshot before the authenticated server snapshot:
+  // two independently-created documents can have conflicting Yjs client clocks,
+  // causing an old local value to win visually without ever reaching the server.
+  // Offline edits are still persisted through the HTTP fallback; proper Yjs
+  // offline replay requires a state-vector sync protocol and must not be faked by
+  // merging arbitrary full snapshots here.
   useEffect(() => {
     if (!enabled || !draftId) return;
 
     const doc = ydocRef.current;
-
-    // Load offline cached update if any
-    if (typeof window !== "undefined") {
-      try {
-        const cached = window.localStorage.getItem(`undangan_crdt_snap_${draftId}`);
-        if (cached) {
-          const update = Uint8Array.from(atob(cached), (c) => c.charCodeAt(0));
-          Y.applyUpdate(doc, update);
-        }
-      } catch {}
-    }
 
     if (initialState) {
       initYDocFromState(initialState, doc);
