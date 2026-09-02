@@ -160,7 +160,15 @@ async function loadRoomSnapshot(draftId, ydoc) {
       const dataMap = new Y.Map();
       const styles = new Y.Map();
       Object.entries(data).forEach(([key, value]) => {
-        if (key === "textStyles" && value && typeof value === "object" && !Array.isArray(value)) Object.entries(value).forEach(([styleKey, styleValue]) => styles.set(styleKey, styleValue));
+        if (key === "textStyles" && value && typeof value === "object" && !Array.isArray(value)) {
+          Object.entries(value).forEach(([styleKey, styleValue]) => {
+            const fieldStyle = new Y.Map();
+            if (styleValue && typeof styleValue === "object" && !Array.isArray(styleValue)) {
+              Object.entries(styleValue).forEach(([property, propertyValue]) => fieldStyle.set(property, propertyValue));
+            }
+            styles.set(styleKey, fieldStyle);
+          });
+        }
         else dataMap.set(key, value);
       });
       secMap.set("data", dataMap);

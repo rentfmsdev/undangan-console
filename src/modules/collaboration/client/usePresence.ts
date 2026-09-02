@@ -38,29 +38,29 @@ export function usePresence({
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("disconnected");
 
   const onDocInitRef = useRef(onDocInit);
-  onDocInitRef.current = onDocInit;
-
   const onDocUpdateRef = useRef(onDocUpdate);
-  onDocUpdateRef.current = onDocUpdate;
 
   const socketRef = useRef<WebSocket | null>(null);
-  const connectionIdRef = useRef<string>("");
+  const connectionIdRef = useRef<string | null>(null);
   const isIdleRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
   const lastCursorSentRef = useRef(0);
 
-  // Store user & role in stable refs to avoid tearing down WebSocket on re-renders
+  // Store mutable callbacks and identity outside render so a new callback does
+  // not tear down the realtime connection.
   const userRef = useRef(currentUser);
-  userRef.current = currentUser;
-
   const roleRef = useRef(role);
-  roleRef.current = role;
-
   const onRevokedRef = useRef(onRevoked);
-  onRevokedRef.current = onRevoked;
-
   const onPermissionChangeRef = useRef(onPermissionChange);
-  onPermissionChangeRef.current = onPermissionChange;
+
+  useEffect(() => {
+    userRef.current = currentUser;
+    roleRef.current = role;
+    onRevokedRef.current = onRevoked;
+    onPermissionChangeRef.current = onPermissionChange;
+    onDocInitRef.current = onDocInit;
+    onDocUpdateRef.current = onDocUpdate;
+  }, [currentUser, role, onRevoked, onPermissionChange, onDocInit, onDocUpdate]);
 
   const activeSurfaceRef = useRef<{
     surface?: "canvas" | "preview" | "left-sidebar" | "right-sidebar";
@@ -69,7 +69,7 @@ export function usePresence({
   }>({});
 
   // Initialize persistent connectionId per browser tab
-  if (!connectionIdRef.current && typeof window !== "undefined") {
+  if (connectionIdRef.current == null && typeof window !== "undefined") {
     let saved = window.sessionStorage.getItem(`collab_conn_${draftId || "default"}`);
     if (!saved) {
       saved = crypto.randomUUID();
@@ -82,7 +82,7 @@ export function usePresence({
   const buildCurrentPresence = useCallback((state: "active" | "idle" = "active"): CollaborationPresence => {
     const user = userRef.current;
     return {
-      connectionId: connectionIdRef.current,
+      connectionId: connectionIdRef.current ?? "",
       userId: user?.id ?? "anonymous",
       name: user?.name ?? "User",
       email: user?.email ?? "",
@@ -124,7 +124,7 @@ export function usePresence({
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const host = window.location.hostname || "localhost";
       const wsBase = configuredUrl || `${protocol}//${host}:3001`;
-      const wsUrl = `${wsBase}?draftId=${encodeURIComponent(draftId!)}&connectionId=${encodeURIComponent(connectionIdRef.current)}`;
+      const wsUrl = `${wsBase}?draftId=${encodeURIComponent(draftId!)}&connectionId=${encodeURIComponent(connectionIdRef.current ?? "")}`;
 
       try {
         setConnectionStatus("connecting");

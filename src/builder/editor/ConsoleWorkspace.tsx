@@ -184,7 +184,7 @@ export function ConsoleWorkspace({
     if (remoteState.globalSettings?.themeId) {
       setThemeId(remoteState.globalSettings.themeId);
     }
-    if (remoteState.globalSettings?.musicUrl) {
+    if (typeof remoteState.globalSettings?.musicUrl === "string") {
       setMusicUrl(remoteState.globalSettings.musicUrl);
     }
     if (typeof remoteState.globalSettings?.musicVolume === "number") {
@@ -795,17 +795,37 @@ export function ConsoleWorkspace({
 
     collabDoc.updateLocalState((doc) => {
       const sectionsMap = doc.getMap("sections");
-      const secMap = sectionsMap.get(sectionId) as Y.Map<unknown> | undefined;
-      if (secMap) {
-        let stylesMap = secMap.get("textStyles") as Y.Map<unknown> | undefined;
-        if (!stylesMap) {
-          stylesMap = new Y.Map();
-          secMap.set("textStyles", stylesMap);
-        }
-        stylesMap.set(key, style);
+      let secMap = sectionsMap.get(sectionId) as Y.Map<unknown> | undefined;
+      if (!secMap) {
+        const currentSec = sections.find((section) => section.id === sectionId);
+        secMap = new Y.Map();
+        secMap.set("id", sectionId);
+        secMap.set("type", currentSec?.type ?? "");
+        secMap.set("enabled", currentSec?.enabled ?? true);
+        secMap.set("data", new Y.Map());
+        sectionsMap.set(sectionId, secMap);
       }
+
+      let stylesMap = secMap.get("textStyles") as Y.Map<unknown> | undefined;
+      if (!(stylesMap instanceof Y.Map)) {
+        stylesMap = new Y.Map();
+        secMap.set("textStyles", stylesMap);
+      }
+
+      const previousStyle = stylesMap.get(key);
+      const fieldStyleMap = new Y.Map();
+      if (!replace && previousStyle instanceof Y.Map) {
+        previousStyle.forEach((value, styleKey) => fieldStyleMap.set(styleKey, value));
+      } else if (!replace && previousStyle && typeof previousStyle === "object") {
+        Object.entries(previousStyle as Record<string, unknown>).forEach(([styleKey, value]) => fieldStyleMap.set(styleKey, value));
+      }
+      Object.entries(style).forEach(([styleKey, value]) => {
+        if (value === undefined) fieldStyleMap.delete(styleKey);
+        else fieldStyleMap.set(styleKey, value);
+      });
+      stylesMap.set(key, fieldStyleMap);
     });
-  }, [isViewer, collabDoc]);
+  }, [isViewer, collabDoc, sections]);
 
   const updateSelectedTextStyle = useCallback((key: string, style: Partial<EditableTextStyle>, replace = false) => {
     if (!selected) return;

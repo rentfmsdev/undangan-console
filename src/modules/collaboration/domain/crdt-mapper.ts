@@ -79,7 +79,18 @@ export function initYDocFromState(state: SharedDraftState, doc: Y.Doc = new Y.Do
         const stylesMap = new Y.Map();
         if (sec.textStyles) {
           Object.entries(sec.textStyles).forEach(([k, v]) => {
-            stylesMap.set(k, v);
+            // Keep each typography property in its own CRDT map. Storing the
+            // entire style object as one value makes concurrent font-size and
+            // color edits overwrite one another.
+            if (v && typeof v === "object" && !Array.isArray(v)) {
+              const fieldStyleMap = new Y.Map();
+              Object.entries(v as Record<string, unknown>).forEach(([styleKey, styleValue]) => {
+                fieldStyleMap.set(styleKey, styleValue);
+              });
+              stylesMap.set(k, fieldStyleMap);
+            } else {
+              stylesMap.set(k, v);
+            }
           });
         }
         secMap.set("textStyles", stylesMap);
@@ -124,7 +135,17 @@ export function extractStateFromYDoc(doc: Y.Doc): SharedDraftState {
       const textStyles: Record<string, unknown> = {};
       if (stylesMap instanceof Y.Map) {
         stylesMap.forEach((v, k) => {
-          textStyles[k] = v;
+          if (v instanceof Y.Map) {
+            const style: Record<string, unknown> = {};
+            v.forEach((styleValue, styleKey) => {
+              style[styleKey] = styleValue;
+            });
+            textStyles[k] = style;
+          } else {
+            // Backward compatibility for documents created before typography
+            // fields were represented as nested CRDT maps.
+            textStyles[k] = v;
+          }
         });
       }
 

@@ -10,16 +10,16 @@ type RemoteCursorLayerProps = {
 };
 
 export function RemoteCursorLayer({ cursors, surface, className = "" }: RemoteCursorLayerProps) {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-      setReducedMotion(query.matches);
-      const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-      query.addEventListener("change", listener);
-      return () => query.removeEventListener("change", listener);
-    }
+    if (typeof window === "undefined") return;
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    query.addEventListener("change", listener);
+    return () => query.removeEventListener("change", listener);
   }, []);
 
   const activeCursors = cursors.filter((c) => c.surface === surface);
