@@ -148,8 +148,10 @@ export async function POST(
 
   const newId = existingCollab ? existingCollab.id : crypto.randomUUID();
 
-  const initialStatus = existingUser ? "accepted" : "pending";
-  const acceptedAt = existingUser ? new Date() : null;
+  // Existing users still need to explicitly accept the invitation. Otherwise an
+  // owner could silently grant a logged-in account access to a private draft.
+  const initialStatus = "pending" as const;
+  const acceptedAt = null;
 
   if (existingCollab) {
     await db
@@ -211,10 +213,9 @@ export async function POST(
       id: newId,
       email,
       role,
-      status: "pending",
+      status: initialStatus,
       expiresAt: expiresAt.toISOString(),
       user: existingUser ?? null,
     },
   });
 }
-

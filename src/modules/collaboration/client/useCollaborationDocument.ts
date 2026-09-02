@@ -43,7 +43,9 @@ export function useCollaborationDocument({
   const isApplyingRemoteRef = useRef(false);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const broadcastDocUpdateRef = useRef(broadcastDocUpdate);
-  broadcastDocUpdateRef.current = broadcastDocUpdate;
+  if (broadcastDocUpdate) {
+    broadcastDocUpdateRef.current = broadcastDocUpdate;
+  }
 
   const setBroadcastHandler = useCallback((fn: (b64: string) => void) => {
     broadcastDocUpdateRef.current = fn;

@@ -44,6 +44,13 @@ export async function POST(
     );
   }
 
+  if (collab.status === "declined" || collab.status === "expired") {
+    return NextResponse.json(
+      { error: "Undangan ini tidak lagi aktif. Minta pemilik untuk mengirim undangan baru." },
+      { status: 400 }
+    );
+  }
+
   if (collab.status === "revoked") {
     return NextResponse.json(
       { error: "Undangan ini telah dicabut oleh pemilik undangan." },
@@ -73,7 +80,18 @@ export async function POST(
     );
   }
 
-  // Accept the invitation!
+  // Idempotent for the intended account; a second click must not mutate history.
+  if (collab.status === "accepted") {
+    const template = getTemplateById(collab.templateId);
+    return NextResponse.json({
+      ok: true,
+      message: "Undangan kolaborasi sudah diterima.",
+      draftId: collab.invitationId,
+      templateCode: template?.code ?? "hjydg",
+    });
+  }
+
+  // Accept the invitation.
   await db
     .update(invitationCollaborators)
     .set({

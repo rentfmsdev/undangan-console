@@ -63,6 +63,10 @@ async function loadRoomSnapshot(draftId, ydoc) {
     const [invRows] = await dbPool.query("SELECT * FROM invitations WHERE id = ? LIMIT 1", [draftId]);
     if (invRows && invRows.length > 0) {
       const inv = invRows[0];
+      let styleOverrides = {};
+      try {
+        styleOverrides = typeof inv.style_overrides === "string" ? JSON.parse(inv.style_overrides) : (inv.style_overrides || {});
+      } catch {}
       const [secRows] = await dbPool.query("SELECT * FROM invitation_sections WHERE invitation_id = ? ORDER BY section_order ASC", [draftId]);
 
       ydoc.transact(() => {
@@ -73,8 +77,8 @@ async function loadRoomSnapshot(draftId, ydoc) {
 
         const globalSettings = ydoc.getMap("globalSettings");
         globalSettings.set("themeId", inv.theme_id || "royal-blue-gold");
-        globalSettings.set("musicUrl", "/assets/audio/easy-on-me.webm");
-        globalSettings.set("musicVolume", 0.6);
+        globalSettings.set("musicUrl", styleOverrides.musicUrl || "/assets/audio/easy-on-me.webm");
+        globalSettings.set("musicVolume", typeof styleOverrides.musicVolume === "number" ? styleOverrides.musicVolume : 0.6);
 
         const sectionOrder = ydoc.getArray("sectionOrder");
         const sectionsMap = ydoc.getMap("sections");
@@ -124,14 +128,26 @@ async function flushRoomSnapshot(room, draftId, createdBy = null) {
       [snapId, draftId, currentRevision, stateUpdate, createdBy]
     );
 
-    // Keep invitations.theme_id and invitations.updated_at synchronized
+    // Keep invitations.theme_id, invitations.style_overrides and invitations.updated_at synchronized
     const globalSettings = room.ydoc.getMap("globalSettings");
     const themeId = globalSettings.get("themeId");
-    if (themeId) {
-      await dbPool.query("UPDATE invitations SET theme_id = ?, updated_at = NOW() WHERE id = ?", [themeId, draftId]);
-    } else {
-      await dbPool.query("UPDATE invitations SET updated_at = NOW() WHERE id = ?", [draftId]);
+    const musicUrl = globalSettings.get("musicUrl");
+    const musicVolume = globalSettings.get("musicVolume");
+
+    const [invRows] = await dbPool.query("SELECT style_overrides FROM invitations WHERE id = ? LIMIT 1", [draftId]);
+    let styleOverrides = {};
+    if (invRows && invRows[0] && invRows[0].style_overrides) {
+      try {
+        styleOverrides = typeof invRows[0].style_overrides === "string" ? JSON.parse(invRows[0].style_overrides) : (invRows[0].style_overrides || {});
+      } catch {}
     }
+    if (musicUrl !== undefined) styleOverrides.musicUrl = musicUrl;
+    if (typeof musicVolume === "number") styleOverrides.musicVolume = musicVolume;
+
+    await dbPool.query(
+      "UPDATE invitations SET theme_id = ?, style_overrides = ?, updated_at = NOW() WHERE id = ?",
+      [themeId || null, JSON.stringify(styleOverrides), draftId]
+    );
 
     console.log(`[Collab Server] Persisted durable snapshot for ${draftId} (rev ${currentRevision})`);
   } catch (err) {

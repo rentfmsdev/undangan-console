@@ -33,18 +33,17 @@ export async function getDraftAccess(draftId: string) {
       )
       .limit(1);
 
-    if (collab && (collab.status === "accepted" || collab.status === "pending")) {
+    // A collaboration invitation grants access only after the recipient explicitly
+    // accepts it through the token flow. Do not turn a pending invitation into an
+    // implicit editor session merely because the account email happens to match.
+    if (collab && collab.status === "accepted") {
       isCollaborator = true;
       collaboratorRole = collab.role;
-      // Auto-accept and link userId when the invited user accesses the draft
+      // This is informational only; failed presence bookkeeping must never
+      // downgrade a valid collaborator's access.
       await db
         .update(invitationCollaborators)
-        .set({
-          userId: user.id,
-          status: "accepted",
-          acceptedAt: collab.acceptedAt ?? new Date(),
-          lastSeenAt: new Date(),
-        })
+        .set({ lastSeenAt: new Date() })
         .where(eq(invitationCollaborators.id, collab.id))
         .catch(() => {});
     }
@@ -70,4 +69,3 @@ export async function getDraftAccess(draftId: string) {
     role,
   };
 }
-

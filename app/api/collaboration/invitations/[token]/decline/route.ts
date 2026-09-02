@@ -34,6 +34,30 @@ export async function POST(
     );
   }
 
+  if (collab.email.toLowerCase().trim() !== user.email.toLowerCase().trim()) {
+    return NextResponse.json(
+      { error: "Undangan ini ditujukan untuk akun Google yang berbeda." },
+      { status: 403 }
+    );
+  }
+
+  if (collab.status === "revoked" || collab.status === "expired") {
+    return NextResponse.json({ error: "Undangan ini tidak lagi aktif." }, { status: 400 });
+  }
+
+  if (collab.expiresAt && new Date(collab.expiresAt) < new Date()) {
+    await db.update(invitationCollaborators).set({ status: "expired" }).where(eq(invitationCollaborators.id, collab.id));
+    return NextResponse.json({ error: "Undangan ini sudah kedaluwarsa." }, { status: 400 });
+  }
+
+  if (collab.status === "accepted") {
+    return NextResponse.json({ error: "Undangan yang sudah diterima tidak dapat ditolak dari tautan ini. Minta pemilik mencabut akses." }, { status: 400 });
+  }
+
+  if (collab.status === "declined") {
+    return NextResponse.json({ ok: true, message: "Undangan kolaborasi sudah ditolak." });
+  }
+
   await db
     .update(invitationCollaborators)
     .set({
