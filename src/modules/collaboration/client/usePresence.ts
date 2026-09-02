@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { CollaborationPresence } from "../domain/presence";
+import { CollaborationPresence, getDeterministicUserColor } from "../domain/presence";
 
 type UsePresenceOptions = {
   draftId?: string;
@@ -13,6 +13,7 @@ type UsePresenceOptions = {
     email: string;
     avatarUrl?: string | null;
   } | null;
+  role?: "owner" | "editor" | "viewer";
   onRevoked?: () => void;
 };
 
@@ -20,162 +21,201 @@ export function usePresence({
   draftId,
   enabled = true,
   currentUser,
+  role = "editor",
   onRevoked,
 }: UsePresenceOptions) {
   const router = useRouter();
   const [onlinePresences, setOnlinePresences] = useState<CollaborationPresence[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("disconnected");
 
+  const socketRef = useRef<WebSocket | null>(null);
   const connectionIdRef = useRef<string>("");
-  const activeSurfaceRef = useRef<{
-    surface?: "canvas" | "preview" | "left-sidebar" | "right-sidebar";
-    sectionId?: string | null;
-    fieldPath?: string | null;
-  }>({});
-
   const isIdleRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
-  const isFetchingRef = useRef(false);
 
-  // Initialize connectionId per browser tab
-  if (!connectionIdRef.current) {
-    if (typeof window !== "undefined") {
-      let saved = window.sessionStorage.getItem(`collab_conn_${draftId}`);
-      if (!saved) {
-        saved = crypto.randomUUID();
-        window.sessionStorage.setItem(`collab_conn_${draftId}`, saved);
-      }
-      connectionIdRef.current = saved;
+  // Initialize persistent connectionId per browser tab
+  if (!connectionIdRef.current && typeof window !== "undefined") {
+    let saved = window.sessionStorage.getItem(`collab_conn_${draftId}`);
+    if (!saved) {
+      saved = crypto.randomUUID();
+      window.sessionStorage.setItem(`collab_conn_${draftId}`, saved);
     }
+    connectionIdRef.current = saved;
   }
 
-  // Heartbeat function (synchronizes presence and returns room members)
-  const sendPulse = useCallback(async (stateOverride?: "active" | "idle") => {
-    if (!draftId || !currentUser || !connectionIdRef.current || isFetchingRef.current) return;
-    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-
-    isFetchingRef.current = true;
-    try {
-      const res = await fetch(`/api/drafts/${draftId}/collaboration/presence`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          connectionId: connectionIdRef.current,
-          state: stateOverride ?? (isIdleRef.current ? "idle" : "active"),
-          surface: activeSurfaceRef.current.surface,
-          sectionId: activeSurfaceRef.current.sectionId,
-          fieldPath: activeSurfaceRef.current.fieldPath,
-        }),
-      });
-
-      if (res.status === 401) {
-        setConnectionStatus("disconnected");
-        if (onRevoked) {
-          onRevoked();
-        } else {
-          alert("Akses kolaborasi Anda untuk undangan ini telah dicabut atau sesi telah berakhir.");
-          router.push("/");
-        }
-        return;
-      }
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.isRevoked) {
-          setConnectionStatus("disconnected");
-          if (onRevoked) onRevoked();
-          else {
-            alert("Akses kolaborasi Anda untuk undangan ini telah dicabut.");
-            router.push("/");
-          }
-          return;
-        }
-
-        setConnectionStatus("connected");
-        if (Array.isArray(data.onlineUsers)) {
-          setOnlinePresences(data.onlineUsers);
-        }
-      } else {
-        setConnectionStatus("error");
-      }
-    } catch {
-      setConnectionStatus("error");
-    } finally {
-      isFetchingRef.current = false;
-    }
-  }, [draftId, currentUser, onRevoked, router]);
-
-  // Handle activity detection (idle timer)
-  useEffect(() => {
-    if (!enabled || !draftId || !currentUser) return;
-
-    function handleUserActivity() {
-      lastActivityRef.current = Date.now();
-      if (isIdleRef.current) {
-        isIdleRef.current = false;
-        void sendPulse("active");
-      }
-    }
-
-    const events = ["pointerdown", "keydown", "wheel", "touchstart"];
-    events.forEach((ev) => window.addEventListener(ev, handleUserActivity, { passive: true }));
-
-    const idleChecker = setInterval(() => {
-      if (!isIdleRef.current && Date.now() - lastActivityRef.current > 30_000) {
-        isIdleRef.current = true;
-        void sendPulse("idle");
-      }
-    }, 10_000);
-
-    return () => {
-      events.forEach((ev) => window.removeEventListener(ev, handleUserActivity));
-      clearInterval(idleChecker);
+  // Get current user presence payload
+  const getMyPresence = useCallback((state: "active" | "idle" = "active"): CollaborationPresence => {
+    return {
+      connectionId: connectionIdRef.current,
+      userId: currentUser?.id ?? "anonymous",
+      name: currentUser?.name ?? "User",
+      email: currentUser?.email ?? "",
+      avatarUrl: currentUser?.avatarUrl ?? null,
+      color: currentUser ? getDeterministicUserColor(currentUser.id) : "#10B981",
+      role,
+      state,
+      lastSeenAt: Date.now(),
     };
-  }, [enabled, draftId, currentUser, sendPulse]);
+  }, [currentUser, role]);
 
-  // Periodic heartbeat loop (every 10s when active)
+  // WebSocket lifecycle (single persistent connection, 0 HTTP fetch)
   useEffect(() => {
     if (!enabled || !draftId || !currentUser) {
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+      }
       setConnectionStatus("disconnected");
       setOnlinePresences([]);
       return;
     }
 
     setConnectionStatus("connecting");
-    // Initial pulse
-    void sendPulse();
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let isUnmounted = false;
 
-    const interval = setInterval(() => {
-      void sendPulse();
-    }, 10_000);
+    function connect() {
+      if (isUnmounted) return;
 
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void sendPulse();
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const host = window.location.hostname || "localhost";
+      const wsUrl = `${protocol}//${host}:3001?draftId=${encodeURIComponent(draftId!)}&connectionId=${encodeURIComponent(connectionIdRef.current)}`;
+
+      try {
+        ws = new WebSocket(wsUrl);
+        socketRef.current = ws;
+
+        ws.onopen = () => {
+          if (isUnmounted) return;
+          setConnectionStatus("connected");
+
+          // Send join message with current presence
+          ws?.send(JSON.stringify({
+            type: "join",
+            draftId,
+            presence: getMyPresence("active"),
+          }));
+        };
+
+        ws.onmessage = (event) => {
+          if (isUnmounted) return;
+          try {
+            const data = JSON.parse(event.data);
+
+            if (data.type === "sync" && Array.isArray(data.presences)) {
+              setOnlinePresences(data.presences);
+            } else if (data.type === "join" || data.type === "update") {
+              setOnlinePresences((prev) => {
+                const map = new Map(prev.map((p) => [p.connectionId, p]));
+                map.set(data.presence.connectionId, data.presence);
+                return Array.from(map.values());
+              });
+            } else if (data.type === "leave") {
+              setOnlinePresences((prev) => prev.filter((p) => p.connectionId !== data.connectionId));
+            } else if (data.type === "revoked") {
+              if (data.userId === currentUser.id) {
+                setConnectionStatus("disconnected");
+                if (onRevoked) onRevoked();
+                else {
+                  alert("Akses kolaborasi Anda untuk undangan ini telah dicabut oleh pemilik.");
+                  router.push("/");
+                }
+              }
+            }
+          } catch {}
+        };
+
+        ws.onclose = () => {
+          if (isUnmounted) return;
+          setConnectionStatus("disconnected");
+          socketRef.current = null;
+          // Reconnect after 3 seconds
+          reconnectTimeout = setTimeout(connect, 3000);
+        };
+
+        ws.onerror = () => {
+          if (isUnmounted) return;
+          setConnectionStatus("error");
+          ws?.close();
+        };
+      } catch {
+        setConnectionStatus("error");
+        reconnectTimeout = setTimeout(connect, 4000);
       }
-    };
+    }
 
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    connect();
 
     return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+      isUnmounted = true;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (ws) {
+        ws.close();
+        socketRef.current = null;
+      }
     };
-  }, [enabled, draftId, currentUser, sendPulse]);
+  }, [enabled, draftId, currentUser?.id, getMyPresence, onRevoked, router]);
 
-  // Method to report active editing surface / section
+  // Handle User Activity (Idle Detection without network spam)
+  useEffect(() => {
+    if (!enabled || !draftId || !currentUser) return;
+
+    function handleActivity() {
+      lastActivityRef.current = Date.now();
+      if (isIdleRef.current) {
+        isIdleRef.current = false;
+        // Only notify WebSocket when transitioning from idle -> active
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({
+            type: "presence.update",
+            presence: getMyPresence("active"),
+          }));
+        }
+      }
+    }
+
+    const events = ["pointerdown", "keydown", "wheel", "touchstart"];
+    events.forEach((ev) => window.addEventListener(ev, handleActivity, { passive: true }));
+
+    const idleChecker = setInterval(() => {
+      if (!isIdleRef.current && Date.now() - lastActivityRef.current > 30_000) {
+        isIdleRef.current = true;
+        // Only notify WebSocket when transitioning from active -> idle
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+          socketRef.current.send(JSON.stringify({
+            type: "presence.update",
+            presence: getMyPresence("idle"),
+          }));
+        }
+      }
+    }, 5_000);
+
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, handleActivity));
+      clearInterval(idleChecker);
+    };
+  }, [enabled, draftId, currentUser, getMyPresence]);
+
+  // Method to report active editing section (sent over WebSocket)
   const updateActiveSurface = useCallback((params: {
     surface?: "canvas" | "preview" | "left-sidebar" | "right-sidebar";
     sectionId?: string | null;
     fieldPath?: string | null;
   }) => {
-    activeSurfaceRef.current = {
-      ...activeSurfaceRef.current,
-      ...params,
-    };
-  }, []);
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      const p = getMyPresence(isIdleRef.current ? "idle" : "active");
+      socketRef.current.send(JSON.stringify({
+        type: "presence.update",
+        presence: {
+          ...p,
+          ...params,
+        },
+      }));
+    }
+  }, [getMyPresence]);
 
-  // Deduplicate online users by userId (combines multiple tabs of same user)
+  // Deduplicate online users by userId
   const uniqueOnlineUsers = useMemo(() => {
     const userMap = new Map<string, CollaborationPresence>();
     for (const p of onlinePresences) {

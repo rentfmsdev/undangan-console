@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:collab": "node server/collab-server.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -22,6 +23,7 @@
     "next": "^16.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "ws": "^8.21.3",
     "xlsx": "^0.18.5",
     "zod": "^3.24.2"
   },
@@ -30,6 +32,7 @@
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.3",
     "@types/react-dom": "^19.0.2",
+    "@types/ws": "^8.18.1",
     "drizzle-kit": "^0.31.4",
     "eslint": "^9.17.0",
     "eslint-config-next": "^16.3.3",
