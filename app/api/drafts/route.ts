@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { and, desc, eq, or } from "drizzle-orm";
 import { db } from "@/db/client";
-import { invitationCollaborators, invitationSections, invitations } from "@/db/schema";
+import { invitationCollaborators, invitationSections, invitations, users } from "@/db/schema";
 import { getSessionUser } from "@/modules/auth/service";
 import { createEditToken, createRecoveryCode, editCookieName, hashSecret } from "@/modules/anonymous-access/token";
 import { createDraftSchema } from "@/modules/drafts/validation";
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     )
     .orderBy(desc(invitations.updatedAt));
 
-  // 2. Collaborated drafts
+  // 2. Collaborated drafts (with Owner details)
   const collabRecords = await db
     .select({
       id: invitations.id,
@@ -48,9 +48,14 @@ export async function GET(request: Request) {
       createdAt: invitations.createdAt,
       updatedAt: invitations.updatedAt,
       collabRole: invitationCollaborators.role,
+      ownerId: users.id,
+      ownerName: users.name,
+      ownerEmail: users.email,
+      ownerAvatar: users.avatarUrl,
     })
     .from(invitationCollaborators)
     .innerJoin(invitations, eq(invitationCollaborators.invitationId, invitations.id))
+    .leftJoin(users, or(eq(invitations.userId, users.id), eq(invitationCollaborators.invitedBy, users.id)))
     .where(
       and(
         or(
@@ -63,10 +68,21 @@ export async function GET(request: Request) {
     )
     .orderBy(desc(invitations.updatedAt));
 
-  const allDraftsMap = new Map<string, typeof ownedRecords[0] & { isCollaborator?: boolean; collabRole?: string }>();
+  type DraftMapItem = typeof ownedRecords[0] & {
+    isCollaborator?: boolean;
+    collabRole?: string;
+    sharedBy?: {
+      id: string;
+      name: string;
+      email: string | null;
+      avatarUrl: string | null;
+    } | null;
+  };
+
+  const allDraftsMap = new Map<string, DraftMapItem>();
 
   for (const record of ownedRecords) {
-    allDraftsMap.set(record.id, { ...record, isCollaborator: false });
+    allDraftsMap.set(record.id, { ...record, isCollaborator: false, sharedBy: null });
   }
 
   for (const record of collabRecords) {
@@ -83,6 +99,14 @@ export async function GET(request: Request) {
         updatedAt: record.updatedAt,
         isCollaborator: true,
         collabRole: record.collabRole,
+        sharedBy: record.ownerId
+          ? {
+              id: record.ownerId,
+              name: record.ownerName ?? record.ownerEmail ?? "Pemilik",
+              email: record.ownerEmail ?? "",
+              avatarUrl: record.ownerAvatar,
+            }
+          : null,
       });
     }
   }

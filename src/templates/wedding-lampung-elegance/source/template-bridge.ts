@@ -53,6 +53,23 @@ const topLevelSectionTypes = [
 ] as const;
 
 const themeVariables: Record<string, Record<string, string>> = {
+  "maroon-gold": {
+    "--maroon": "#5b232d",
+    "--maroon-soft": "#7b3039",
+    "--wine": "#91444e",
+    "--gold": "#caa254",
+    "--gold-light": "#e4d1a1",
+    "--ivory": "#fdf7eb",
+    "--paper": "#fffaf0",
+    "--sage": "#728170",
+    "--sage-light": "#c8cebc",
+    "--ink": "#382326",
+    "--theme-deep": "#2c0e13",
+    "--theme-rich": "#50151d",
+    "--theme-mid": "#722a35",
+    "--theme-cream": "#fff5dc",
+    "--theme-border": "#e4c880",
+  },
   "blue-gold": {
     "--maroon": "#1e40af",
     "--maroon-soft": "#3b5fc0",
@@ -64,6 +81,11 @@ const themeVariables: Record<string, Record<string, string>> = {
     "--sage": "#64748b",
     "--sage-light": "#cbd5e1",
     "--ink": "#1e293b",
+    "--theme-deep": "#102452",
+    "--theme-rich": "#19357a",
+    "--theme-mid": "#466bbd",
+    "--theme-cream": "#f5f8ff",
+    "--theme-border": "#d97706",
   },
   "ivory-gold": {
     "--maroon": "#66502d",
@@ -76,6 +98,11 @@ const themeVariables: Record<string, Record<string, string>> = {
     "--sage": "#7e7a61",
     "--sage-light": "#d9d4bd",
     "--ink": "#443c2d",
+    "--theme-deep": "#3e321d",
+    "--theme-rich": "#5d4828",
+    "--theme-mid": "#9b7c43",
+    "--theme-cream": "#fff9ec",
+    "--theme-border": "#bb923f",
   },
   "sage-gold": {
     "--maroon": "#3f594e",
@@ -88,6 +115,11 @@ const themeVariables: Record<string, Record<string, string>> = {
     "--sage": "#4d665b",
     "--sage-light": "#cbd6c8",
     "--ink": "#33453b",
+    "--theme-deep": "#20372c",
+    "--theme-rich": "#314b3b",
+    "--theme-mid": "#6f8778",
+    "--theme-cream": "#f5faf2",
+    "--theme-border": "#c29c4d",
   },
 };
 
@@ -496,15 +528,20 @@ export function applyWeddingTemplateState(sections: WeddingPreviewSection[], the
     const root = document.documentElement;
     if (settings.customColors.primary) {
       root.style.setProperty("--maroon", settings.customColors.primary);
-      root.style.setProperty("--maroon-soft", settings.customColors.primary);
-      root.style.setProperty("--wine", settings.customColors.primary);
+      root.style.setProperty("--maroon-soft", `color-mix(in srgb, ${settings.customColors.primary} 72%, white)`);
+      root.style.setProperty("--wine", `color-mix(in srgb, ${settings.customColors.primary} 82%, black)`);
+      root.style.setProperty("--theme-deep", `color-mix(in srgb, ${settings.customColors.primary} 60%, black)`);
+      root.style.setProperty("--theme-rich", `color-mix(in srgb, ${settings.customColors.primary} 76%, black)`);
+      root.style.setProperty("--theme-mid", `color-mix(in srgb, ${settings.customColors.primary} 72%, white)`);
     }
     if (settings.customColors.accent) {
       root.style.setProperty("--gold", settings.customColors.accent);
+      root.style.setProperty("--theme-border", settings.customColors.accent);
     }
     if (settings.customColors.background) {
       root.style.setProperty("--ivory", settings.customColors.background);
       root.style.setProperty("--paper", settings.customColors.background);
+      root.style.setProperty("--theme-cream", `color-mix(in srgb, ${settings.customColors.background} 88%, white)`);
     }
   }
   applyTopLevelOrder(sections);

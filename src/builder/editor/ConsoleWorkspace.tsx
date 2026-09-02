@@ -3,7 +3,7 @@
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, ChevronDown, Copy, ExternalLink, Eye, FolderOpen, GripVertical, ImagePlus, LayoutPanelTop, Library, LoaderCircle, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, Plus, Redo2, RotateCw, Save, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, Eye, FolderOpen, GripVertical, ImagePlus, LayoutPanelTop, Library, LoaderCircle, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, PanelRightClose, PanelRightOpen, Plus, Redo2, RotateCw, Save, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useCallback, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { TemplateKit, TemplateSection } from "@/templates/contracts";
 import { getTemplateRuntime } from "@/templates/runtime-registry";
@@ -161,6 +161,7 @@ export function ConsoleWorkspace({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [inspectorWidth, setInspectorWidth] = useState(340);
+  const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
   const [isInspectorResizing, setIsInspectorResizing] = useState(false);
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [frameMode, setFrameMode] = useState<"desktop" | "ios" | "android" | "clean">("ios");
@@ -391,12 +392,22 @@ export function ConsoleWorkspace({
 
   useEffect(() => {
     const savedWidth = Number(window.localStorage.getItem(`undangan-console:inspector-width:${template.code}`));
-    if (!Number.isFinite(savedWidth) || savedWidth < 280 || savedWidth > 620) return;
-    const frame = window.requestAnimationFrame(() => {
+    if (Number.isFinite(savedWidth) && savedWidth >= 280 && savedWidth <= 620) {
       inspectorWidthRef.current = savedWidth;
       setInspectorWidth(savedWidth);
+    }
+    const savedCollapsed = window.localStorage.getItem(`undangan-console:inspector-collapsed:${template.code}`);
+    if (savedCollapsed === "true") {
+      setIsInspectorCollapsed(true);
+    }
+  }, [template.code]);
+
+  const toggleInspectorCollapse = useCallback(() => {
+    setIsInspectorCollapsed((prev) => {
+      const next = !prev;
+      window.localStorage.setItem(`undangan-console:inspector-collapsed:${template.code}`, String(next));
+      return next;
     });
-    return () => window.cancelAnimationFrame(frame);
   }, [template.code]);
 
   useEffect(() => {
@@ -884,6 +895,10 @@ export function ConsoleWorkspace({
   function selectEditorSection(section: EditableSection) {
     setSelectedId(section.id);
     setSectionEditorOpen(true);
+    if (isInspectorCollapsed) {
+      setIsInspectorCollapsed(false);
+      window.localStorage.setItem(`undangan-console:inspector-collapsed:${template.code}`, "false");
+    }
     if (!section.enabled) return;
     const navigation: PendingNavigation = { sectionType: section.type, requestId: crypto.randomUUID(), navigationSource: "editor-sidebar" };
     pendingNavigationRef.current = navigation;
@@ -1364,7 +1379,12 @@ export function ConsoleWorkspace({
       </nav>
 
       {view === "editor" && (
-        <div className={`editor-workspace-grid grid min-h-[calc(100vh-64px)] grid-cols-1 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:[overflow-anchor:none] ${isInspectorResizing ? "is-resizing" : ""}`} style={{ "--inspector-width": `${inspectorWidth}px` } as CSSProperties}>
+        <div
+          className={`editor-workspace-grid grid min-h-[calc(100vh-64px)] grid-cols-1 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:[overflow-anchor:none] ${
+            isInspectorResizing ? "is-resizing" : ""
+          } ${isInspectorCollapsed ? "is-inspector-collapsed" : ""}`}
+          style={{ "--inspector-width": isInspectorCollapsed ? "0px" : `${inspectorWidth}px` } as CSSProperties}
+        >
           <aside
             ref={structurePanelRef}
             onPointerMove={(e) => {
@@ -1657,32 +1677,41 @@ export function ConsoleWorkspace({
             </div>
           </section>
 
-          <aside ref={inspectorPanelRef} className="console-scrollbar relative min-w-0 max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain border-t border-slate-200 bg-slate-50 p-3 lg:h-full lg:min-h-0 lg:max-h-none lg:border-t-0 lg:border-l">
-            <div
-              data-inspector-resizer
-              role="separator"
-              aria-label="Ubah lebar sidebar editor"
-              aria-orientation="vertical"
-              aria-valuemin={280}
-              aria-valuemax={620}
-              aria-valuenow={inspectorWidth}
-              tabIndex={0}
-              onPointerDown={startInspectorResize}
-              onPointerMove={moveInspectorResize}
-              onPointerUp={stopInspectorResize}
-              onPointerCancel={stopInspectorResize}
-              onDoubleClick={resetInspectorWidth}
-              onKeyDown={(event) => {
-                if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-                event.preventDefault();
-                const direction = event.key === "ArrowLeft" ? 1 : -1;
-                inspectorWidthRef.current = Math.min(620, Math.max(280, inspectorWidthRef.current + direction * (event.shiftKey ? 40 : 10)));
-                setInspectorWidth(inspectorWidthRef.current);
-                window.localStorage.setItem(`undangan-console:inspector-width:${template.code}`, String(inspectorWidthRef.current));
-              }}
-              className="group absolute -left-1 top-0 z-20 hidden h-full w-2 touch-none cursor-col-resize outline-none lg:block"
-              title="Tarik untuk mengubah lebar · klik dua kali untuk reset"
-            ><span className="absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-slate-200 transition group-hover:w-0.5 group-hover:bg-emerald-500 group-focus:w-0.5 group-focus:bg-emerald-600" /></div>
+          <aside
+            ref={inspectorPanelRef}
+            className={`console-scrollbar relative min-w-0 max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain border-t border-slate-200 bg-slate-50 p-3 lg:h-full lg:min-h-0 lg:max-h-none lg:border-t-0 lg:border-l transition-all duration-200 ${
+              isInspectorCollapsed
+                ? "hidden lg:block lg:overflow-hidden lg:p-0 lg:border-0 lg:opacity-0 lg:pointer-events-none"
+                : "block lg:opacity-100"
+            }`}
+          >
+            {!isInspectorCollapsed && (
+              <div
+                data-inspector-resizer
+                role="separator"
+                aria-label="Ubah lebar sidebar editor"
+                aria-orientation="vertical"
+                aria-valuemin={280}
+                aria-valuemax={620}
+                aria-valuenow={inspectorWidth}
+                tabIndex={0}
+                onPointerDown={startInspectorResize}
+                onPointerMove={moveInspectorResize}
+                onPointerUp={stopInspectorResize}
+                onPointerCancel={stopInspectorResize}
+                onDoubleClick={resetInspectorWidth}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                  event.preventDefault();
+                  const direction = event.key === "ArrowLeft" ? 1 : -1;
+                  inspectorWidthRef.current = Math.min(620, Math.max(280, inspectorWidthRef.current + direction * (event.shiftKey ? 40 : 10)));
+                  setInspectorWidth(inspectorWidthRef.current);
+                  window.localStorage.setItem(`undangan-console:inspector-width:${template.code}`, String(inspectorWidthRef.current));
+                }}
+                className="group absolute -left-1 top-0 z-20 hidden h-full w-2 touch-none cursor-col-resize outline-none lg:block"
+                title="Tarik untuk mengubah lebar · klik dua kali untuk reset"
+              ><span className="absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-slate-200 transition group-hover:w-0.5 group-hover:bg-emerald-500 group-focus:w-0.5 group-focus:bg-emerald-600" /></div>
+            )}
             <div className="space-y-3">
               {/* Quick Actions Card: Full Icon Toolbar (Undo, Redo, Asset Manager, Save) - Sticky Header */}
               <div className="sticky top-0 z-30 flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-[0_8px_24px_rgba(15,23,42,.08)] backdrop-blur-md">
@@ -1750,6 +1779,18 @@ export function ConsoleWorkspace({
                   >
                     {autoSaveStatus === "saving" ? <LoaderCircle size={15} className="animate-spin text-emerald-600" /> : <Save size={15} />}
                   </button>
+
+                  <div className="mx-0.5 h-4 w-px bg-slate-200" />
+
+                  {/* Collapse Sidebar Button */}
+                  <button
+                    type="button"
+                    onClick={toggleInspectorCollapse}
+                    title="Tutup sidebar editor (Collapse ke kanan)"
+                    className="grid h-8 w-8 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 active:scale-95"
+                  >
+                    <PanelRightClose size={15} />
+                  </button>
                 </div>
               </div>
 
@@ -1793,6 +1834,24 @@ export function ConsoleWorkspace({
               </SidebarAccordion>
             </div>
           </aside>
+
+          {/* Floating Expand Tab (When Inspector is Collapsed) */}
+          {isInspectorCollapsed && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsInspectorCollapsed(false);
+                window.localStorage.setItem(`undangan-console:inspector-collapsed:${template.code}`, "false");
+              }}
+              title="Buka panel editor (Klik untuk expand)"
+              className="fixed right-0 top-1/2 z-40 -translate-y-1/2 flex items-center gap-1.5 rounded-l-2xl border border-r-0 border-slate-200 bg-white/95 px-2.5 py-4 text-xs font-bold text-slate-700 shadow-[-4px_6px_24px_rgba(15,23,42,0.14)] backdrop-blur-md hover:bg-emerald-50 hover:text-emerald-700 active:scale-95 transition group cursor-pointer"
+            >
+              <PanelRightOpen size={17} className="text-emerald-600 group-hover:scale-110 transition" />
+              <span className="[writing-mode:vertical-lr] rotate-180 text-[10px] tracking-widest uppercase font-extrabold text-slate-600 group-hover:text-emerald-700">
+                Buka Editor
+              </span>
+            </button>
+          )}
 
           <button type="button" onClick={() => setIsAddOpen(true)} className="editor-add-section-button fixed bottom-6 right-5 z-30 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-3 text-xs font-extrabold text-white shadow-[0_12px_30px_rgba(5,150,105,.35)] transition hover:-translate-y-0.5 hover:bg-emerald-700"><Plus size={17} /> Tambah section</button>
         </div>

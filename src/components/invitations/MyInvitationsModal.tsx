@@ -37,6 +37,12 @@ export type UserDraftItem = {
   updatedAt: string;
   isCollaborator?: boolean;
   collabRole?: string;
+  sharedBy?: {
+    id: string;
+    name: string;
+    email: string | null;
+    avatarUrl: string | null;
+  } | null;
 };
 
 export type PendingInvitationItem = {
@@ -115,19 +121,23 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
     return () => window.cancelAnimationFrame(frame);
   }, [open]);
 
-  const handleAcceptInvite = async (invite: PendingInvitationItem) => {
+  const handleInvitationAction = async (invite: PendingInvitationItem, action: "accept" | "decline") => {
     setProcessingInviteId(invite.id);
     try {
-      // Find token from backend accept or direct endpoint
-      const res = await fetch(`/api/collaboration/invitations`, { cache: "no-store" });
-      const freshData = await res.json();
+      const res = await fetch("/api/collaboration/invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationId: invite.id, action }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal memproses undangan.");
       setPendingInvites((prev) => prev.filter((i) => i.id !== invite.id));
-      await fetchDrafts();
-      setActiveTab("shared");
-      router.push(`/editor/${invite.templateCode}/${invite.invitationId}`);
-      onClose();
-    } catch {
-      alert("Gagal memproses undangan.");
+      if (action === "accept") {
+        router.push(`/editor/${json.templateCode}/${json.draftId}`);
+        onClose();
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Gagal memproses undangan.");
     } finally {
       setProcessingInviteId(null);
     }
@@ -165,7 +175,9 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
         draft.title.toLowerCase().includes(q) ||
         draft.templateName.toLowerCase().includes(q) ||
         draft.templateCode.toLowerCase().includes(q) ||
-        (draft.slug && draft.slug.toLowerCase().includes(q));
+        (draft.slug && draft.slug.toLowerCase().includes(q)) ||
+        (draft.sharedBy?.name && draft.sharedBy.name.toLowerCase().includes(q)) ||
+        (draft.sharedBy?.email && draft.sharedBy.email.toLowerCase().includes(q));
       return matchesStatus && matchesSearch;
     });
   }, [currentTabDrafts, filterStatus, searchQuery]);
@@ -357,7 +369,7 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
                         <button
                           type="button"
                           disabled={processingInviteId === invite.id}
-                          onClick={() => handleAcceptInvite(invite)}
+                          onClick={() => handleInvitationAction(invite, "accept")}
                           className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 active:scale-95 transition disabled:opacity-50"
                         >
                           {processingInviteId === invite.id ? (
@@ -366,6 +378,16 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
                             <Check size={14} />
                           )}
                           <span>Terima & Buka</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={processingInviteId === invite.id}
+                          onClick={() => handleInvitationAction(invite, "decline")}
+                          className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                          title="Tolak undangan"
+                          aria-label="Tolak undangan"
+                        >
+                          <X size={15} />
                         </button>
                       </div>
                     </div>
@@ -512,6 +534,36 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
                           <p className="mt-1 truncate text-[11px] font-medium text-slate-500">
                             {draft.templateName} · <span className="font-mono text-slate-600 font-semibold">{draft.templateCode}</span>
                           </p>
+
+                          {/* Owner / Shared By info for Collaborated Drafts */}
+                          {draft.isCollaborator && (
+                            <div className="mt-2 flex items-center gap-2 rounded-xl bg-indigo-50/80 border border-indigo-200/70 px-2.5 py-1.5 shadow-2xs">
+                              {draft.sharedBy?.avatarUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={draft.sharedBy.avatarUrl}
+                                  alt={draft.sharedBy.name}
+                                  referrerPolicy="no-referrer"
+                                  crossOrigin="anonymous"
+                                  className="h-5 w-5 rounded-full border border-indigo-300 object-cover shrink-0"
+                                />
+                              ) : (
+                                <div className="grid h-5 w-5 place-items-center rounded-full bg-indigo-600 text-[9px] font-extrabold text-white shrink-0">
+                                  {(draft.sharedBy?.name || "P").charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1 flex items-center justify-between gap-1.5">
+                                <p className="truncate text-[11px] text-indigo-950 font-medium">
+                                  Dibagikan oleh <strong className="font-bold text-indigo-950">{draft.sharedBy?.name || "Pemilik"}</strong>
+                                </p>
+                                {draft.collabRole && (
+                                  <span className="rounded-md bg-indigo-100/90 px-1.5 py-0.5 text-[9px] font-extrabold text-indigo-800 uppercase tracking-wider shrink-0">
+                                    {draft.collabRole === "editor" ? "Editor" : "Viewer"}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Last Updated Timestamp */}

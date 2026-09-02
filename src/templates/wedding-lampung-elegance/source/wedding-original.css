@@ -10,6 +10,11 @@
   --sage-light: #c8cebc;
   --ink: #382e2c;
   --muted: #756b66;
+  --theme-deep: #2c0e13;
+  --theme-rich: #50151d;
+  --theme-mid: #722a35;
+  --theme-cream: #fff5dc;
+  --theme-border: #e4c880;
   --font-script: cursive;
   --font-serif: Georgia, serif;
   --font-sans: Arial, sans-serif;
@@ -28,15 +33,15 @@ nextjs-portal {
 
 html {
   scroll-behavior: smooth;
-  background: #251014;
+  background: var(--maroon);
 }
 
 body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(circle at 20% 0%, #5e282e 0, transparent 33%),
-    linear-gradient(110deg, #1d0c0f, #4d2026 48%, #1d0c0f);
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--maroon-soft) 78%, white) 0, transparent 33%),
+    linear-gradient(110deg, color-mix(in srgb, var(--maroon) 82%, black), var(--maroon-soft) 48%, color-mix(in srgb, var(--maroon) 82%, black));
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
@@ -702,7 +707,7 @@ img {
   place-items: center;
   border-radius: 50%;
   color: #fff1c7;
-  background: linear-gradient(145deg, #8c3b43, #50151d);
+  background: linear-gradient(145deg, var(--theme-mid), var(--theme-rich));
   box-shadow: 0 0 0 3px rgba(201, 168, 95, .16), 0 4px 9px rgba(75, 23, 28, .2);
   font-style: normal;
   animation: callout-point-left 1.15s ease-in-out infinite;
@@ -1108,7 +1113,7 @@ img {
   margin: 0 auto 38px;
   overflow: hidden;
   border-radius: 180px 180px 12px 12px;
-  background: #2d1115;
+  background: var(--theme-deep);
   box-shadow: 0 18px 45px rgba(58, 22, 27, .24);
 }
 
@@ -1417,7 +1422,7 @@ img {
   border: 1px solid rgba(201, 168, 95, .58);
   border-radius: 12px;
   color: #fff;
-  background: linear-gradient(135deg, #541d25, #351116);
+  background: linear-gradient(135deg, var(--maroon), var(--theme-deep));
   box-shadow: 0 12px 28px rgba(58, 22, 27, .15);
 }
 
@@ -1479,7 +1484,7 @@ img {
   display: grid;
   place-items: center;
   margin: 0 auto 13px;
-  border: 1px solid #e4c880;
+  border: 1px solid var(--theme-border);
   border-radius: 50%;
   color: var(--maroon);
   background: linear-gradient(145deg, #f1ddaa, #c99f4d);
@@ -1614,7 +1619,7 @@ img {
   border: 1px solid rgba(201, 168, 95, .72);
   border-radius: 12px;
   color: #fff;
-  background: linear-gradient(135deg, #43161d, #2c0e13);
+  background: linear-gradient(135deg, var(--maroon), var(--theme-deep));
   box-shadow: 0 13px 35px rgba(58, 22, 27, .2);
 }
 
@@ -1678,7 +1683,7 @@ img {
   isolation: isolate;
   overflow: hidden;
   color: white;
-  background: #351319;
+  background: var(--theme-deep);
 }
 
 .quote-section>img {
@@ -1950,7 +1955,7 @@ img {
   overflow: hidden;
   border: 1px solid rgba(237, 211, 152, .68);
   border-radius: 5px;
-  background: #260a10;
+  background: var(--theme-deep);
   box-shadow: 0 25px 65px rgba(0, 0, 0, .5), inset 0 0 0 7px rgba(255, 248, 226, .08);
 }
 
@@ -2037,7 +2042,7 @@ img {
   color: #fff;
   background:
     radial-gradient(circle at 0 0, rgba(201, 168, 95, .14), transparent 35%),
-    linear-gradient(150deg, #321116, #561f27 55%, #2b0e13);
+    linear-gradient(150deg, var(--theme-deep), var(--maroon-soft) 55%, var(--theme-rich));
 }
 
 .gift-section::before,
@@ -2363,10 +2368,10 @@ img {
   overflow: hidden;
   margin-top: 2px;
   padding: 12px;
-  border: 1px solid #702b35;
+  border: 1px solid var(--theme-mid);
   border-radius: 99px;
-  color: #fff5dc;
-  background: linear-gradient(135deg, #3e1219, #722a35 56%, #4a151d);
+  color: var(--theme-cream);
+  background: linear-gradient(135deg, var(--theme-rich), var(--theme-mid) 56%, var(--theme-deep));
   box-shadow: 0 11px 25px rgba(80, 25, 32, .22), inset 0 1px rgba(255, 255, 255, .16);
   cursor: pointer;
   font: 700 9px var(--font-sans);
@@ -2591,7 +2596,7 @@ img {
   isolation: isolate;
   color: #fff;
   text-align: center;
-  background: #2c0e13;
+  background: var(--theme-deep);
 }
 
 .closing-section>img {

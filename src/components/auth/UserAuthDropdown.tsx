@@ -31,7 +31,34 @@ export function UserAuthDropdown({
 }: UserAuthDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setPendingInvitationCount(0);
+      return;
+    }
+
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const response = await fetch("/api/collaboration/invitations", { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (!cancelled) setPendingInvitationCount(Array.isArray(payload.invitations) ? payload.invitations.length : 0);
+      } catch {
+        // Badge is supplemental; a failed notification request must not affect auth UI.
+      }
+    };
+
+    void refresh();
+    const interval = window.setInterval(refresh, 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [user?.id]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -132,6 +159,11 @@ export function UserAuthDropdown({
           size={13}
           className={`text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
         />
+        {pendingInvitationCount > 0 && (
+          <span className="absolute -right-1 -top-1 grid min-w-4 h-4 place-items-center rounded-full border-2 border-white bg-rose-500 px-1 text-[9px] font-extrabold leading-none text-white shadow-sm" aria-label={`${pendingInvitationCount} undangan kolaborasi baru`}>
+            {pendingInvitationCount > 9 ? "9+" : pendingInvitationCount}
+          </span>
+        )}
       </button>
 
       {/* Dropdown Menu */}
@@ -176,7 +208,14 @@ export function UserAuthDropdown({
               style={{ fontSize: "12px", fontWeight: 600 }}
             >
               <Layers size={15} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-              <span className="text-[12px] font-semibold text-slate-700 group-hover:text-emerald-800" style={{ fontSize: "12px", fontWeight: 600 }}>Undangan Saya</span>
+              <span className="flex min-w-0 flex-1 items-center justify-between gap-2 text-[12px] font-semibold text-slate-700 group-hover:text-emerald-800" style={{ fontSize: "12px", fontWeight: 600 }}>
+                <span>Undangan Saya</span>
+                {pendingInvitationCount > 0 && (
+                  <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-extrabold text-white group-hover:bg-rose-600">
+                    {pendingInvitationCount > 9 ? "9+" : pendingInvitationCount} baru
+                  </span>
+                )}
+              </span>
             </button>
 
             {/* Undang Kolaborator */}
