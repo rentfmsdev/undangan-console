@@ -19,7 +19,7 @@ export const templateKitSchema = z.object({
   themes: z.array(z.object({
     id: z.string().min(1),
     label: z.string().min(1),
-    colors: z.object({ background: z.string(), surface: z.string(), primary: z.string(), accent: z.string(), text: z.string() }),
+    colors: z.object({ background: z.string(), surface: z.string(), primary: z.string(), accent: z.string(), text: z.string(), dark: z.string(), rich: z.string(), mid: z.string(), cream: z.string(), border: z.string(), muted: z.string() }),
     fonts: z.object({ display: z.string(), heading: z.string(), body: z.string() }),
   })).min(1),
   sections: z.array(z.object({
@@ -30,6 +30,7 @@ export const templateKitSchema = z.object({
     reorderable: z.boolean(),
     maxInstances: z.number().int().positive(),
     fields: z.array(editorFieldSchema).optional(),
+    capabilities: z.object({ backgroundColor: z.boolean().optional(), backgroundImage: z.boolean().optional(), image: z.boolean().optional(), gallery: z.boolean().optional(), map: z.boolean().optional(), textStyle: z.boolean().optional() }).optional(),
     defaultData: z.object({ title: z.string() }).passthrough(),
   })).min(1),
   defaultSections: z.array(z.string().min(1)).min(1),
@@ -75,4 +76,3 @@ export const templateCatalogListSchema = z.array(templateCatalogItemSchema);
 export function validateTemplateCatalog(data: unknown) {
   return templateCatalogListSchema.parse(data);
 }
-

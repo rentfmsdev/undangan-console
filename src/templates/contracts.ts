@@ -1,7 +1,7 @@
 export type TemplateTheme = {
   id: string;
   label: string;
-  colors: { background: string; surface: string; primary: string; accent: string; text: string };
+  colors: { background: string; surface: string; primary: string; accent: string; text: string; dark: string; rich: string; mid: string; cream: string; border: string; muted: string };
   fonts: { display: string; heading: string; body: string };
 };
 
@@ -20,6 +20,7 @@ export type TemplateSection = {
   reorderable: boolean;
   maxInstances: number;
   fields?: TemplateEditorField[];
+  capabilities?: { backgroundColor?: boolean; backgroundImage?: boolean; image?: boolean; gallery?: boolean; map?: boolean; textStyle?: boolean };
   defaultData: { title: string; subtitle?: string; imageLabel?: string; imageUrl?: string; imageUrls?: string[]; backgroundColor?: string; [key: string]: unknown };
 };
 
@@ -60,4 +61,3 @@ export type TemplateCatalogItem = {
   features: string[];
   tags?: string[];
 };
-

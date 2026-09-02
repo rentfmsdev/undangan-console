@@ -1,82 +1,68 @@
-## Standard Registrasi Template (`templates.json`)
+# Template Contract
 
-Untuk mendaftarkan template baru di marketplace / landing page, cukup tambahkan objek baru ke dalam array `src/templates/templates.json`:
+Panduan singkat ini adalah kontrak untuk manusia maupun AI agent saat menambah template undangan: pernikahan, khitanan, aqiqah, ulang tahun, wisuda, dan kategori lain.
 
-```json
-[
-  {
-    "id": "wedding-elegance",
-    "code": "hjydg",
-    "name": "Wedding Elegance",
-    "category": "pernikahan",
-    "categoryLabel": "Pernikahan",
-    "description": "Template pernikahan 2 culture dengan opening envelope, aksen emas mewah, dan audio player.",
-    "price": 50000,
-    "rating": 4.9,
-    "favoriteCount": 248,
-    "releaseDate": "2026-08-30",
-    "status": "available",
-    "covers": [
-      "/thumb/wedding-elegance.png"
-    ],
-    "themeColors": [
-      "#1e40af",
-      "#5b232d",
-      "#78613b",
-      "#4d665b"
-    ],
-    "features": [
-      "Opening Envelope",
-      "Hero Header",
-      "Mempelai",
-      "Rangkaian Acara",
-      "Galeri Foto Lightbox"
-    ],
-    "tags": ["wedding", "pernikahan", "adat", "2 culture", "envelope", "gold"]
-  }
-]
+## Struktur
+
+Setiap template berada di `src/templates/<template-id>/`.
+
+- `manifest.ts` — nama, harga, kategori, section, preset tema, dan data default.
+- `source/` — renderer visual, stylesheet, dan bridge untuk menerima state editor.
+- `normalize-section-state.ts` — normalisasi data draft lama/default.
+- `navigation-adapter.ts` — hubungan klik sidebar, preview, serta bottom navigation.
+- asset template — thumbnail dan dekorasi yang memang khusus template.
+
+Daftarkan metadata marketplace di `templates.json`, manifest di `registry.ts`, dan runtime renderer di `runtime-registry.ts`.
+
+## Contract wajib
+
+1. `code` harus unik dan tepat 5 karakter.
+2. `category` gunakan kategori yang sesuai. Tambahkan kategori baru di `contracts.ts` dan `schema.ts` bila belum ada.
+3. Semua section memiliki `type`, `defaultData`, batas instance, dan field editor yang diperlukan.
+4. Renderer harus memiliki `data-template-scroll-root` serta `data-template-section="<type>"`.
+5. Semua text/foto/editor value dibaca dari state bridge. Jangan membuat teks atau foto pengguna hard-code di renderer.
+6. Semua warna visual harus memakai token tema. Jangan memakai maroon/biru/hijau hard-code untuk background, overlay, button, card, atau navbar.
+
+## Theme token wajib
+
+Setiap preset di manifest harus memiliki semua token berikut:
+
+`background`, `surface`, `primary`, `accent`, `text`, `dark`, `rich`, `mid`, `cream`, `border`, `muted`.
+
+Makna ringkas:
+
+- `primary`, `accent`: warna identitas dan aksen.
+- `background`, `surface`, `cream`: area terang/paper.
+- `dark`, `rich`, `mid`: overlay, section gelap, gradient, navbar, dan seal.
+- `border`, `muted`, `text`: detail, teks sekunder, dan teks utama.
+
+Custom color harus menimpa token turunan di bridge, bukan hanya `primary` saja.
+
+## Capability section
+
+Gunakan `capabilities` bila section mendukung editor khusus:
+
+```ts
+capabilities: {
+  textStyle: true,
+  image: true,
+  gallery: true,
+  backgroundColor: true,
+  backgroundImage: true,
+  map: true,
+}
 ```
 
-### Properti Objek JSON:
-- `id`: Unique identifier template (string).
-- `code`: Kode unik 5 karakter untuk rute editor / builder (misal: `"hjydg"`).
-- `name`: Nama tampilan template.
-- `category`: Kategori internal (`"pernikahan" | "khitanan" | "aqiqah" | "ulang-tahun" | "wisuda"`).
-- `categoryLabel`: Label kategori untuk UI (misal: `"Pernikahan"`).
-- `description`: Ringkasan fitur & deskripsi template.
-- `price`: Harga template dalam Rupiah (angka integer, misal: `50000`).
-- `rating`: Nilai rating (0.0 - 5.0).
-- `favoriteCount`: Jumlah suka / bookmark awal.
-- `releaseDate`: Tanggal rilis format ISO `YYYY-MM-DD`.
-- `status`: `"available"` (siap pakai) atau `"coming-soon"` (segera hadir).
-- `covers`: **Array daftar gambar cover / mockup** (string array). Mendukung multi-cover sehingga kartu template dapat di-slide di landing page.
-- `themeColors`: Array hex color swatch tema yang tersedia.
-- `features`: Array nama fitur / section yang ada di dalam template.
-- `tags`: Tag kata kunci pencarian.
+Hanya aktifkan capability yang benar-benar dipakai section. Ini menjaga sidebar editor tetap relevan untuk template khitanan, wisuda, dan kategori lain.
 
----
+## Checklist agent sebelum selesai
 
-## Checklist Implementasi Template Engine (Full Builder)
+- Tambahkan catalog, manifest, registry, dan runtime.
+- Uji semua preset pada mobile dan desktop.
+- Uji custom primary/accent/background.
+- Uji tambah, sembunyikan, urutkan, dan edit semua section.
+- Uji foto tunggal, gallery, background image, musik, map, dan ucapan jika digunakan.
+- Pastikan klik sidebar dan bottom navigation tidak menggeser halaman editor utama.
+- Jalankan `npm run build`.
 
-1. Daftarkan metadata ke `src/templates/templates.json`.
-2. Buat manifest melalui `defineTemplate(...)` di `src/templates/<template-id>/manifest.ts`.
-3. Sediakan elemen `data-template-scroll-root` dan `data-template-section="<section-type>"`.
-4. Implementasikan `TemplateNavigationAdapter` & bridge `applyState/watchState`.
-5. Daftarkan renderer dan adapter di `runtime-registry.ts`.
-6. Ekspor manifest di `registry.ts`.
-
-## Protokol navigasi
-
-- Editor mengirim `navigate-section` dengan `requestId` dan `navigationSource`.
-- Runtime mengirim `navigation-start`, `active-section`, lalu `navigation-complete`.
-- Wheel/touch pengguna membatalkan animasi dan mengirim `navigation-cancelled`.
-- `active-section` hanya mengubah selection editor. Event ini tidak boleh mengirim navigasi balik.
-
-Gunakan `?debugNavigation=1` pada URL preview untuk melihat active section, status, scroll top, dan request ID.
-
-## Pengujian wajib
-
-- Klik seluruh section sidebar dan pastikan target berada di atas scroll root.
-- Klik seluruh bottom navigation dan pastikan parent `window.scrollY` tetap `0`.
-- Lakukan wheel/touch ketika smooth navigation berlangsung dan pastikan animasi batal tanpa loader terkunci.
-- Uji opening section, section tersembunyi, reorder, Android frame, iOS frame, reload draft, dan halaman published.
+Template baru tidak perlu memiliki section yang sama dengan Wedding Elegance; yang harus sama adalah contract editor, state, tema, dan navigasinya.

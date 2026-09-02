@@ -1587,7 +1587,7 @@ export function ConsoleWorkspace({
                 sectionId: selectedId,
               });
             }}
-            className="console-scrollbar relative min-h-[680px] overflow-y-auto overscroll-contain bg-slate-100 p-5 md:p-8 lg:h-full lg:min-h-0 lg:[overflow-anchor:none]"
+            className="console-scrollbar relative min-h-[680px] overflow-y-auto overscroll-contain overflow-x-hidden bg-slate-100 p-2 sm:p-5 md:p-8 lg:h-full lg:min-h-0 lg:[overflow-anchor:none]"
           >
             <RemoteCursorLayer cursors={presence.remoteCursors} surface="canvas" />
 
@@ -1615,52 +1615,56 @@ export function ConsoleWorkspace({
                 >
                   <ZoomOut size={13} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setZoomScale(1)}
-                  title="Reset Zoom ke 100%"
-                  className="px-1.5 text-[10px] font-bold text-slate-700 hover:text-emerald-600 transition"
-                >
+
+                <span className="min-w-9 text-center text-[10px] font-semibold text-slate-600">
                   {Math.round(zoomScale * 100)}%
-                </button>
+                </span>
+
                 <button
                   type="button"
-                  onClick={() => setZoomScale((z) => Math.min(1.25, Number((z + 0.1).toFixed(2))))}
+                  onClick={() => setZoomScale((z) => Math.min(1.4, Number((z + 0.1).toFixed(2))))}
                   title="Perbesar Kanvas"
                   className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 transition"
                 >
                   <ZoomIn size={13} />
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setZoomScale(1)}
+                  title="Reset Zoom (100%)"
+                  className="inline-flex h-7 px-1.5 items-center justify-center rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-100 transition"
+                >
+                  100%
+                </button>
               </div>
 
-              {/* Right: Viewport selector */}
-              <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-xs">
+              {/* Center/Right: Device Frame Switcher (Only desktop / clean / iOS / Android) */}
+              <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-xs">
                 <button
                   type="button"
                   onClick={() => setFrameMode("desktop")}
-                  className={`inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition ${
-                    frameMode === "desktop"
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                    frameMode === "desktop" ? "bg-slate-900 text-white shadow-xs" : "text-slate-600 hover:bg-slate-100"
                   }`}
-                  title="Viewport desktop"
+                  title="Tampilan Desktop Viewport"
                 >
-                  <Monitor size={12} />
-                  <span>Desktop</span>
+                  <Monitor size={13} />
+                  <span className="hidden sm:inline">Desktop</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setFrameMode("ios")}
-                  className={`inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition ${
-                    frameMode === "ios"
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                    frameMode === "ios" ? "bg-slate-900 text-white shadow-xs" : "text-slate-600 hover:bg-slate-100"
                   }`}
-                  title="Frame iPhone (Dynamic Island)"
+                  title="Tampilan Frame iPhone"
                 >
-                  <Smartphone size={12} />
-                  <span>iOS</span>
+                  <Smartphone size={13} />
+                  <span className="hidden sm:inline">iPhone</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setFrameMode("android")}
@@ -1696,14 +1700,14 @@ export function ConsoleWorkspace({
                 transformOrigin: "top center",
                 transition: "transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)",
               }}
-              className={`relative mx-auto ${frameMode === "desktop" ? "w-full min-w-[768px] max-w-[1100px]" : "w-[390px] max-w-full"} ${
+              className={`relative mx-auto box-border ${frameMode === "desktop" ? "w-full min-w-[768px] max-w-[1100px]" : "w-[390px] max-w-full"} ${
                 frameMode === "desktop"
                   ? "overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_24px_70px_rgba(15,23,42,.16)]"
                   : frameMode === "clean"
                   ? "rounded-2xl border border-slate-300/80 bg-white shadow-xl p-0 overflow-hidden"
                   : frameMode === "ios"
-                  ? "bg-[#171719] p-[9px] shadow-[0_24px_70px_rgba(15,23,42,.2)] rounded-[48px] border-[5px] border-[#323235]"
-                  : "bg-[#171719] p-[9px] shadow-[0_24px_70px_rgba(15,23,42,.2)] rounded-[30px] border-[3px] border-[#424245]"
+                  ? "bg-[#171719] p-[9px] max-sm:p-0 max-sm:border-0 shadow-[0_24px_70px_rgba(15,23,42,.2)] rounded-[48px] max-sm:rounded-2xl border-[5px] border-[#323235]"
+                  : "bg-[#171719] p-[9px] max-sm:p-0 max-sm:border-0 shadow-[0_24px_70px_rgba(15,23,42,.2)] rounded-[30px] max-sm:rounded-2xl border-[3px] border-[#424245]"
               }`}
             >
               {frameMode === "ios" && (
