@@ -1,0 +1,51 @@
+<svg width="180" height="104" viewBox="0 0 180 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="doveFill" x1="34" y1="15" x2="137" y2="91" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.58" stop-color="#FAFAF6"/>
+      <stop offset="1" stop-color="#D9DDD8"/>
+    </linearGradient>
+    <linearGradient id="doveStroke" x1="42" y1="15" x2="145" y2="87" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F5F4EB"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-30%" width="150%" height="170%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#24090D" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <g class="wing wing-top">
+      <path d="M83 50C67 34 57 16 53 4C69 12 83 23 91 38C98 24 109 13 126 6C119 27 108 43 91 55L83 50Z" fill="url(#doveFill)" stroke="url(#doveStroke)" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M89 43C78 29 68 19 58 12M94 40C102 27 111 18 120 12" stroke="#C8CECA" stroke-opacity="0.68" stroke-width="1.3" stroke-linecap="round"/>
+    </g>
+
+    <g class="wing wing-low">
+      <path d="M88 52C73 49 59 51 45 60C61 61 73 65 83 73C101 68 114 57 120 43C107 47 97 50 88 52Z" fill="url(#doveFill)" stroke="url(#doveStroke)" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M82 58C69 56 59 57 50 59M91 61C101 57 109 52 116 47" stroke="#C8CECA" stroke-opacity="0.68" stroke-width="1.2" stroke-linecap="round"/>
+    </g>
+
+    <path d="M85 49C102 43 119 46 133 56C142 62 146 72 143 80C137 73 130 70 121 70C111 79 100 83 86 79C74 75 68 67 70 59C73 54 78 51 85 49Z" fill="url(#doveFill)" stroke="url(#doveStroke)" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M136 58C147 55 157 57 166 63L151 68L140 67L136 58Z" fill="#F1D69C" stroke="#FFF2CA" stroke-width="1.2" stroke-linejoin="round"/>
+    <circle cx="134" cy="55" r="2.2" fill="#491820"/>
+    <circle cx="134.7" cy="54.4" r="0.65" fill="white"/>
+    <path d="M75 70L50 86L64 69L40 73L67 57" fill="url(#doveFill)" stroke="url(#doveStroke)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <style>
+    .wing { transform-box: fill-box; transform-origin: 55% 68%; }
+    .wing-top { animation: flapTop 1.05s ease-in-out infinite; }
+    .wing-low { animation: flapLow 1.05s ease-in-out infinite; }
+    @keyframes flapTop {
+      0%, 100% { transform: rotate(-3deg) scaleY(1); }
+      50% { transform: rotate(8deg) scaleY(.64); }
+    }
+    @keyframes flapLow {
+      0%, 100% { transform: rotate(2deg) scaleY(.78); opacity: .88; }
+      50% { transform: rotate(-7deg) scaleY(1.12); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .wing { animation: none; }
+    }
+  </style>
+</svg>

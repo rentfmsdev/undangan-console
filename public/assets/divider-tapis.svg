@@ -1,0 +1,44 @@
+<svg width="520" height="64" viewBox="0 0 520 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lineGold" x1="0" y1="0" x2="520" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C9A85F" stop-opacity="0"/>
+      <stop offset="0.28" stop-color="#C9A85F"/>
+      <stop offset="0.72" stop-color="#C9A85F"/>
+      <stop offset="1" stop-color="#C9A85F" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="diamondGold" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#F1D792"/>
+      <stop offset="1" stop-color="#B88939"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M0 32H158M362 32H520" stroke="url(#lineGold)" stroke-width="1.5"/>
+  <path d="M37 27L42 32L37 37L32 32L37 27ZM483 27L488 32L483 37L478 32L483 27Z" fill="#718170" fill-opacity="0.65"/>
+
+  <g stroke-linejoin="round">
+    <path d="M168 32L183 17L198 32L183 47L168 32Z" fill="#F7F1E4" stroke="#718170"/>
+    <path d="M176 32L183 25L190 32L183 39L176 32Z" fill="#718170"/>
+
+    <path d="M196 32L213 13L230 32L213 51L196 32Z" fill="#F7F1E4" stroke="#C9A85F" stroke-width="1.2"/>
+    <path d="M204 32L213 22L222 32L213 42L204 32Z" fill="#5A2028"/>
+    <path d="M209 32L213 27L217 32L213 37L209 32Z" fill="url(#diamondGold)"/>
+
+    <path d="M226 32L243 11L260 32L243 53L226 32Z" fill="#F7F1E4" stroke="#5A2028" stroke-width="1.2"/>
+    <path d="M234 32L243 20L252 32L243 44L234 32Z" fill="url(#diamondGold)"/>
+    <path d="M239 32L243 26L247 32L243 38L239 32Z" fill="#718170"/>
+
+    <path d="M260 32L277 11L294 32L277 53L260 32Z" fill="#F7F1E4" stroke="#5A2028" stroke-width="1.2"/>
+    <path d="M268 32L277 20L286 32L277 44L268 32Z" fill="url(#diamondGold)"/>
+    <path d="M273 32L277 26L281 32L277 38L273 32Z" fill="#718170"/>
+
+    <path d="M290 32L307 13L324 32L307 51L290 32Z" fill="#F7F1E4" stroke="#C9A85F" stroke-width="1.2"/>
+    <path d="M298 32L307 22L316 32L307 42L298 32Z" fill="#5A2028"/>
+    <path d="M303 32L307 27L311 32L307 37L303 32Z" fill="url(#diamondGold)"/>
+
+    <path d="M322 32L337 17L352 32L337 47L322 32Z" fill="#F7F1E4" stroke="#718170"/>
+    <path d="M330 32L337 25L344 32L337 39L330 32Z" fill="#718170"/>
+  </g>
+
+  <circle cx="158" cy="32" r="2.5" fill="#C9A85F"/>
+  <circle cx="362" cy="32" r="2.5" fill="#C9A85F"/>
+</svg>

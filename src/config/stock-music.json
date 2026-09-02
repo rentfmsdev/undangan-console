@@ -1,0 +1,47 @@
+[
+  {
+    "id": "stock-easy-on-me",
+    "title": "Easy On Me",
+    "artist": "Adele (Instrumental Cover)",
+    "category": "Romantis",
+    "url": "/assets/audio/easy-on-me.webm",
+    "duration": "3:44",
+    "isDefault": true
+  },
+  {
+    "id": "stock-canon-in-d",
+    "title": "Canon in D Major",
+    "artist": "Johann Pachelbel (Piano & Cello)",
+    "category": "Klasik",
+    "url": "/assets/audio/canon-in-d-pachelbels.webm",
+    "duration": "4:12",
+    "isDefault": false
+  },
+  {
+    "id": "stock-thousand-years",
+    "title": "A Thousand Years",
+    "artist": "Christina Perri (Instrumental)",
+    "category": "Akustik",
+    "url": "/assets/audio/a-thousand-years.mp3",
+    "duration": "4:45",
+    "isDefault": false
+  },
+  {
+    "id": "stock-sampai-jadi-debu",
+    "title": "Sampai Jadi Debu",
+    "artist": "Banda Neira (Piano Melody)",
+    "category": "Romantis",
+    "url": "/assets/audio/easy-on-me.webm",
+    "duration": "3:58",
+    "isDefault": false
+  },
+  {
+    "id": "stock-perfect-duet",
+    "title": "Perfect",
+    "artist": "Ed Sheeran (Romantic Strings)",
+    "category": "Pop Instrumental",
+    "url": "/assets/audio/easy-on-me.webm",
+    "duration": "4:23",
+    "isDefault": false
+  }
+]

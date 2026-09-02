@@ -1,0 +1,45 @@
+[
+  {
+    "id": "wedding-elegance",
+    "code": "hjydg",
+    "name": "Wedding Elegance",
+    "category": "pernikahan",
+    "categoryLabel": "Pernikahan",
+    "description": "Template pernikahan 2 culture dengan opening envelope, aksen emas mewah, dan audio player.",
+    "price": 50000,
+    "rating": 4.9,
+    "favoriteCount": 248,
+    "releaseDate": "2026-08-30",
+    "status": "available",
+    "covers": [
+      "/thumb/wedding-elegance.png"
+    ],
+    "themeColors": [
+      "#1e40af",
+      "#5b232d",
+      "#78613b",
+      "#4d665b"
+    ],
+    "features": [
+      "Opening Envelope",
+      "Hero Header",
+      "Mempelai",
+      "Rangkaian Acara",
+      "Galeri Foto Lightbox",
+      "Cerita Cinta",
+      "Live Streaming",
+      "Amplop & Hadiah Digital",
+      "Buku Tamu & Ucapan",
+      "Doa Penutup"
+    ],
+    "tags": [
+      "wedding",
+      "pernikahan",
+      "adat",
+      "2 culture",
+      "envelope",
+      "gold",
+      "audio"
+    ]
+  }
+]

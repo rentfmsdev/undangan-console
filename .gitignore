@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.next-build-check/
+.next-*-check*/
+.env
+.env.local
+*.log
+*.tsbuildinfo
+.visual/
+.tmp-ui-test/
+public/uploads/
