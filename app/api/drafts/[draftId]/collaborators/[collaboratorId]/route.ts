@@ -5,6 +5,7 @@ import { invitationCollaborators } from "@/db/schema";
 import { getDraftAccess } from "@/modules/drafts/access";
 import { logInvitationActivity } from "@/modules/collaboration/invitation";
 import { broadcastRevokeToUser } from "@/modules/collaboration/server/presence-store";
+import { publishCollaborationRealtimeEvent } from "@/modules/collaboration/server/realtime-events";
 import { z } from "zod";
 
 const updateRoleSchema = z.object({
@@ -63,6 +64,10 @@ export async function PATCH(
     metadata: { targetEmail: collab.email, oldRole: collab.role, newRole: role },
   });
 
+  if (collab.userId) {
+    void publishCollaborationRealtimeEvent({ draftId, userId: collab.userId, role, type: "collaborator.role-changed" });
+  }
+
   return NextResponse.json({ ok: true, role });
 }
 
@@ -116,9 +121,9 @@ export async function DELETE(
 
   if (collab.userId) {
     broadcastRevokeToUser(draftId, collab.userId);
+    void publishCollaborationRealtimeEvent({ draftId, userId: collab.userId, type: "collaborator.revoked" });
   }
 
   return NextResponse.json({ ok: true, revokedId: collaboratorId });
 }
-
 

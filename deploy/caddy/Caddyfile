@@ -1,0 +1,41 @@
+# ==============================================================================
+# Caddy Configuration Template for Undangan Console
+# Otomatis menangani sertifikat SSL Let's Encrypt / ZeroSSL
+# ==============================================================================
+
+console.undangan.co {
+    # Ukuran upload maksimal 20MB
+    request_body {
+        max_size 20MB
+    }
+
+    # 1. Realtime Collaboration WebSocket Gateway
+    handle /collaboration-ws* {
+        reverse_proxy 127.0.0.1:3001 {
+            # Caddy otomatis menangani WebSocket upgrade
+            transport http {
+                response_header_timeout 3600s
+            }
+        }
+    }
+
+    # 2. Next.js Main Web App & APIs
+    handle {
+        reverse_proxy 127.0.0.1:3000
+    }
+
+    # Security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/console_undangan_access.log {
+            roll_size 50mb
+            roll_keep 5
+        }
+    }
+}

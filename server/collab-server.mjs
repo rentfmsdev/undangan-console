@@ -376,4 +376,42 @@ wss.on("connection", async (ws, req) => {
 
 const pingInterval = setInterval(() => wss.clients.forEach((ws) => ws.ping()), 20_000);
 wss.on("close", () => clearInterval(pingInterval));
+
+async function gracefulShutdown(signal) {
+  console.log(`[Collab Server] Received ${signal}, flushing all active rooms before shutdown...`);
+  clearInterval(pingInterval);
+
+  const flushTasks = [];
+  for (const [draftId, room] of rooms.entries()) {
+    if (room.isDirty) {
+      flushTasks.push(
+        flushRoomSnapshot(room, draftId).catch((err) => {
+          console.error(`[Collab Server] Failed to flush room ${draftId} on shutdown:`, err.message);
+        })
+      );
+    }
+  }
+
+  await Promise.all(flushTasks);
+  console.log("[Collab Server] All pending room snapshots successfully flushed to MySQL.");
+
+  wss.close(() => {
+    server.close(() => {
+      dbPool.end().then(() => {
+        console.log("[Collab Server] Database pool closed. Graceful shutdown complete.");
+        process.exit(0);
+      });
+    });
+  });
+
+  // Force exit if hanging beyond 7 seconds
+  setTimeout(() => {
+    console.error("[Collab Server] Forced exit due to shutdown timeout.");
+    process.exit(1);
+  }, 7_000).unref();
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
 server.listen(PORT, () => console.log(`[Collab Server] ws://localhost:${PORT}`));
