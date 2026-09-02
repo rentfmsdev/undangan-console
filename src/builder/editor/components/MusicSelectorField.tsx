@@ -86,7 +86,7 @@ export function MusicSelectorField({
     recommended.forEach((track) => {
       list.push({
         value: track.url,
-        label: `⭐ [${currentCategoryLabel}] ${track.title} — ${track.artist}`,
+        label: `⭐ ${track.title} — ${track.artist}`,
         subtitle: `${track.genre || track.categoryLabel || track.category} · ${track.duration}`,
       });
     });
@@ -95,8 +95,8 @@ export function MusicSelectorField({
     others.forEach((track) => {
       list.push({
         value: track.url,
-        label: `[${track.categoryLabel || track.category}] ${track.title} — ${track.artist}`,
-        subtitle: `${track.genre || ""} · ${track.duration}`,
+        label: `${track.title} — ${track.artist}`,
+        subtitle: `${track.categoryLabel || track.category}${track.genre ? ` · ${track.genre}` : ""} · ${track.duration}`,
       });
     });
 
