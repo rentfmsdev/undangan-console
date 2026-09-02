@@ -503,21 +503,21 @@ Tambahkan correlation ID untuk API request, room connection, dan persistence flu
 
 ### Fase 0 — Stabilkan fondasi
 
-- [ ] Masukkan schema collaborator ke migration Drizzle resmi.
-- [ ] Perbaiki dan build-verifikasi query daftar owned/shared draft.
-- [ ] Buat capability guard terpusat dan audit semua mutation endpoint.
-- [ ] Tambahkan test role `owner/editor/viewer/anonymous`.
-- [ ] Pecah kontrak collaboration dari `ConsoleWorkspace` tanpa mengubah UI.
+- [x] Masukkan schema collaborator ke migration Drizzle resmi.
+- [x] Perbaiki dan build-verifikasi query daftar owned/shared draft.
+- [x] Buat capability guard terpusat dan audit semua mutation endpoint.
+- [x] Tambahkan test role `owner/editor/viewer/anonymous`.
+- [x] Pecah kontrak collaboration dari `ConsoleWorkspace` tanpa mengubah UI.
 
 Kriteria selesai: tidak ada role yang dapat menjalankan aksi di luar matriks permission dan build/lint/test bersih.
 
 ### Fase 1 — Invitation yang aman
 
-- [ ] Migration lifecycle status, hashed token, expiry, dan activity log.
-- [ ] Halaman accept/decline setelah login.
-- [ ] Tab Undangan masuk dan Dibagikan kepada saya.
-- [ ] Update role, revoke, resend, dan email outbox.
-- [ ] Hapus token dari response daftar dan hentikan auto-accept.
+- [x] Migration lifecycle status, hashed token, expiry, dan activity log.
+- [x] Halaman accept/decline setelah login (/collaboration/invite/[token]).
+- [x] Tab Undangan masuk dan Dibagikan kepada saya di modal undangan.
+- [x] Update role, revoke, resend, dan email outbox.
+- [x] Hapus token dari response daftar dan hentikan auto-accept.
 
 Kriteria selesai: undangan hanya diterima secara eksplisit oleh akun dengan email yang tepat.
 

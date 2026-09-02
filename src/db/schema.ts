@@ -131,16 +131,50 @@ export const invitationCollaborators = mysqlTable("invitation_collaborators", {
   userId: char("user_id", { length: 36 }),
   email: varchar("email", { length: 255 }).notNull(),
   role: mysqlEnum("role", ["editor", "viewer"]).notNull().default("editor"),
-  inviteToken: varchar("invite_token", { length: 64 }).notNull(),
-  status: mysqlEnum("status", ["pending", "accepted"]).notNull().default("pending"),
+  inviteTokenHash: varchar("invite_token_hash", { length: 64 }).notNull(),
+  status: mysqlEnum("status", ["pending", "accepted", "declined", "expired", "revoked"]).notNull().default("pending"),
   invitedBy: char("invited_by", { length: 36 }).notNull(),
+  expiresAt: datetime("expires_at"),
+  acceptedAt: datetime("accepted_at"),
+  declinedAt: datetime("declined_at"),
+  revokedAt: datetime("revoked_at"),
+  lastSeenAt: datetime("last_seen_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 }, (table) => [
   uniqueIndex("invitation_collaborators_unique").on(table.invitationId, table.email),
   index("invitation_collaborators_user_id_idx").on(table.userId),
   index("invitation_collaborators_email_idx").on(table.email),
-  index("invitation_collaborators_token_idx").on(table.inviteToken),
+  index("invitation_collaborators_status_idx").on(table.status),
+  index("invitation_collaborators_token_hash_idx").on(table.inviteTokenHash),
 ]);
+
+export const invitationActivityLogs = mysqlTable("invitation_activity_logs", {
+  id: char("id", { length: 36 }).primaryKey(),
+  invitationId: char("invitation_id", { length: 36 }).notNull(),
+  userId: char("user_id", { length: 36 }),
+  action: varchar("action", { length: 64 }).notNull(),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("invitation_activity_logs_invitation_id_idx").on(table.invitationId),
+  index("invitation_activity_logs_action_idx").on(table.action),
+]);
+
+export const emailOutbox = mysqlTable("email_outbox", {
+  id: char("id", { length: 36 }).primaryKey(),
+  type: varchar("type", { length: 64 }).notNull(),
+  recipient: varchar("recipient", { length: 255 }).notNull(),
+  payload: json("payload").notNull(),
+  status: mysqlEnum("status", ["pending", "sent", "failed"]).notNull().default("pending"),
+  attempts: int("attempts").notNull().default(0),
+  lastError: text("last_error"),
+  sentAt: datetime("sent_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("email_outbox_status_idx").on(table.status),
+  index("email_outbox_recipient_idx").on(table.recipient),
+]);
+
 
 

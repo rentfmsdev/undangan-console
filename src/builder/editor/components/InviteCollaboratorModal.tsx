@@ -128,10 +128,54 @@ export function InviteCollaboratorModal({
     }
   }
 
-  // Handle Delete Collaborator
+  // Handle Role Change
+  async function handleChangeRole(collaboratorId: string, newRole: "editor" | "viewer") {
+    if (!draftId) return;
+    try {
+      const res = await fetch(`/api/drafts/${draftId}/collaborators/${collaboratorId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (res.ok) {
+        setCollaborators((prev) =>
+          prev.map((c) => (c.id === collaboratorId ? { ...c, role: newRole } : c))
+        );
+        setSuccess("Peran kolaborator berhasil diperbarui.");
+      } else {
+        const data = await res.json();
+        setError(data.error || "Gagal mengubah peran.");
+      }
+    } catch {
+      setError("Gagal menghubungi server.");
+    }
+  }
+
+  // Handle Resend Invite
+  async function handleResendInvite(collaboratorId: string, email: string) {
+    if (!draftId) return;
+    try {
+      const res = await fetch(`/api/drafts/${draftId}/collaborators/${collaboratorId}/resend`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess(`Undangan untuk ${email} diperbarui! Link: ${data.inviteUrl}`);
+        if (data.inviteUrl) {
+          await navigator.clipboard.writeText(data.inviteUrl);
+        }
+      } else {
+        setError(data.error || "Gagal mengirim ulang undangan.");
+      }
+    } catch {
+      setError("Gagal menghubungi server.");
+    }
+  }
+
+  // Handle Delete / Revoke Collaborator
   async function handleDeleteCollaborator(collaboratorId: string, email: string) {
     if (!draftId) return;
-    if (!window.confirm(`Hapus akses kolaborasi untuk ${email}?`)) return;
+    if (!window.confirm(`Cabut akses kolaborasi untuk ${email}?`)) return;
 
     try {
       const res = await fetch(`/api/drafts/${draftId}/collaborators/${collaboratorId}`, {
@@ -142,7 +186,7 @@ export function InviteCollaboratorModal({
         setSuccess(`Akses untuk ${email} berhasil dicabut.`);
       } else {
         const data = await res.json();
-        setError(data.error || "Gagal menghapus kolaborator.");
+        setError(data.error || "Gagal mencabut akses kolaborator.");
       }
     } catch {
       setError("Gagal menghubungi server.");
@@ -331,7 +375,7 @@ export function InviteCollaboratorModal({
               {collaborators.map((c) => (
                 <div
                   key={c.id}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 hover:border-slate-300 transition"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 hover:border-slate-300 transition"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {c.user?.avatarUrl ? (
@@ -353,22 +397,21 @@ export function InviteCollaboratorModal({
                         <p className="text-xs font-bold text-slate-900 truncate">
                           {c.user ? c.user.name : c.email.split("@")[0]}
                         </p>
-                        <span
-                          className={`rounded-md px-1.5 py-0.5 text-[9px] font-extrabold uppercase ${
-                            c.role === "editor"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-slate-100 text-slate-700"
-                          }`}
-                        >
-                          {c.role === "editor" ? "Editor" : "Viewer"}
-                        </span>
                         {c.status === "accepted" ? (
-                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-600">
+                          <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-extrabold text-emerald-700 border border-emerald-200/60">
                             <UserCheck size={10} /> Aktif
                           </span>
+                        ) : c.status === "declined" ? (
+                          <span className="inline-flex items-center gap-0.5 rounded-md bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold text-rose-700">
+                            Ditolak
+                          </span>
+                        ) : c.status === "revoked" ? (
+                          <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
+                            Dicabut
+                          </span>
                         ) : (
-                          <span className="text-[9px] font-bold text-amber-600">
-                            Menunggu Login
+                          <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 border border-amber-200/60">
+                            Menunggu Konfirmasi
                           </span>
                         )}
                       </div>
@@ -376,16 +419,51 @@ export function InviteCollaboratorModal({
                     </div>
                   </div>
 
-                  {isOwner && (
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteCollaborator(c.id, c.email)}
-                      className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
-                      title="Hapus Akses Kolaborator"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  )}
+                  <div className="flex items-center justify-end gap-1.5 shrink-0 self-end sm:self-center">
+                    {/* Role Selector */}
+                    {isOwner ? (
+                      <select
+                        value={c.role}
+                        onChange={(e) => handleChangeRole(c.id, e.target.value as "editor" | "viewer")}
+                        className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 outline-none transition focus:border-emerald-600"
+                      >
+                        <option value="editor">Editor</option>
+                        <option value="viewer">Viewer</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={`rounded-md px-1.5 py-0.5 text-[9px] font-extrabold uppercase ${
+                          c.role === "editor" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {c.role === "editor" ? "Editor" : "Viewer"}
+                      </span>
+                    )}
+
+                    {/* Resend button if pending or revoked */}
+                    {isOwner && c.status !== "accepted" && (
+                      <button
+                        type="button"
+                        onClick={() => handleResendInvite(c.id, c.email)}
+                        className="rounded-xl border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-50 transition"
+                        title="Kirim ulang undangan dan salin link baru"
+                      >
+                        Kirim Ulang
+                      </button>
+                    )}
+
+                    {/* Revoke button */}
+                    {isOwner && c.status !== "revoked" && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCollaborator(c.id, c.email)}
+                        className="rounded-xl p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                        title="Cabut Akses Kolaborator"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
 

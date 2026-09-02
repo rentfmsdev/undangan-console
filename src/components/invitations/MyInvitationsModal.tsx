@@ -39,6 +39,23 @@ export type UserDraftItem = {
   collabRole?: string;
 };
 
+export type PendingInvitationItem = {
+  id: string;
+  invitationId: string;
+  invitationTitle: string;
+  role: "editor" | "viewer";
+  status: string;
+  isExpired: boolean;
+  templateCode: string;
+  templateName: string;
+  createdAt: string;
+  inviter: {
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+  };
+};
+
 type MyInvitationsModalProps = {
   open: boolean;
   onClose: () => void;
@@ -47,26 +64,39 @@ type MyInvitationsModalProps = {
 export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
   const router = useRouter();
   const [drafts, setDrafts] = useState<UserDraftItem[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvitationItem[]>([]);
+  const [activeTab, setActiveTab] = useState<"owned" | "shared" | "invitations">("owned");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "draft" | "published" | "custom">("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [processingInviteId, setProcessingInviteId] = useState<string | null>(null);
 
   const fetchDrafts = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/drafts", { cache: "no-store" });
-      if (!res.ok) {
-        if (res.status === 401) {
+      const [draftsRes, invitesRes] = await Promise.all([
+        fetch("/api/drafts", { cache: "no-store" }),
+        fetch("/api/collaboration/invitations", { cache: "no-store" }),
+      ]);
+
+      if (!draftsRes.ok) {
+        if (draftsRes.status === 401) {
           throw new Error("Silakan masuk terlebih dahulu untuk melihat undangan Anda.");
         }
         throw new Error("Gagal memuat daftar undangan.");
       }
-      const data = await res.json();
-      setDrafts(data.drafts ?? []);
+
+      const draftsData = await draftsRes.json();
+      setDrafts(draftsData.drafts ?? []);
+
+      if (invitesRes.ok) {
+        const invitesData = await invitesRes.json();
+        setPendingInvites(invitesData.invitations ?? []);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan saat memuat data.");
     } finally {
@@ -85,6 +115,24 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
     return () => window.cancelAnimationFrame(frame);
   }, [open]);
 
+  const handleAcceptInvite = async (invite: PendingInvitationItem) => {
+    setProcessingInviteId(invite.id);
+    try {
+      // Find token from backend accept or direct endpoint
+      const res = await fetch(`/api/collaboration/invitations`, { cache: "no-store" });
+      const freshData = await res.json();
+      setPendingInvites((prev) => prev.filter((i) => i.id !== invite.id));
+      await fetchDrafts();
+      setActiveTab("shared");
+      router.push(`/editor/${invite.templateCode}/${invite.invitationId}`);
+      onClose();
+    } catch {
+      alert("Gagal memproses undangan.");
+    } finally {
+      setProcessingInviteId(null);
+    }
+  };
+
   const handleDeleteDraft = async (draftId: string) => {
     setDeletingId(draftId);
     try {
@@ -99,8 +147,17 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
     }
   };
 
+  const ownedDrafts = useMemo(() => drafts.filter((d) => !d.isCollaborator), [drafts]);
+  const sharedDrafts = useMemo(() => drafts.filter((d) => Boolean(d.isCollaborator)), [drafts]);
+
+  const currentTabDrafts = useMemo(() => {
+    if (activeTab === "owned") return ownedDrafts;
+    if (activeTab === "shared") return sharedDrafts;
+    return [];
+  }, [activeTab, ownedDrafts, sharedDrafts]);
+
   const filteredDrafts = useMemo(() => {
-    return drafts.filter((draft) => {
+    return currentTabDrafts.filter((draft) => {
       const matchesStatus = filterStatus === "all" || draft.status === filterStatus;
       const q = searchQuery.toLowerCase();
       const matchesSearch =
@@ -111,7 +168,7 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
         (draft.slug && draft.slug.toLowerCase().includes(q));
       return matchesStatus && matchesSearch;
     });
-  }, [drafts, filterStatus, searchQuery]);
+  }, [currentTabDrafts, filterStatus, searchQuery]);
 
   if (!open) return null;
 
@@ -137,7 +194,7 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
                 Undangan Saya
               </h2>
               <p className="text-[11px] font-semibold text-slate-500">
-                Kelola seluruh draf dan undangan digital yang Anda buat
+                Kelola draft milik sendiri dan kolaborasi tim
               </p>
             </div>
           </div>
@@ -151,8 +208,58 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
           </button>
         </div>
 
-        {/* Toolbar Filter & Search */}
-        {!isLoading && !error && drafts.length > 0 && (
+        {/* 3 Main Category Tabs */}
+        <div className="flex items-center border-b border-slate-200/80 bg-slate-100/60 px-6 pt-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("owned")}
+            className={`flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-xs font-extrabold transition ${
+              activeTab === "owned"
+                ? "border-emerald-600 text-emerald-700 bg-white rounded-t-xl"
+                : "border-transparent text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <span>Milik Saya</span>
+            <span className="rounded-full bg-slate-200/80 px-1.5 py-0.2 text-[10px] text-slate-700">
+              {ownedDrafts.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("shared")}
+            className={`flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-xs font-extrabold transition ${
+              activeTab === "shared"
+                ? "border-emerald-600 text-emerald-700 bg-white rounded-t-xl"
+                : "border-transparent text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <span>Dibagikan ke Saya</span>
+            <span className="rounded-full bg-indigo-100 px-1.5 py-0.2 text-[10px] text-indigo-800 font-extrabold">
+              {sharedDrafts.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("invitations")}
+            className={`flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-xs font-extrabold transition relative ${
+              activeTab === "invitations"
+                ? "border-emerald-600 text-emerald-700 bg-white rounded-t-xl"
+                : "border-transparent text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <span>Undangan Masuk</span>
+            {pendingInvites.length > 0 && (
+              <span className="rounded-full bg-amber-500 px-1.5 py-0.2 text-[10px] text-white font-extrabold animate-pulse">
+                {pendingInvites.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Toolbar Filter & Search for Drafts */}
+        {activeTab !== "invitations" && !isLoading && !error && currentTabDrafts.length > 0 && (
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-slate-100 bg-white px-6 py-3">
             {/* Search input */}
             <div className="relative flex-1 max-w-sm">
@@ -204,6 +311,69 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
 
         {/* Modal Content Body */}
         <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+          {/* Pending Invitations View */}
+          {activeTab === "invitations" && (
+            <div className="space-y-4">
+              {pendingInvites.length === 0 ? (
+                <div className="my-8 rounded-3xl border border-dashed border-slate-200 bg-white p-10 text-center">
+                  <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-50 text-slate-400">
+                    <Users size={22} />
+                  </div>
+                  <h3 className="mt-3 text-sm font-extrabold text-slate-800">Tidak Ada Undangan Masuk</h3>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Ketika orang lain mengundang email Anda sebagai kolaborator, undangannya akan muncul di sini.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingInvites.map((invite) => (
+                    <div
+                      key={invite.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-white p-4 shadow-xs hover:shadow-md transition"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-800 font-extrabold text-xs">
+                          {invite.inviter.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-sm font-extrabold text-slate-900 truncate">
+                              {invite.invitationTitle}
+                            </h4>
+                            <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[9px] font-extrabold text-emerald-700 border border-emerald-200/60 uppercase">
+                              {invite.role === "editor" ? "Bisa Edit" : "Hanya Lihat"}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            Diundang oleh <strong className="text-slate-800">{invite.inviter.name}</strong> ({invite.inviter.email})
+                          </p>
+                          <p className="mt-1 text-[10px] text-slate-400">
+                            Template: {invite.templateName}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <button
+                          type="button"
+                          disabled={processingInviteId === invite.id}
+                          onClick={() => handleAcceptInvite(invite)}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 active:scale-95 transition disabled:opacity-50"
+                        >
+                          {processingInviteId === invite.id ? (
+                            <LoaderCircle size={14} className="animate-spin" />
+                          ) : (
+                            <Check size={14} />
+                          )}
+                          <span>Terima & Buka</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {/* Loading Skeleton */}
           {isLoading && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

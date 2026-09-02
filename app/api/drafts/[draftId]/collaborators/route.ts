@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { invitationCollaborators, invitations, users } from "@/db/schema";
 import { getDraftAccess } from "@/modules/drafts/access";
+import { generateInviteToken, hashInviteToken, logInvitationActivity, queueOutboxEmail } from "@/modules/collaboration/invitation";
 import { z } from "zod";
 import crypto from "crypto";
 
@@ -38,14 +39,15 @@ export async function GET(
     owner = ownerRecord;
   }
 
-  // Get all collaborators with linked user info
+  // Get all active / pending collaborators (never expose token hashes in GET!)
   const collabRecords = await db
     .select({
       id: invitationCollaborators.id,
       email: invitationCollaborators.email,
       role: invitationCollaborators.role,
       status: invitationCollaborators.status,
-      inviteToken: invitationCollaborators.inviteToken,
+      expiresAt: invitationCollaborators.expiresAt,
+      acceptedAt: invitationCollaborators.acceptedAt,
       createdAt: invitationCollaborators.createdAt,
       userId: invitationCollaborators.userId,
       userName: users.name,
@@ -60,7 +62,8 @@ export async function GET(
     email: c.email,
     role: c.role,
     status: c.status,
-    inviteToken: c.inviteToken,
+    expiresAt: c.expiresAt ? c.expiresAt.toISOString() : null,
+    acceptedAt: c.acceptedAt ? c.acceptedAt.toISOString() : null,
     createdAt: c.createdAt.toISOString(),
     user: c.userId
       ? {
@@ -119,14 +122,17 @@ export async function POST(
     );
   }
 
-  // Check if target user already exists in users table
+  // Check if target user exists in users table
   const [existingUser] = await db
     .select({ id: users.id, name: users.name, email: users.email, avatarUrl: users.avatarUrl })
     .from(users)
     .where(eq(users.email, email))
     .limit(1);
 
-  const inviteToken = crypto.randomBytes(24).toString("hex");
+  // Generate secure raw token (sent only once) & hash for DB storage
+  const rawToken = generateInviteToken();
+  const tokenHash = hashInviteToken(rawToken);
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
   // Check existing collaboration record
   const [existingCollab] = await db
@@ -140,44 +146,70 @@ export async function POST(
     )
     .limit(1);
 
+  const newId = existingCollab ? existingCollab.id : crypto.randomUUID();
+
   if (existingCollab) {
-    // Update existing
     await db
       .update(invitationCollaborators)
       .set({
         role,
+        inviteTokenHash: tokenHash,
+        expiresAt,
+        status: "pending",
         userId: existingUser?.id ?? existingCollab.userId,
-        status: existingUser ? "accepted" : existingCollab.status,
+        declinedAt: null,
+        revokedAt: null,
       })
       .where(eq(invitationCollaborators.id, existingCollab.id));
-
-    return NextResponse.json({
-      ok: true,
-      message: `Peran untuk ${email} diperbarui menjadi ${role}.`,
+  } else {
+    await db.insert(invitationCollaborators).values({
+      id: newId,
+      invitationId: draftId,
+      email,
+      role,
+      inviteTokenHash: tokenHash,
+      status: "pending",
+      expiresAt,
+      userId: existingUser?.id ?? null,
+      invitedBy: access.user.id,
     });
   }
 
-  const newId = crypto.randomUUID();
-  await db.insert(invitationCollaborators).values({
-    id: newId,
+  // Activity Log
+  await logInvitationActivity({
     invitationId: draftId,
-    email,
-    role,
-    inviteToken,
-    userId: existingUser?.id ?? null,
-    status: existingUser ? "accepted" : "pending",
-    invitedBy: access.user.id,
+    userId: access.user.id,
+    action: "invited",
+    metadata: { recipientEmail: email, role, expiresAt: expiresAt.toISOString() },
+  });
+
+  // Email Outbox
+  const origin = new URL(request.url).origin;
+  const inviteUrl = `${origin}/collaboration/invite/${rawToken}`;
+  await queueOutboxEmail({
+    type: "collaboration_invite",
+    recipient: email,
+    payload: {
+      draftTitle: access.draft.title,
+      inviterName: access.user.name,
+      role,
+      inviteUrl,
+      expiresAt: expiresAt.toISOString(),
+    },
   });
 
   return NextResponse.json({
     ok: true,
-    message: `Undangan kolaborasi berhasil dikirim ke ${email}!`,
+    message: `Undangan kolaborasi berhasil dibuat untuk ${email}!`,
+    inviteUrl,
     collaborator: {
       id: newId,
       email,
       role,
-      status: existingUser ? "accepted" : "pending",
+      status: "pending",
+      expiresAt: expiresAt.toISOString(),
       user: existingUser ?? null,
     },
   });
 }
+
