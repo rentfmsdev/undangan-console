@@ -4,15 +4,17 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CollaborationPresence, getDeterministicUserColor } from "../domain/presence";
 
+type CurrentUserProps = {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string | null;
+} | null;
+
 type UsePresenceOptions = {
-  draftId?: string;
+  draftId?: string | null;
   enabled?: boolean;
-  currentUser?: {
-    id: string;
-    name: string;
-    email: string;
-    avatarUrl?: string | null;
-  } | null;
+  currentUser?: CurrentUserProps;
   role?: "owner" | "editor" | "viewer";
   onRevoked?: () => void;
 };
@@ -33,35 +35,58 @@ export function usePresence({
   const isIdleRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
 
+  // Store user & role in stable refs to avoid tearing down WebSocket on re-renders
+  const userRef = useRef(currentUser);
+  userRef.current = currentUser;
+
+  const roleRef = useRef(role);
+  roleRef.current = role;
+
+  const onRevokedRef = useRef(onRevoked);
+  onRevokedRef.current = onRevoked;
+
+  const activeSurfaceRef = useRef<{
+    surface?: "canvas" | "preview" | "left-sidebar" | "right-sidebar";
+    sectionId?: string | null;
+    fieldPath?: string | null;
+  }>({});
+
   // Initialize persistent connectionId per browser tab
   if (!connectionIdRef.current && typeof window !== "undefined") {
-    let saved = window.sessionStorage.getItem(`collab_conn_${draftId}`);
+    let saved = window.sessionStorage.getItem(`collab_conn_${draftId || "default"}`);
     if (!saved) {
       saved = crypto.randomUUID();
-      window.sessionStorage.setItem(`collab_conn_${draftId}`, saved);
+      window.sessionStorage.setItem(`collab_conn_${draftId || "default"}`, saved);
     }
     connectionIdRef.current = saved;
   }
 
-  // Get current user presence payload
-  const getMyPresence = useCallback((state: "active" | "idle" = "active"): CollaborationPresence => {
+  // Construct current presence payload safely
+  const buildCurrentPresence = useCallback((state: "active" | "idle" = "active"): CollaborationPresence => {
+    const user = userRef.current;
     return {
       connectionId: connectionIdRef.current,
-      userId: currentUser?.id ?? "anonymous",
-      name: currentUser?.name ?? "User",
-      email: currentUser?.email ?? "",
-      avatarUrl: currentUser?.avatarUrl ?? null,
-      color: currentUser ? getDeterministicUserColor(currentUser.id) : "#10B981",
-      role,
+      userId: user?.id ?? "anonymous",
+      name: user?.name ?? "User",
+      email: user?.email ?? "",
+      avatarUrl: user?.avatarUrl ?? null,
+      color: user ? getDeterministicUserColor(user.id) : "#10B981",
+      role: roleRef.current,
       state,
+      surface: activeSurfaceRef.current.surface,
+      sectionId: activeSurfaceRef.current.sectionId,
+      fieldPath: activeSurfaceRef.current.fieldPath,
       lastSeenAt: Date.now(),
     };
-  }, [currentUser, role]);
+  }, []);
 
-  // WebSocket lifecycle (single persistent connection, 0 HTTP fetch)
+  const currentUserId = currentUser?.id;
+
+  // Single WebSocket connection lifecycle - ONLY re-runs if draftId or currentUserId changes
   useEffect(() => {
-    if (!enabled || !draftId || !currentUser) {
+    if (!enabled || !draftId || !currentUserId) {
       if (socketRef.current) {
+        socketRef.current.onclose = null;
         socketRef.current.close();
         socketRef.current = null;
       }
@@ -70,36 +95,36 @@ export function usePresence({
       return;
     }
 
-    setConnectionStatus("connecting");
     let ws: WebSocket | null = null;
     let reconnectTimeout: NodeJS.Timeout | null = null;
-    let isUnmounted = false;
+    let isDisposed = false;
 
     function connect() {
-      if (isUnmounted) return;
+      if (isDisposed) return;
 
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const host = window.location.hostname || "localhost";
       const wsUrl = `${protocol}//${host}:3001?draftId=${encodeURIComponent(draftId!)}&connectionId=${encodeURIComponent(connectionIdRef.current)}`;
 
       try {
+        setConnectionStatus("connecting");
         ws = new WebSocket(wsUrl);
         socketRef.current = ws;
 
         ws.onopen = () => {
-          if (isUnmounted) return;
+          if (isDisposed) return;
           setConnectionStatus("connected");
 
-          // Send join message with current presence
+          // Send join message
           ws?.send(JSON.stringify({
             type: "join",
             draftId,
-            presence: getMyPresence("active"),
+            presence: buildCurrentPresence("active"),
           }));
         };
 
         ws.onmessage = (event) => {
-          if (isUnmounted) return;
+          if (isDisposed) return;
           try {
             const data = JSON.parse(event.data);
 
@@ -114,10 +139,11 @@ export function usePresence({
             } else if (data.type === "leave") {
               setOnlinePresences((prev) => prev.filter((p) => p.connectionId !== data.connectionId));
             } else if (data.type === "revoked") {
-              if (data.userId === currentUser.id) {
+              if (data.userId === currentUserId) {
                 setConnectionStatus("disconnected");
-                if (onRevoked) onRevoked();
-                else {
+                if (onRevokedRef.current) {
+                  onRevokedRef.current();
+                } else {
                   alert("Akses kolaborasi Anda untuk undangan ini telah dicabut oleh pemilik.");
                   router.push("/");
                 }
@@ -126,50 +152,54 @@ export function usePresence({
           } catch {}
         };
 
-        ws.onclose = () => {
-          if (isUnmounted) return;
+        ws.onclose = (e) => {
+          if (isDisposed) return;
           setConnectionStatus("disconnected");
           socketRef.current = null;
-          // Reconnect after 3 seconds
-          reconnectTimeout = setTimeout(connect, 3000);
+          // Reconnect after 3s only if not cleanly closed
+          if (!isDisposed) {
+            reconnectTimeout = setTimeout(connect, 3000);
+          }
         };
 
         ws.onerror = () => {
-          if (isUnmounted) return;
+          if (isDisposed) return;
           setConnectionStatus("error");
           ws?.close();
         };
       } catch {
-        setConnectionStatus("error");
-        reconnectTimeout = setTimeout(connect, 4000);
+        if (!isDisposed) {
+          setConnectionStatus("error");
+          reconnectTimeout = setTimeout(connect, 4000);
+        }
       }
     }
 
     connect();
 
     return () => {
-      isUnmounted = true;
+      isDisposed = true;
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (ws) {
+        ws.onclose = null; // Prevent reconnect callback on cleanup
         ws.close();
         socketRef.current = null;
       }
     };
-  }, [enabled, draftId, currentUser?.id, getMyPresence, onRevoked, router]);
+  }, [enabled, draftId, currentUserId, buildCurrentPresence, router]);
 
-  // Handle User Activity (Idle Detection without network spam)
+  // Handle User Activity (Idle Detection - sends only on actual state transition)
   useEffect(() => {
-    if (!enabled || !draftId || !currentUser) return;
+    if (!enabled || !draftId || !currentUserId) return;
 
     function handleActivity() {
       lastActivityRef.current = Date.now();
       if (isIdleRef.current) {
         isIdleRef.current = false;
-        // Only notify WebSocket when transitioning from idle -> active
         if (socketRef.current?.readyState === WebSocket.OPEN) {
           socketRef.current.send(JSON.stringify({
             type: "presence.update",
-            presence: getMyPresence("active"),
+            presence: buildCurrentPresence("active"),
           }));
         }
       }
@@ -181,11 +211,10 @@ export function usePresence({
     const idleChecker = setInterval(() => {
       if (!isIdleRef.current && Date.now() - lastActivityRef.current > 30_000) {
         isIdleRef.current = true;
-        // Only notify WebSocket when transitioning from active -> idle
         if (socketRef.current?.readyState === WebSocket.OPEN) {
           socketRef.current.send(JSON.stringify({
             type: "presence.update",
-            presence: getMyPresence("idle"),
+            presence: buildCurrentPresence("idle"),
           }));
         }
       }
@@ -195,25 +224,25 @@ export function usePresence({
       events.forEach((ev) => window.removeEventListener(ev, handleActivity));
       clearInterval(idleChecker);
     };
-  }, [enabled, draftId, currentUser, getMyPresence]);
+  }, [enabled, draftId, currentUserId, buildCurrentPresence]);
 
-  // Method to report active editing section (sent over WebSocket)
+  // Method to report active editing section (sent over WebSocket without re-render)
   const updateActiveSurface = useCallback((params: {
     surface?: "canvas" | "preview" | "left-sidebar" | "right-sidebar";
     sectionId?: string | null;
     fieldPath?: string | null;
   }) => {
+    activeSurfaceRef.current = {
+      ...activeSurfaceRef.current,
+      ...params,
+    };
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      const p = getMyPresence(isIdleRef.current ? "idle" : "active");
       socketRef.current.send(JSON.stringify({
         type: "presence.update",
-        presence: {
-          ...p,
-          ...params,
-        },
+        presence: buildCurrentPresence(isIdleRef.current ? "idle" : "active"),
       }));
     }
-  }, [getMyPresence]);
+  }, [buildCurrentPresence]);
 
   // Deduplicate online users by userId
   const uniqueOnlineUsers = useMemo(() => {

@@ -884,8 +884,8 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
           </div>
         </div>
 
-        {/* Center Tabs: Semibold & Smaller font */}
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center rounded-xl border border-slate-200/80 bg-slate-100/90 p-1 md:flex shadow-xs">
+        {/* Center Navigation Tabs */}
+        <nav className="hidden xl:flex items-center rounded-xl border border-slate-200/80 bg-slate-100/90 p-1 shadow-xs shrink-0">
           {([["editor", "Editor", LayoutPanelTop], ["generator", "Generator", Send], ["wishes", "Ucapan", MessageCircleHeart]] as const).map(([id, label, Icon]) => (
             <button
               key={id}
@@ -904,7 +904,7 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
         </nav>
 
         {/* Right Actions: Presence, User Profile Dropdown, Collaboration & Publish Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {currentUser && draftId && (
             <div className="flex items-center gap-1.5 mr-1">
               <CollaborationStatus status={presence.connectionStatus} onlineCount={presence.onlineCount} />
