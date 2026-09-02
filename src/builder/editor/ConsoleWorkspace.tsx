@@ -402,6 +402,10 @@ export function ConsoleWorkspace({
     const savedCollapsed = window.localStorage.getItem(`undangan-console:inspector-collapsed:${template.code}`);
     if (savedCollapsed === "true") {
       setIsInspectorCollapsed(true);
+    } else if (savedCollapsed === "false") {
+      setIsInspectorCollapsed(false);
+    } else if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setIsInspectorCollapsed(true);
     }
     const savedStructureCollapsed = window.localStorage.getItem(`undangan-console:structure-collapsed:${template.code}`);
     if (savedStructureCollapsed === "true") {
@@ -1272,7 +1276,7 @@ export function ConsoleWorkspace({
 
   return (
     <CollaborativeProvider value={collaborativeContextValue}>
-      <main className={`${view === "editor" ? "min-h-screen lg:fixed lg:inset-0 lg:flex lg:h-dvh lg:max-h-dvh lg:flex-col lg:overflow-hidden" : "min-h-screen"} bg-slate-50 text-slate-900`}>
+      <main className={`${view === "editor" ? "fixed inset-0 flex h-dvh max-h-dvh flex-col overflow-hidden" : "min-h-screen"} bg-slate-50 text-slate-900`}>
       <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur md:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <Link href="/" className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white shadow-sm transition hover:scale-105" title="Kembali ke Beranda">
@@ -1434,7 +1438,7 @@ export function ConsoleWorkspace({
 
       {view === "editor" && (
         <div
-          className={`editor-workspace-grid grid min-h-[calc(100vh-64px)] grid-cols-1 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:[overflow-anchor:none] ${
+          className={`editor-workspace-grid relative flex flex-col flex-1 min-h-0 overflow-hidden lg:grid lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:[overflow-anchor:none] ${
             isInspectorResizing ? "is-resizing" : ""
           } ${isStructureCollapsed ? "is-structure-collapsed" : ""} ${isInspectorCollapsed ? "is-inspector-collapsed" : ""}`}
           style={{ "--inspector-width": isInspectorCollapsed ? "0px" : `${inspectorWidth}px` } as CSSProperties}
@@ -1587,7 +1591,7 @@ export function ConsoleWorkspace({
                 sectionId: selectedId,
               });
             }}
-            className="console-scrollbar relative min-h-[680px] overflow-y-auto overscroll-contain overflow-x-hidden bg-slate-100 p-2 sm:p-5 md:p-8 lg:h-full lg:min-h-0 lg:[overflow-anchor:none]"
+            className="console-scrollbar relative flex-1 min-h-0 overflow-y-auto overscroll-contain overflow-x-hidden bg-slate-100 p-3 sm:p-5 md:p-8 lg:h-full lg:min-h-0 lg:[overflow-anchor:none]"
           >
             <RemoteCursorLayer cursors={presence.remoteCursors} surface="canvas" />
 
@@ -1700,14 +1704,18 @@ export function ConsoleWorkspace({
                 transformOrigin: "top center",
                 transition: "transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)",
               }}
-              className={`relative mx-auto box-border ${frameMode === "desktop" ? "w-full min-w-[768px] max-w-[1100px]" : "w-[390px] max-w-full"} ${
+              className={`relative mx-auto box-border ${
+                frameMode === "desktop"
+                  ? "w-full min-w-[768px] max-w-[1100px]"
+                  : "w-[330px] max-w-[82vw] sm:w-[380px] sm:max-w-full"
+              } ${
                 frameMode === "desktop"
                   ? "overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-[0_24px_70px_rgba(15,23,42,.16)]"
                   : frameMode === "clean"
                   ? "rounded-2xl border border-slate-300/80 bg-white shadow-xl p-0 overflow-hidden"
                   : frameMode === "ios"
-                  ? "bg-[#171719] p-[9px] max-sm:p-0 max-sm:border-0 shadow-[0_24px_70px_rgba(15,23,42,.2)] rounded-[48px] max-sm:rounded-2xl border-[5px] border-[#323235]"
-                  : "bg-[#171719] p-[9px] max-sm:p-0 max-sm:border-0 shadow-[0_24px_70px_rgba(15,23,42,.2)] rounded-[30px] max-sm:rounded-2xl border-[3px] border-[#424245]"
+                  ? "bg-[#171719] p-[9px] max-sm:p-1.5 shadow-[0_24px_70px_rgba(15,23,42,.2)] rounded-[48px] max-sm:rounded-[36px] border-[5px] max-sm:border-[3px] border-[#323235]"
+                  : "bg-[#171719] p-[9px] max-sm:p-1.5 shadow-[0_24px_70px_rgba(15,23,42,.2)] rounded-[30px] max-sm:rounded-[24px] border-[3px] max-sm:border-[2px] border-[#424245]"
               }`}
             >
               {frameMode === "ios" && (
@@ -1765,12 +1773,21 @@ export function ConsoleWorkspace({
             </div>
           </section>
 
+          {/* Backdrop for Mobile Slide-Over Inspector */}
+          {!isInspectorCollapsed && (
+            <div
+              onClick={toggleInspectorCollapse}
+              className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs lg:hidden transition-opacity"
+              aria-label="Tutup editor"
+            />
+          )}
+
           <aside
             ref={inspectorPanelRef}
-            className={`console-scrollbar relative min-w-0 max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain border-t border-slate-200 bg-slate-50 p-3 lg:h-full lg:min-h-0 lg:max-h-none lg:border-t-0 lg:border-l transition-all duration-200 ${
+            className={`console-scrollbar fixed inset-y-0 right-0 z-50 w-[min(400px,88vw)] max-h-none overflow-y-auto overscroll-contain border-l border-slate-200 bg-slate-50 p-3 shadow-2xl transition-transform duration-300 ease-out lg:relative lg:inset-auto lg:z-auto lg:w-auto lg:h-full lg:min-h-0 lg:max-h-none lg:shadow-none lg:transition-all lg:duration-200 ${
               isInspectorCollapsed
-                ? "hidden lg:block lg:overflow-hidden lg:p-0 lg:border-0 lg:opacity-0 lg:pointer-events-none"
-                : "block lg:opacity-100"
+                ? "translate-x-full pointer-events-none lg:translate-x-0 lg:overflow-hidden lg:p-0 lg:border-0 lg:opacity-0"
+                : "translate-x-0 pointer-events-auto lg:opacity-100"
             }`}
           >
             {!isInspectorCollapsed && (
