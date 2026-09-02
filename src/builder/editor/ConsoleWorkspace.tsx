@@ -250,30 +250,6 @@ export function ConsoleWorkspace({ template, templatePrice, requestedDraftId = n
   }, [template.code]);
 
   useEffect(() => {
-    if (view !== "editor") return;
-    const media = window.matchMedia("(min-width: 1024px)");
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    const applyViewportLock = () => {
-      if (media.matches) {
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      } else {
-        document.body.style.overflow = previousBodyOverflow;
-        document.documentElement.style.overflow = previousHtmlOverflow;
-      }
-    };
-    applyViewportLock();
-    media.addEventListener("change", applyViewportLock);
-    return () => {
-      media.removeEventListener("change", applyViewportLock);
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousHtmlOverflow;
-    };
-  }, [view]);
-
-  useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       const panel = structurePanelRef.current;
       const row = Array.from(panel?.querySelectorAll<HTMLElement>("[data-section-id]") ?? []).find((item) => item.dataset.sectionId === selectedId);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { CollaborationPresence } from "@/modules/collaboration/domain/presence";
 import { CollaborationPopover } from "./CollaborationPopover";
 
@@ -16,6 +16,22 @@ export function CollaboratorAvatarStack({
   onOpenInviteModal,
 }: CollaboratorAvatarStackProps) {
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close popover when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setPopoverOpen(false);
+      }
+    }
+    if (popoverOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [popoverOpen]);
 
   if (onlineUsers.length === 0) return null;
 
@@ -23,16 +39,15 @@ export function CollaboratorAvatarStack({
   const remainingCount = onlineUsers.length - visibleUsers.length;
 
   return (
-    <>
+    <div className="relative" ref={containerRef}>
       <button
         type="button"
-        onClick={() => setPopoverOpen(true)}
-        className="group relative flex items-center -space-x-2 rounded-full p-0.5 transition hover:opacity-90 active:scale-95 focus:outline-none"
-        title="Klik untuk melihat kolaborator yang sedang online"
+        onClick={() => setPopoverOpen((prev) => !prev)}
+        className="group relative flex items-center -space-x-1.5 rounded-full p-0.5 transition hover:opacity-90 active:scale-95 focus:outline-none"
+        title="Klik untuk melihat kolaborator online"
         aria-label="Daftar kolaborator online"
       >
         {visibleUsers.map((user, idx) => {
-          const isSelf = user.userId === currentUserId;
           return (
             <div
               key={user.connectionId}
@@ -76,13 +91,17 @@ export function CollaboratorAvatarStack({
         )}
       </button>
 
-      <CollaborationPopover
-        open={popoverOpen}
-        onClose={() => setPopoverOpen(false)}
-        onlineUsers={onlineUsers}
-        onOpenInviteModal={onOpenInviteModal}
-        currentUserId={currentUserId}
-      />
-    </>
+      {popoverOpen && (
+        <CollaborationPopover
+          onClose={() => setPopoverOpen(false)}
+          onlineUsers={onlineUsers}
+          onOpenInviteModal={() => {
+            setPopoverOpen(false);
+            onOpenInviteModal();
+          }}
+          currentUserId={currentUserId}
+        />
+      )}
+    </div>
   );
 }
