@@ -57,6 +57,7 @@ export async function GET(request: Request) {
           eq(invitationCollaborators.userId, user.id),
           eq(invitationCollaborators.email, user.email)
         ),
+        eq(invitationCollaborators.status, "accepted"),
         template ? eq(invitations.templateId, template.id) : undefined
       )
     )
