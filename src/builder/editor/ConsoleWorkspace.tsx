@@ -170,7 +170,7 @@ export function ConsoleWorkspace({
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [frameMode, setFrameMode] = useState<"desktop" | "ios" | "android" | "clean">("ios");
   const [globalEditorOpen, setGlobalEditorOpen] = useState(true);
-  const [sectionEditorOpen, setSectionEditorOpen] = useState(true);
+  const [sectionEditorOpen, setSectionEditorOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<ClientUser | null>(null);
@@ -742,7 +742,7 @@ export function ConsoleWorkspace({
         pendingNavigationRef.current = null;
         setIsPreviewLoading(false);
       }
-      if (event.data.type === "section-selected" || event.data.type === "active-section") {
+      if (event.data.type === "section-selected") {
         const section = sections.find((item) => item.type === event.data.sectionType);
         if (section) {
           const previewPanelScrollTop = previewPanelRef.current?.scrollTop ?? 0;
@@ -757,6 +757,12 @@ export function ConsoleWorkspace({
             document.documentElement.scrollTop = 0;
             document.body.scrollTop = 0;
           });
+        }
+      }
+      if (event.data.type === "active-section") {
+        const section = sections.find((item) => item.type === event.data.sectionType);
+        if (section) {
+          setSelectedId(section.id);
         }
       }
       if (event.data.type === "preview-pointer") {
