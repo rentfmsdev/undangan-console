@@ -10,7 +10,22 @@ dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
 
 const PORT = Number.parseInt(process.env.COLLAB_PORT || "3001", 10);
-const DB_URL = process.env.DATABASE_URL || "mysql://root@127.0.0.1:3306/undangan_console";
+
+function getDatabaseUrl() {
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+  const host = process.env.MYSQL_HOST || "127.0.0.1";
+  const port = process.env.MYSQL_PORT || "3306";
+  const database = process.env.MYSQL_DATABASE || "undangan_console";
+  const user = process.env.MYSQL_USER || "root";
+  const password = process.env.MYSQL_PASSWORD ?? "";
+
+  const auth = password ? `${encodeURIComponent(user)}:${encodeURIComponent(password)}` : encodeURIComponent(user);
+  return `mysql://${auth}@${host}:${port}/${database}`;
+}
+
+const DB_URL = getDatabaseUrl();
 const SESSION_COOKIE_NAME = "undangan_session";
 const MAX_DOCUMENT_UPDATE_BYTES = 1_000_000;
 const VALID_SURFACES = new Set(["canvas", "preview", "left-sidebar", "right-sidebar"]);

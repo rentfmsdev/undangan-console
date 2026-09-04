@@ -1,8 +1,10 @@
 const mysql = require("mysql2/promise");
+const { getDatabaseUrl } = require("./db-config");
 require("dotenv").config({ path: ".env.local" });
+require("dotenv").config({ path: ".env" });
 
 async function run() {
-  const url = process.env.DATABASE_URL || "mysql://root@127.0.0.1:3306/undangan_console";
+  const url = getDatabaseUrl();
   try {
     const conn = await mysql.createConnection(url);
     await conn.query(`

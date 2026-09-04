@@ -1,10 +1,10 @@
 const mysql = require("mysql2/promise");
+const { getDatabaseUrl } = require("./db-config");
 require("dotenv").config({ path: ".env.local" });
+require("dotenv").config({ path: ".env" });
 
 async function migrate() {
-  const conn = await mysql.createConnection(
-    process.env.DATABASE_URL || "mysql://root@127.0.0.1:3306/undangan_console"
-  );
+  const conn = await mysql.createConnection(getDatabaseUrl());
 
   console.log("Migrating Phase 4: creating invitation_collaboration_snapshots table...");
 

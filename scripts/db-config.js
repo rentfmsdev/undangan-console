@@ -1,7 +1,4 @@
-import "dotenv/config";
-import { defineConfig } from "drizzle-kit";
-
-function getDatabaseUrl(): string {
+function getDatabaseUrl() {
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL;
   }
@@ -15,11 +12,4 @@ function getDatabaseUrl(): string {
   return `mysql://${auth}@${host}:${port}/${database}`;
 }
 
-export default defineConfig({
-  dialect: "mysql",
-  schema: "./src/db/schema.ts",
-  out: "./drizzle",
-  dbCredentials: {
-    url: getDatabaseUrl(),
-  },
-});
+module.exports = { getDatabaseUrl };
