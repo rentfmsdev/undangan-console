@@ -14,9 +14,9 @@ x-app: &app
     - .env
   environment:
     NODE_ENV: production
-    MYSQL_HOST: ${MYSQL_HOST:-host.docker.internal}
+    MYSQL_HOST: ${DOCKER_MYSQL_HOST:-host.docker.internal}
     MYSQL_PORT: ${MYSQL_PORT:-3306}
-    DATABASE_URL: mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD}@${MYSQL_HOST:-host.docker.internal}:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-undangan_console}
+    DATABASE_URL: mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD}@${DOCKER_MYSQL_HOST:-host.docker.internal}:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-undangan_console}
     NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
     NEXT_PUBLIC_COLLAB_WS_URL: ${NEXT_PUBLIC_COLLAB_WS_URL}
     COLLAB_PORT: ${COLLAB_PORT}
