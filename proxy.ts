@@ -16,6 +16,7 @@ const reservedRootPaths = new Set([
   "admin",
   "console",
   "dashboard",
+  "undangan-saya",
   "fav.png",
   "favicon.ico",
   "robots.txt",

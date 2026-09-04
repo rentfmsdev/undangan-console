@@ -41,14 +41,19 @@ export async function POST(request: Request) {
     template?.price ??
     0;
 
-  const subdomainFee = mode === "subdomain" ? 50_000 : 0;
-  const totalAmount = templatePrice + subdomainFee;
+  const isTestingPrice = template?.category === "aqiqah" || templatePrice === 1_000;
+  const subdomainFee = mode === "subdomain" ? (isTestingPrice ? 0 : 50_000) : 0;
+  const totalAmount = isTestingPrice && mode === "subdomain" ? 1_000 : templatePrice + subdomainFee;
 
   if (totalAmount <= 0) {
     return NextResponse.json({ error: "Nominal pembayaran tidak valid." }, { status: 400 });
   }
 
   const pgsUrl = process.env.PAYMENT_GATEWAY_SERVICE_URL || "http://localhost:3003";
+  const subMerchantId =
+    process.env.SUB_MERCHANT_ID ||
+    process.env.PIVOT_SUB_MERCHANT_ID ||
+    "dfeee5f7-0e89-4d3d-8ad9-b1fceaaf8ead";
 
   const topupPayload = {
     user_id: access.user.id,
@@ -61,22 +66,31 @@ export async function POST(request: Request) {
     phone: phone || access.user.phone || "081234567890",
     description: `Publish Undangan: ${identifier}`,
     client_app: "undangan",
+    sub_merchant_id: subMerchantId,
+    submerchant_id: subMerchantId,
     metadata: {
       draftId,
       invitationId: draftId,
       mode,
       identifier,
       userId: access.user.id,
+      sub_merchant_id: subMerchantId,
     },
   };
 
   try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "X-Forwarded-Host": "http://127.0.0.1",
+    };
+    if (subMerchantId) {
+      headers["x-submerchant-id"] = subMerchantId;
+      headers["X-Submerchant-Id"] = subMerchantId;
+    }
+
     const pgsResponse = await fetch(`${pgsUrl}/api/proxy/v1/service_payment/payments/topup`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Forwarded-Host": "http://127.0.0.1",
-      },
+      headers,
       body: JSON.stringify(topupPayload),
     });
 

@@ -5,7 +5,7 @@ import { invitations } from "@/db/schema";
 import { getSessionUser } from "@/modules/auth/service";
 import { releaseExpiredPublications } from "@/modules/publishing/retention";
 
-const reservedNames = new Set(["www", "console", "api", "admin", "mail", "app", "assets", "demo", "editor"]);
+const reservedNames = new Set(["www", "console", "api", "admin", "mail", "app", "assets", "demo", "editor", "undangan-saya"]);
 const identifierPattern = /^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/;
 
 export async function GET(request: Request) {

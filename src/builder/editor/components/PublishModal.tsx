@@ -136,8 +136,9 @@ export function PublishModal({
 
   const displayHost = getAppBaseUrl().replace(/^https?:\/\//, "");
   const rootDomain = getRootDomain();
-  const subdomainFee = 50_000;
-  const totalAmount = mode === "subdomain" ? templatePrice + subdomainFee : templatePrice;
+  const isTestingPrice = templatePrice === 1_000;
+  const subdomainFee = isTestingPrice ? 0 : 50_000;
+  const totalAmount = mode === "subdomain" ? (isTestingPrice ? 1_000 : templatePrice + subdomainFee) : templatePrice;
 
   const validPathIdentifier = useMemo(() => pathPattern.test(identifier), [identifier]);
   const validDomainLabel = useMemo(
@@ -636,8 +637,14 @@ export function PublishModal({
                   <AvailabilityNotice state={availability} message={availabilityMessage} />
                   {mode === "subdomain" && (
                     <div className="mt-3 rounded-xl bg-amber-50 px-3 py-3 text-xs leading-5 text-amber-800">
-                      Total {formatRupiah(templatePrice + subdomainFee)} terdiri dari harga template{" "}
-                      {formatRupiah(templatePrice)} dan tambahan layanan subdomain {formatRupiah(subdomainFee)}.
+                      {isTestingPrice ? (
+                        <span>Testing Aqiqah: Total {formatRupiah(totalAmount)} (sudah termasuk subdomain).</span>
+                      ) : (
+                        <span>
+                          Total {formatRupiah(templatePrice + subdomainFee)} terdiri dari harga template{" "}
+                          {formatRupiah(templatePrice)} dan tambahan layanan subdomain {formatRupiah(subdomainFee)}.
+                        </span>
+                      )}
                     </div>
                   )}
                 </>

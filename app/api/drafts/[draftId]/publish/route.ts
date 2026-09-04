@@ -34,8 +34,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ dra
   await releaseExpiredPublications();
   const template = getTemplateById(draft.templateId);
   const templatePrice = getTemplateCatalogItem(draft.templateId)?.price ?? (template ? getTemplateCatalogItem(template.code)?.price : undefined) ?? template?.price ?? 0;
-  const subdomainFee = 50_000;
-  const totalAmount = mode === "subdomain" ? templatePrice + subdomainFee : templatePrice;
+  const isTestingPrice = template?.category === "aqiqah" || templatePrice === 1_000;
+  const subdomainFee = isTestingPrice ? 0 : 50_000;
+  const totalAmount = isTestingPrice && mode === "subdomain" ? 1_000 : mode === "subdomain" ? templatePrice + subdomainFee : templatePrice;
 
   const existingOverrides = (draft.styleOverrides as Record<string, unknown>) || {};
   const isPaid =
