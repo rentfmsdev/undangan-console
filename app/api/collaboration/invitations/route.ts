@@ -96,7 +96,15 @@ export async function POST(request: Request) {
     })
     .from(invitationCollaborators)
     .innerJoin(invitations, eq(invitationCollaborators.invitationId, invitations.id))
-    .where(and(eq(invitationCollaborators.id, invitationId), eq(invitationCollaborators.email, user.email)))
+    .where(
+      and(
+        eq(invitationCollaborators.id, invitationId),
+        or(
+          eq(invitationCollaborators.userId, user.id),
+          eq(invitationCollaborators.email, user.email)
+        )
+      )
+    )
     .limit(1);
 
   if (!collab) return NextResponse.json({ error: "Undangan kolaborasi tidak ditemukan untuk akun ini." }, { status: 404 });
