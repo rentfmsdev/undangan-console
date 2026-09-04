@@ -137,21 +137,40 @@ export function ImageCropModal({
     ctx.restore();
   }
 
-  function handleMouseDown(e: React.MouseEvent) {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+  function getCanvasScale() {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 1, y: 1 };
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: rect.width ? canvas.width / rect.width : 1,
+      y: rect.height ? canvas.height / rect.height : 1,
+    };
   }
 
-  function handleMouseMove(e: React.MouseEvent) {
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    const scale = getCanvasScale();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX * scale.x - offset.x, y: e.clientY * scale.y - offset.y });
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!isDragging) return;
+    e.preventDefault();
+    const scale = getCanvasScale();
     setOffset({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
+      x: e.clientX * scale.x - dragStart.x,
+      y: e.clientY * scale.y - dragStart.y,
     });
   }
 
-  function handleMouseUp() {
+  function handlePointerUp(e?: React.PointerEvent<HTMLDivElement>) {
     setIsDragging(false);
+    if (e?.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
   }
 
   function handleRotate(deg: number) {
@@ -217,7 +236,7 @@ export function ImageCropModal({
 
   return (
     <div
-      className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/75 p-4 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[80] flex items-end bg-slate-950/75 p-0 backdrop-blur-md animate-in fade-in duration-200 sm:grid sm:place-items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Image Editor & Crop"
@@ -225,9 +244,9 @@ export function ImageCropModal({
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
-      <div className="flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-white/40 bg-white shadow-2xl">
+      <div className="flex h-[100dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-white/40 bg-white shadow-2xl sm:h-auto sm:max-h-[92dvh] sm:rounded-3xl">
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/70">
+        <header className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-2.5">
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
               <Crop size={17} />
@@ -251,11 +270,11 @@ export function ImageCropModal({
         {/* Canvas Stage Area */}
         <div
           ref={containerRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          className="relative flex min-h-[380px] flex-1 items-center justify-center bg-slate-900 p-6 select-none cursor-grab active:cursor-grabbing overflow-hidden"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="relative flex min-h-[220px] flex-1 touch-none items-center justify-center overflow-hidden bg-slate-900 p-3 select-none cursor-grab active:cursor-grabbing sm:min-h-[380px] sm:p-6"
         >
           {/* Subtle Grid overlay */}
           <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
@@ -263,16 +282,16 @@ export function ImageCropModal({
           {/* Render Canvas */}
           <canvas
             ref={canvasRef}
-            className="relative z-10 max-h-[360px] max-w-full rounded-xl shadow-2xl border-2 border-emerald-500/80 bg-slate-950/60 transition-transform"
+            className="relative z-10 max-h-[250px] max-w-full rounded-xl border-2 border-emerald-500/80 bg-slate-950/60 shadow-2xl transition-transform sm:max-h-[360px]"
           />
 
-          <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 rounded-full bg-slate-900/85 px-3 py-1 text-[10px] font-semibold text-slate-300 backdrop-blur">
-            <span>Tahan & geser untuk memposisikan gambar</span>
+          <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1.5 rounded-full bg-slate-900/85 px-2.5 py-1 text-[9px] font-semibold text-slate-300 backdrop-blur sm:bottom-3 sm:left-3 sm:px-3 sm:text-[10px]">
+            <span>Geser foto untuk memosisikan</span>
           </div>
         </div>
 
         {/* Toolbar Controls */}
-        <div className="border-t border-slate-100 bg-white p-5 space-y-4">
+        <div className="console-scrollbar max-h-[44dvh] overflow-y-auto space-y-4 border-t border-slate-100 bg-white p-4 sm:max-h-none sm:p-5">
           {/* Aspect Ratio Presets */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs font-bold text-slate-700">Rasio Potongan:</span>
@@ -331,7 +350,7 @@ export function ImageCropModal({
             </div>
 
             {/* Transform buttons */}
-            <div className="flex items-center justify-end gap-1.5">
+            <div className="flex flex-wrap items-center justify-start gap-1.5 sm:justify-end">
               <button
                 type="button"
                 onClick={() => handleRotate(-90)}
@@ -386,7 +405,7 @@ export function ImageCropModal({
           )}
 
           {/* Footer Action Buttons */}
-          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-2">
             <button
               type="button"
               disabled={saving}

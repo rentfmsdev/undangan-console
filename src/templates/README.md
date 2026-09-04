@@ -109,9 +109,22 @@ Contoh renderer:
 
 Gunakan URL share Google Maps yang valid, contohnya `https://maps.app.goo.gl/...` atau `https://www.google.com/maps/search/?api=1&query=...`. URL dibuka dengan `target="_blank"` dan `rel="noreferrer"`.
 
-### Musik global
+### Pengaturan Global (`settings`) vs Data Section
 
-Global editor sudah menyimpan musik pada `settings.musicUrl` dan volume pada `settings.musicVolume` (0 sampai 1). Template yang menawarkan musik wajib menyediakan elemen audio dan bridge:
+Di editor, inspector dibagi menjadi dua tab utama: **Section** (konten per section) dan **Global** (pengaturan menyeluruh). Template developer **DILARANG** menaruh pengaturan tingkat global ke dalam data salah satu section (misal menaruh musik atau container toggle di dalam section Hero).
+
+Pengaturan global wajib selalu berada di object `settings`:
+
+| Key Global Setting | Tipe Data | Deskripsi & Kontrak |
+| --- | --- | --- |
+| `settings.musicUrl` | `string` | URL audio latar undangan. |
+| `settings.musicVolume` | `number` | Volume audio (0.0 sampai 1.0). |
+| `settings.customColors` | `Record<string, string>` | Override token tema (`primary`, `accent`, `background`). |
+| `settings.useContainer` | `boolean` | `true` = terpusat 480px di desktop; `false` = full-width responsif. |
+
+Bridge wajib mengaplikasikan nilai-nilai `settings` ini secara terpisah dari loop per-section.
+
+Contoh penanganan audio global:
 
 ```tsx
 <audio loop preload="metadata">
@@ -122,7 +135,7 @@ Global editor sudah menyimpan musik pada `settings.musicUrl` dan volume pada `se
 ```ts
 const audio = document.querySelector<HTMLAudioElement>("[data-template-scroll-root] audio");
 const source = audio?.querySelector("source");
-if (audio && source && settings.musicUrl) {
+if (audio && source && settings.musicUrl && source.src !== settings.musicUrl) {
   source.src = settings.musicUrl;
   audio.load();
 }
@@ -132,6 +145,11 @@ if (audio && typeof settings.musicVolume === "number") {
 ```
 
 Jangan autoplay sebelum interaksi pengguna. Untuk template dengan envelope, mulai/lanjutkan audio setelah tamu menekan tombol buka. Pergantian musik di editor harus memperbarui `source`, memanggil `audio.load()`, dan tidak membuat error bila browser menolak `play()`.
+
+### Idempotensi Bridge & Serializability Data
+
+1. **Idempotensi Bridge**: State editor dikirimkan secara berkala melalui event `preview-state` (misalnya saat auto-save, sinkronisasi CRDT kolaboratif, atau kustomisasi warna). `template-bridge.ts` WAJIB bersifat idempoten: **tidak boleh me-reload halaman, me-reset audio yang sedang berputar tanpa alasan, atau mereset posisi scroll preview** bila nilai yang masuk tidak berubah.
+2. **Serializability**: Seluruh data pada `section.data` dan `settings` wajib murni JSON primitif (string, number, boolean, array, plain object). Dilarang menyimpan DOM Element, function callback, atau instance `File`/`Blob` di dalam state template.
 
 ## 4. Tema dan warna
 

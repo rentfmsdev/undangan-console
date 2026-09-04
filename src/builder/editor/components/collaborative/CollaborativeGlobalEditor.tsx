@@ -43,62 +43,64 @@ export function CollaborativeGlobalEditor({
   );
 
   return (
-    <div className="min-w-0 space-y-4">
-      {/* 1. Music Selector & Volume Slider */}
-      <MusicSelectorField
-        musicUrl={musicUrl}
-        volume={musicVolume}
-        category={template.category}
-        disabled={disabled || !authResolved || (isLoggedIn && !draftReady)}
-        onChange={(nextUrl) => {
-          if (!authResolved) return;
-          if (!isLoggedIn) {
-            onRequestLogin("Masuk dengan Google untuk memilih musik undangan.");
-            return;
-          }
-          updateGlobalSetting("musicUrl", nextUrl);
-        }}
-        onVolumeChange={(nextVol) => {
-          updateGlobalSetting("musicVolume", nextVol);
-        }}
-        onOpenLibrary={onOpenMusicLibrary}
-      />
+    <div className="w-full min-w-0 max-w-full space-y-3">
+      {/* 1. Music Selector & Volume Slider Card */}
+      <div className="w-full min-w-0 max-w-full rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
+        <MusicSelectorField
+          musicUrl={musicUrl}
+          volume={musicVolume}
+          category={template.category}
+          disabled={disabled || !authResolved || (isLoggedIn && !draftReady)}
+          onChange={(nextUrl) => {
+            if (!authResolved) return;
+            if (!isLoggedIn) {
+              onRequestLogin("Masuk dengan Google untuk memilih musik undangan.");
+              return;
+            }
+            updateGlobalSetting("musicUrl", nextUrl);
+          }}
+          onVolumeChange={(nextVol) => {
+            updateGlobalSetting("musicVolume", nextVol);
+          }}
+          onOpenLibrary={onOpenMusicLibrary}
+        />
 
-      {uploadError && (
-        <p role="alert" className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-semibold leading-4 text-rose-700">
-          {uploadError}
-        </p>
-      )}
+        {uploadError && (
+          <p role="alert" className="mt-2 w-full min-w-0 max-w-full rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-semibold leading-4 text-rose-700">
+            {uploadError}
+          </p>
+        )}
+      </div>
 
-      {/* 2. Fokuskan untuk Layar (Mobile vs Desktop) */}
-      <div className="min-w-0 border-t border-slate-100 pt-4">
-        <div className="mb-2.5 flex min-w-0 items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-700">Fokuskan untuk Layar</p>
-            <p className="text-[10px] text-slate-400">Pilih tata letak saat dibuka di layar komputer/desktop</p>
+      {/* 2. Fokuskan untuk Layar (Mobile vs Desktop) Card */}
+      <div className="w-full min-w-0 max-w-full rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs space-y-2.5">
+        <div className="flex w-full min-w-0 max-w-full items-center justify-between gap-1.5">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold text-slate-800">Fokuskan untuk Layar</p>
+            <p className="truncate text-[10px] text-slate-400">Tata letak saat dibuka di layar komputer/desktop</p>
           </div>
-          <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-emerald-600">Layout</span>
+          <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-emerald-700">Layout</span>
         </div>
-        <div className="grid min-w-0 grid-cols-2 gap-2">
+        <div className="grid w-full min-w-0 max-w-full grid-cols-2 gap-1.5 sm:gap-2">
           <button
             type="button"
             disabled={isViewer}
             onClick={() => updateGlobalSetting("useContainer", true)}
-            className={`flex min-w-0 items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
+            className={`flex w-full min-w-0 max-w-full items-center gap-2 rounded-xl border p-2 text-left transition ${
               useContainer !== false
                 ? "border-emerald-600 bg-emerald-50 text-emerald-950 shadow-xs"
                 : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             } disabled:cursor-not-allowed disabled:opacity-60`}
             title="Tampilan Terpusat Card Mobile 480px di Layar Desktop"
           >
-            <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition ${
+            <div className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg transition ${
               useContainer !== false ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-600"
             }`}>
-              <Smartphone size={16} />
+              <Smartphone size={14} />
             </div>
-            <div className="min-w-0">
-              <b className="block text-xs font-semibold">Mobile</b>
-              <small className={`block text-[9px] truncate ${
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <b className="block truncate text-xs font-semibold">Mobile</b>
+              <small className={`block truncate text-[9px] ${
                 useContainer !== false ? "text-emerald-700 font-medium" : "text-slate-500"
               }`}>
                 Card 480px
@@ -110,21 +112,21 @@ export function CollaborativeGlobalEditor({
             type="button"
             disabled={isViewer}
             onClick={() => updateGlobalSetting("useContainer", false)}
-            className={`flex min-w-0 items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
+            className={`flex w-full min-w-0 max-w-full items-center gap-2 rounded-xl border p-2 text-left transition ${
               useContainer === false
                 ? "border-emerald-600 bg-emerald-50 text-emerald-950 shadow-xs"
                 : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             } disabled:cursor-not-allowed disabled:opacity-60`}
             title="Tampilan Lebar Penuh Responsif di Layar Desktop"
           >
-            <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition ${
+            <div className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg transition ${
               useContainer === false ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-600"
             }`}>
-              <Monitor size={16} />
+              <Monitor size={14} />
             </div>
-            <div className="min-w-0">
-              <b className="block text-xs font-semibold">Desktop</b>
-              <small className={`block text-[9px] truncate ${
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <b className="block truncate text-xs font-semibold">Desktop</b>
+              <small className={`block truncate text-[9px] ${
                 useContainer === false ? "text-emerald-700 font-medium" : "text-slate-500"
               }`}>
                 Lebar Penuh
@@ -134,13 +136,13 @@ export function CollaborativeGlobalEditor({
         </div>
       </div>
 
-      {/* 3. Preset Themes Grid */}
-      <div className="min-w-0 border-t border-slate-100 pt-4">
-        <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
-          <p className="text-xs font-bold text-slate-700">Preset Theme</p>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Global</span>
+      {/* 3. Preset Themes Grid Card */}
+      <div className="w-full min-w-0 max-w-full rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs space-y-2.5">
+        <div className="flex w-full min-w-0 max-w-full items-center justify-between gap-1.5">
+          <p className="truncate text-xs font-bold text-slate-800">Preset Theme</p>
+          <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-emerald-700">Global</span>
         </div>
-        <div className="grid min-w-0 grid-cols-2 gap-2">
+        <div className="grid w-full min-w-0 max-w-full grid-cols-2 gap-1.5 sm:gap-2">
           {template.themes.map((item) => {
             const isSelected = themeId === item.id && !hasCustomColors;
             return (
@@ -152,15 +154,15 @@ export function CollaborativeGlobalEditor({
                   updateGlobalSetting("themeId", item.id);
                   updateGlobalSetting("customColors", {});
                 }}
-                className={`min-w-0 rounded-xl border p-2.5 text-left transition ${
+                className={`w-full min-w-0 max-w-full rounded-xl border p-2 text-left transition ${
                   isSelected
                     ? "border-emerald-600 bg-emerald-50 shadow-sm"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                 } disabled:cursor-not-allowed disabled:opacity-60`}
               >
-                <span className="mb-2 flex gap-1">
+                <span className="mb-1.5 flex gap-1">
                   {[item.colors.primary, item.colors.accent, item.colors.background].map((color) => (
-                    <i key={color} className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ background: color }} />
+                    <i key={color} className="h-3 w-3 rounded-full border border-black/10 shrink-0" style={{ background: color }} />
                   ))}
                 </span>
                 <b className="block truncate text-[10px] text-slate-800">{item.label}</b>
@@ -171,26 +173,26 @@ export function CollaborativeGlobalEditor({
         </div>
       </div>
 
-      {/* 4. Custom Color Palette */}
-      <div className="min-w-0 border-t border-slate-100 pt-4">
-        <div className="mb-2.5 flex min-w-0 items-center justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-700">Kustom Warna Tema</p>
-            <p className="text-[10px] text-slate-400">Sesuaikan dengan tema busana/dekorasi</p>
+      {/* 4. Custom Color Palette Card */}
+      <div className="w-full min-w-0 max-w-full rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs space-y-2.5">
+        <div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-between gap-1.5">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold text-slate-800">Kustom Warna Tema</p>
+            <p className="truncate text-[10px] text-slate-400">Sesuaikan dengan tema busana/dekorasi</p>
           </div>
           {hasCustomColors && (
             <button
               type="button"
               disabled={isViewer}
               onClick={() => updateGlobalSetting("customColors", {})}
-              className="text-[10px] font-bold text-emerald-700 hover:underline disabled:opacity-50"
+              className="shrink-0 text-[10px] font-bold text-emerald-700 hover:underline disabled:opacity-50"
             >
               Reset ke tema
             </button>
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="w-full min-w-0 max-w-full space-y-2">
           <CollaborativeColorInput
             label="Warna Utama (Primary)"
             value={customColors.primary}

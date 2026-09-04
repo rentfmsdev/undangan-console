@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { TemplateKit } from "@/templates/contracts";
 import type { EditableSection } from "@/builder/editor/ConsoleWorkspace";
 import { EditableField, type EditableTextStyle } from "../EditableField";
@@ -25,6 +26,7 @@ export function CollaborativeSectionInspector({
   onOpenBackgroundLibrary,
 }: Props) {
   const { isViewer, updateField, updateFields, updateTextStyle, activeFieldCollaborator, broadcastFieldFocus } = useCollaborative();
+  const [activeTextStyleField, setActiveTextStyleField] = useState<string | null>(null);
 
   if (!selected) {
     return (
@@ -37,7 +39,7 @@ export function CollaborativeSectionInspector({
   const defaultData = selected.defaultData || {};
 
   return (
-    <div>
+    <div className="w-full min-w-0 max-w-full">
       {/* Section Header & Visibility Badge */}
       <div className="mb-4 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5">
         <div className="min-w-0">
@@ -67,6 +69,7 @@ export function CollaborativeSectionInspector({
               : {};
           const style = textStyles[field.key] ?? (legacyFonts[field.key] ? { fontFamily: legacyFonts[field.key] } : {});
           const collaborator = activeFieldCollaborator?.(selected.id, field.key) ?? null;
+          const textStyleFieldId = `${selected.id}:${field.key}`;
 
           return (
             <EditableField
@@ -74,9 +77,11 @@ export function CollaborativeSectionInspector({
               field={field}
               value={value}
               textStyle={style}
+              textStyleOpen={activeTextStyleField === textStyleFieldId}
               activeCollaborator={collaborator}
               onFocus={() => broadcastFieldFocus?.(selected.id, field.key)}
               onBlur={() => broadcastFieldFocus?.(selected.id, null)}
+              onTextStyleOpenChange={(open) => setActiveTextStyleField(open ? textStyleFieldId : null)}
               onValueChange={(nextValue) => {
                 updateField(selected.id, field.key, nextValue);
               }}

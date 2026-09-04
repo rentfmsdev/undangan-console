@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Check, Copy, Pipette, RotateCcw, X } from "lucide-react";
 
 type Props = {
@@ -43,25 +44,13 @@ export function FigmaColorPicker({
 }: Props) {
   const currentColor = value || fallbackValue;
   const [isOpen, setIsOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(placement === "top");
+  const [popoverPosition, setPopoverPosition] = useState<{ left: number; top: number } | null>(null);
   const [hexInput, setHexInput] = useState(currentColor.toUpperCase());
   const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = () => {
-    if (!isOpen && containerRef.current) {
-      if (placement === "top") {
-        setOpenUpward(true);
-      } else if (placement === "bottom") {
-        setOpenUpward(false);
-      } else {
-        const rect = containerRef.current.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        setOpenUpward(spaceBelow < 320 || rect.top > window.innerHeight * 0.45);
-      }
-    } else if (placement === "top") {
-      setOpenUpward(true);
-    }
     setIsOpen((prev) => !prev);
   };
 
@@ -74,7 +63,11 @@ export function FigmaColorPicker({
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node) &&
+        !popoverRef.current?.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -88,6 +81,37 @@ export function FigmaColorPicker({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
+
+  // Render above the scrollable inspector instead of being clipped by it.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const positionPopover = () => {
+      const trigger = containerRef.current?.getBoundingClientRect();
+      const popover = popoverRef.current;
+      if (!trigger || !popover) return;
+
+      const gutter = 12;
+      const popoverWidth = popover.offsetWidth;
+      const popoverHeight = popover.offsetHeight;
+      const openUpward = placement === "top" || (placement === "auto" && window.innerHeight - trigger.bottom < popoverHeight + gutter);
+      const left = Math.min(window.innerWidth - popoverWidth - gutter, Math.max(gutter, trigger.right - popoverWidth));
+      const top = openUpward
+        ? Math.max(gutter, trigger.top - popoverHeight - 8)
+        : Math.min(window.innerHeight - popoverHeight - gutter, trigger.bottom + 8);
+
+      setPopoverPosition({ left: Math.round(left), top: Math.round(top) });
+    };
+
+    const frame = window.requestAnimationFrame(positionPopover);
+    window.addEventListener("resize", positionPopover);
+    window.addEventListener("scroll", positionPopover, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", positionPopover);
+      window.removeEventListener("scroll", positionPopover, true);
+    };
+  }, [isOpen, placement]);
 
   const handleHexInputChange = (text: string) => {
     let clean = text.trim();
@@ -126,7 +150,7 @@ export function FigmaColorPicker({
   const hasEyeDropper = typeof window !== "undefined" && "EyeDropper" in window;
 
   return (
-    <div ref={containerRef} className={`relative min-w-0 max-w-full ${isOpen ? "z-50" : "z-auto"}`}>
+    <div ref={containerRef} className={`relative w-full min-w-0 max-w-full ${isOpen ? "z-50" : "z-auto"}`}>
       {compact ? (
         <button
           type="button"
@@ -144,8 +168,8 @@ export function FigmaColorPicker({
         </button>
       ) : (
         /* Trigger Row (Figma Property Style) */
-        <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white p-2 text-[11px] font-semibold text-slate-700 transition hover:border-slate-300 shadow-2xs">
-          <span className="flex min-w-0 flex-1 items-center gap-2 truncate pr-2">
+        <div className="flex w-full min-w-0 max-w-full items-center justify-between gap-1.5 rounded-xl border border-slate-200/80 bg-white p-2 text-[11px] font-semibold text-slate-700 transition hover:border-slate-300 shadow-2xs">
+          <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate pr-1">
             <span className="truncate">{label}</span>
             {onReset && value && value.toLowerCase() !== fallbackValue.toLowerCase() && (
               <button
@@ -157,7 +181,7 @@ export function FigmaColorPicker({
                   onReset();
                 }}
                 title="Reset ke warna tema bawaan"
-                className="text-[9px] font-bold text-emerald-700 hover:underline"
+                className="shrink-0 text-[9px] font-bold text-emerald-700 hover:underline"
               >
                 Reset
               </button>
@@ -168,24 +192,24 @@ export function FigmaColorPicker({
             type="button"
             disabled={disabled}
             onClick={handleToggle}
-            className="flex min-w-0 shrink items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition active:scale-95 disabled:opacity-50"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition active:scale-95 disabled:opacity-50"
           >
             {/* Swatch circle with checkered border */}
             <span
-              className="h-4 w-4 rounded-full border border-black/15 shadow-2xs shrink-0"
+              className="h-3.5 w-3.5 rounded-full border border-black/15 shadow-2xs shrink-0"
               style={{ backgroundColor: currentColor }}
             />
-            <span className="truncate tracking-wider">{currentColor.toUpperCase()}</span>
+            <span className="tracking-wider">{currentColor.toUpperCase()}</span>
           </button>
         </div>
       )}
 
       {/* Figma-Style Popover Dialog */}
-      {isOpen && (
+      {isOpen && typeof document !== "undefined" && createPortal(
         <div
-          className={`absolute right-0 z-[9999] w-64 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.22)] backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 ${
-            openUpward ? "bottom-full mb-2" : "top-full mt-2"
-          }`}
+          ref={popoverRef}
+          style={popoverPosition ? { left: popoverPosition.left, top: popoverPosition.top } : { visibility: "hidden" }}
+          className="fixed z-[9999] w-64 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.22)] backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Header */}
           <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
@@ -304,7 +328,8 @@ export function FigmaColorPicker({
               </button>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

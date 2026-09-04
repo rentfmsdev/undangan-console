@@ -19,13 +19,13 @@ export function AutoSaveStatusBadge({
 }: Props) {
   if (status === "saving") {
     return (
-      <StatusBadge tone="info" icon={<LoaderCircle size={12} className="animate-spin" />} className={className}>Menyimpan</StatusBadge>
+      <StatusBadge tone="info" icon={<LoaderCircle size={12} className="animate-spin" />} className={className}>Menyimpan perubahan</StatusBadge>
     );
   }
 
   if (status === "unsaved") {
     return (
-      <StatusBadge tone="warning" icon={<span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />} className={className}>Menunggu simpan</StatusBadge>
+      <StatusBadge tone="warning" icon={<span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />} className={className}>Belum tersimpan</StatusBadge>
     );
   }
 
@@ -45,6 +45,8 @@ export function AutoSaveStatusBadge({
 
   // Saved / Idle
   return (
-    <StatusBadge tone={isCloud ? "success" : "neutral"} icon={isCloud ? <Check size={12} /> : <CloudUpload size={12} />} className={className}>{isCloud ? "Tersimpan" : "Tersimpan lokal"}</StatusBadge>
+    <StatusBadge tone={isCloud ? "success" : "neutral"} icon={isCloud ? <Check size={12} /> : <CloudUpload size={12} />} className={className}>
+      {isCloud ? "Tersimpan di cloud" : "Tersimpan di perangkat"}
+    </StatusBadge>
   );
 }

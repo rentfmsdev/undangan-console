@@ -139,7 +139,7 @@ export function MusicSelectorField({
   const hasMusic = Boolean(musicUrl);
 
   return (
-    <div className="min-w-0 space-y-2.5">
+    <div className="w-full min-w-0 max-w-full space-y-2.5">
       <audio
         ref={audioRef}
         onEnded={() => setIsPlaying(false)}
@@ -148,29 +148,29 @@ export function MusicSelectorField({
       />
 
       {/* Label and Status */}
-      <div className="flex min-w-0 items-center justify-between gap-2">
-        <label className="flex min-w-0 items-center gap-2 text-xs font-bold text-slate-700">
-          <Music2 size={14} className="text-emerald-600" />
+      <div className="flex w-full min-w-0 max-w-full items-center justify-between gap-1">
+        <label className="flex min-w-0 flex-1 items-center gap-1.5 text-xs font-bold text-slate-700 overflow-hidden">
+          <Music2 size={14} className="shrink-0 text-emerald-600" />
           <span className="truncate">Musik undangan</span>
         </label>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1">
           <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">
-            <Sparkles size={10} className="text-amber-500" />
-            <span>{currentCategoryLabel}</span>
+            <Sparkles size={9} className="shrink-0 text-amber-500" />
+            <span className="max-w-[55px] sm:max-w-[75px] truncate">{currentCategoryLabel}</span>
           </span>
           <span
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold ${
+            className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold ${
               hasMusic ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
             }`}
           >
             {hasMusic ? (
               <>
-                <Volume2 size={10} />
+                <Volume2 size={9} className="shrink-0" />
                 <span>Aktif</span>
               </>
             ) : (
               <>
-                <VolumeX size={10} />
+                <VolumeX size={9} className="shrink-0" />
                 <span>Mati</span>
               </>
             )}
@@ -179,7 +179,7 @@ export function MusicSelectorField({
       </div>
 
       {/* Custom Reusable Select Dropdown with Integrated Play/Pause Button */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex w-full min-w-0 max-w-full items-center gap-1.5">
         <div className="relative min-w-0 flex-1">
           <EditorSelect
             value={musicUrl}
@@ -208,34 +208,34 @@ export function MusicSelectorField({
 
       {/* Track Info Badge when playing or selected */}
       {selectedTrack && (
-        <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-slate-100/80 border border-slate-200/80 px-2.5 py-1.5 text-[10px] text-slate-600">
-          <span className="min-w-0 truncate">
+        <div className="flex w-full min-w-0 max-w-full items-center justify-between gap-1.5 rounded-xl bg-slate-100/80 border border-slate-200/80 px-2.5 py-1.5 text-[10px] text-slate-600">
+          <span className="min-w-0 flex-1 truncate">
             Genre: <strong className="text-slate-800">{selectedTrack.genre || selectedTrack.categoryLabel}</strong>
           </span>
-          <span className="shrink-0 text-slate-400 font-mono">{selectedTrack.duration}</span>
+          <span className="shrink-0 text-slate-400 font-mono text-[9px]">{selectedTrack.duration}</span>
         </div>
       )}
 
       {/* Volume Adjustment Slider */}
       {hasMusic && (
-        <div className="rounded-2xl border border-slate-200/90 bg-slate-50/90 p-3">
+        <div className="w-full min-w-0 max-w-full rounded-2xl border border-slate-200/90 bg-slate-50/90 p-2.5">
           <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2">
-            <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-bold text-slate-700">
+            <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] font-bold text-slate-700">
               {volume === 0 ? (
-                <VolumeX size={13} className="text-slate-400" />
+                <VolumeX size={13} className="shrink-0 text-slate-400" />
               ) : volume < 0.4 ? (
-                <Volume1 size={13} className="text-emerald-600" />
+                <Volume1 size={13} className="shrink-0 text-emerald-600" />
               ) : (
-                <Volume2 size={13} className="text-emerald-600" />
+                <Volume2 size={13} className="shrink-0 text-emerald-600" />
               )}
               <span className="truncate">Volume Musik</span>
             </span>
-            <span className="rounded-md bg-white border border-slate-200/80 px-1.5 py-0.5 text-[10px] font-mono font-bold text-emerald-800">
+            <span className="shrink-0 rounded-md bg-white border border-slate-200/80 px-1.5 py-0.5 text-[10px] font-mono font-bold text-emerald-800">
               {Math.round((volume ?? 0.6) * 100)}%
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full min-w-0 max-w-full items-center gap-2">
             <input
               type="range"
               min="0"
@@ -259,7 +259,7 @@ export function MusicSelectorField({
         type="button"
         disabled={disabled}
         onClick={onOpenLibrary}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-2.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 hover:border-emerald-300 active:scale-95 disabled:cursor-wait disabled:opacity-55"
+        className="inline-flex w-full min-w-0 max-w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-2.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 hover:border-emerald-300 active:scale-95 disabled:cursor-wait disabled:opacity-55"
       >
         <FolderOpen size={15} />
         <span>Pilih dari Asset Saya</span>

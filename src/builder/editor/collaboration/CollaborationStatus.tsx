@@ -9,7 +9,8 @@ type CollaborationStatusProps = {
 };
 
 export function CollaborationStatus({ status, onlineCount }: CollaborationStatusProps) {
-  if (status === "disconnected") return null;
+  // Presence only earns a spot in the header when a collaborator is active.
+  if (status === "disconnected" || onlineCount < 1) return null;
 
   return (
     <StatusBadge

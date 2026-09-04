@@ -3,7 +3,7 @@
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, ChevronDown, Copy, ExternalLink, Eye, EyeOff, FolderOpen, Gift, GripVertical, Heart, History, ImagePlus, Layers, LayoutPanelTop, Library, LoaderCircle, Mail, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Plus, Redo2, RotateCw, Save, Scroll, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, WifiOff, X, ZoomIn, ZoomOut, CalendarDays } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, Eye, EyeOff, FolderOpen, Gift, GripVertical, Heart, History, ImagePlus, Keyboard, Layers, LayoutPanelTop, Library, LoaderCircle, Mail, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Plus, Redo2, RotateCw, Save, Scroll, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, WifiOff, X, ZoomIn, ZoomOut, CalendarDays } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useCallback, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { TemplateKit, TemplateSection } from "@/templates/contracts";
 import { getTemplateRuntime } from "@/templates/runtime-registry";
@@ -37,6 +37,7 @@ import { SharedDraftState } from "@/modules/collaboration/domain/crdt-mapper";
 import { CollaborativeProvider, type CollaborativeContextValue } from "./components/collaborative/CollaborativeContext";
 import { CollaborativeGlobalEditor } from "./components/collaborative/CollaborativeGlobalEditor";
 import { CollaborativeSectionInspector } from "./components/collaborative/CollaborativeSectionInspector";
+import { TabbedInspectorSidebar, type InspectorSidebarTab } from "./components/TabbedInspectorSidebar";
 import { compressImage } from "@/lib/image-compressor";
 import * as Y from "yjs";
 
@@ -238,18 +239,18 @@ function SidebarAccordion({
   className?: string;
 }) {
   return (
-    <section className={`min-w-0 max-w-full rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,.05)] ${open ? "overflow-visible" : "overflow-hidden"} ${className}`}>
-      <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50" aria-expanded={open}>
-        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl transition ${open ? "bg-emerald-600 text-white shadow-sm" : "bg-emerald-50 text-emerald-600"}`}>{icon}</span>
+    <section style={{ overflowX: "clip" }} className={`w-full min-w-0 max-w-full rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,.05)] ${open ? "overflow-y-visible" : "overflow-hidden"} ${className}`}>
+      <button type="button" onClick={onToggle} className="flex w-full min-w-0 items-center gap-2.5 sm:gap-3 px-3.5 py-3 text-left transition hover:bg-slate-50" aria-expanded={open}>
+        <span className={`grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-xl transition ${open ? "bg-emerald-600 text-white shadow-sm" : "bg-emerald-50 text-emerald-600"}`}>{icon}</span>
         <span className="min-w-0 flex-1">
-          <strong className="block text-xs font-extrabold uppercase tracking-[.12em] text-slate-800">{title}</strong>
+          <strong className="block truncate text-xs font-extrabold uppercase tracking-[.12em] text-slate-800">{title}</strong>
           <small className="mt-0.5 block truncate text-[10px] font-medium text-slate-500">{subtitle}</small>
         </span>
         <ChevronDown size={17} className={`shrink-0 text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
-      <div className={`grid min-w-0 transition-[grid-template-rows] duration-300 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
-        <div className={`min-h-0 ${open ? "overflow-visible" : "overflow-hidden"}`}>
-          <div className="min-w-0 border-t border-slate-100 p-4">{children}</div>
+      <div className={`grid w-full min-w-0 max-w-full transition-[grid-template-rows] duration-300 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+        <div style={open ? { overflowX: "clip" } : undefined} className={`w-full min-w-0 max-w-full min-h-0 ${open ? "overflow-visible" : "overflow-hidden"}`}>
+          <div className="w-full min-w-0 max-w-full border-t border-slate-100 p-2.5 sm:p-3.5">{children}</div>
         </div>
       </div>
     </section>
@@ -306,10 +307,10 @@ export function ConsoleWorkspace({
   const [isOnline, setIsOnline] = useState(true);
   const [showReconnectedBadge, setShowReconnectedBadge] = useState(false);
   const [isInspectorResizing, setIsInspectorResizing] = useState(false);
+  const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [frameMode, setFrameMode] = useState<"desktop" | "ios" | "android" | "clean">("ios");
-  const [globalEditorOpen, setGlobalEditorOpen] = useState(true);
-  const [sectionEditorOpen, setSectionEditorOpen] = useState(false);
+  const [inspectorTab, setInspectorTab] = useState<InspectorSidebarTab>("section");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<ClientUser | null>(null);
@@ -569,26 +570,6 @@ export function ConsoleWorkspace({
     const q = sectionSearchQuery.toLowerCase();
     return sections.filter((s) => s.label.toLowerCase().includes(q) || (s.description ?? "").toLowerCase().includes(q));
   }, [sections, sectionSearchQuery]);
-
-  // Keyboard shortcuts (Ctrl+Z / Ctrl+Y) for isolated undo/redo
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
-        if (e.shiftKey) {
-          e.preventDefault();
-          handleRedo();
-        } else {
-          e.preventDefault();
-          handleUndo();
-        }
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
-        e.preventDefault();
-        handleRedo();
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [canUndo, canRedo, collabDoc, applySharedState]);
 
   useEffect(() => {
     const savedWidth = Number(window.localStorage.getItem(`undangan-console:inspector-width:${template.code}`));
@@ -901,6 +882,98 @@ export function ConsoleWorkspace({
     },
   });
 
+  // Manual save feedback state (allows instant visual feedback even if network save is debounced/skipped)
+  const [manualSaveFeedback, setManualSaveFeedback] = useState<"idle" | "saving" | "saved">("idle");
+  const manualSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const manualSaveResetTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastManualSaveTimeRef = useRef<number>(0);
+
+  const handleManualSave = useCallback(() => {
+    if (isViewer) return;
+    if (!currentUser) {
+      requestLogin("Masuk dengan Google untuk menyimpan draft undangan.");
+      return;
+    }
+    if (!draftReady) {
+      setUploadError("Draft akun sedang disiapkan...");
+      return;
+    }
+
+    // Reset any previous feedback timers
+    if (manualSaveTimerRef.current) clearTimeout(manualSaveTimerRef.current);
+    if (manualSaveResetTimerRef.current) clearTimeout(manualSaveResetTimerRef.current);
+
+    // Trigger instant UI saving state
+    setManualSaveFeedback("saving");
+
+    // Spam protection: only trigger backend network flush if > 1500ms since last attempt
+    const now = Date.now();
+    if (now - lastManualSaveTimeRef.current > 1500) {
+      lastManualSaveTimeRef.current = now;
+      if (!isWsConnected) {
+        void flushAutoSave();
+      }
+    }
+
+    // Smooth UI feedback: "saving" for 750ms, then "saved" for 1600ms, then idle
+    manualSaveTimerRef.current = setTimeout(() => {
+      setManualSaveFeedback("saved");
+      manualSaveResetTimerRef.current = setTimeout(() => {
+        setManualSaveFeedback("idle");
+      }, 1600);
+    }, 750);
+  }, [currentUser, draftReady, flushAutoSave, isViewer, isWsConnected]);
+
+  useEffect(() => {
+    return () => {
+      if (manualSaveTimerRef.current) clearTimeout(manualSaveTimerRef.current);
+      if (manualSaveResetTimerRef.current) clearTimeout(manualSaveResetTimerRef.current);
+    };
+  }, []);
+
+  const isSavingActive = manualSaveFeedback === "saving" || collabDoc.syncStatus === "saving" || autoSaveStatus === "saving";
+  const isSavedFeedback = manualSaveFeedback === "saved";
+  const effectiveAutoSaveStatus = isSavingActive
+    ? "saving"
+    : collabDoc.syncStatus === "offline"
+    ? "unsaved"
+    : autoSaveStatus;
+
+  // App-level shortcuts stay out of text fields so native input undo continues to work.
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsShortcutHelpOpen(false);
+        return;
+      }
+
+      if (!event.ctrlKey && !event.metaKey) return;
+      const key = event.key.toLowerCase();
+
+      if (key === "s") {
+        event.preventDefault();
+        handleManualSave();
+        return;
+      }
+
+      const target = event.target;
+      const isEditingText = target instanceof HTMLElement && Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
+      if (isEditingText) return;
+
+      if (key === "z") {
+        event.preventDefault();
+        if (event.shiftKey) handleRedo();
+        else handleUndo();
+      } else if (key === "y") {
+        event.preventDefault();
+        handleRedo();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [canRedo, canUndo, collabDoc, currentUser, draftReady, handleManualSave, isViewer]);
+
   useEffect(() => {
     if (selectedId && presence.connectionStatus === "connected") {
       presence.updateActiveSurface({ surface: "canvas", sectionId: selectedId });
@@ -933,8 +1006,7 @@ export function ConsoleWorkspace({
         if (section) {
           const previewPanelScrollTop = previewPanelRef.current?.scrollTop ?? 0;
           setSelectedId(section.id);
-          setSectionEditorOpen(true);
-          setGlobalEditorOpen(false);
+          setInspectorTab("section");
           window.requestAnimationFrame(() => {
             // Focus/clicks inside a tall iframe can trigger browser scroll
             // anchoring on its parent. Preserve the editor canvas position and
@@ -1152,8 +1224,7 @@ export function ConsoleWorkspace({
 
   function selectEditorSection(section: EditableSection) {
     setSelectedId(section.id);
-    setSectionEditorOpen(true);
-    setGlobalEditorOpen(false);
+    setInspectorTab("section");
     if (isInspectorCollapsed) {
       setIsInspectorCollapsed(false);
       window.localStorage.setItem(`undangan-console:inspector-collapsed:${template.code}`, "false");
@@ -1484,9 +1555,9 @@ export function ConsoleWorkspace({
                 <>
                   <span className="text-slate-300">·</span>
                   <AutoSaveStatusBadge
-                    status={collabDoc.syncStatus === "saving" ? "saving" : autoSaveStatus}
+                    status={effectiveAutoSaveStatus}
                     isCloud={Boolean(currentUser)}
-                    onRetry={flushAutoSave}
+                    onRetry={handleManualSave}
                   />
                 </>
               )}
@@ -1527,7 +1598,7 @@ export function ConsoleWorkspace({
           )}
 
           {/* Quick Invite Team Button */}
-          {isOwner && (
+          {isOwner && presence.onlineCount === 0 && (
             <button
               type="button"
               onClick={() => {
@@ -1658,7 +1729,9 @@ export function ConsoleWorkspace({
               });
             }}
             className={`console-scrollbar relative overflow-y-auto overscroll-contain bg-white p-4 lg:h-full lg:max-h-none lg:border-r border-slate-200 transition-all duration-200 ${
-              isStructureCollapsed ? "hidden" : "hidden lg:block"
+              isStructureCollapsed
+                ? "hidden lg:block lg:w-0 lg:min-w-0 lg:overflow-hidden lg:border-0 lg:p-0 lg:opacity-0 lg:pointer-events-none"
+                : "hidden lg:block"
             }`}
           >
             <RemoteCursorLayer cursors={presence.remoteCursors} surface="left-sidebar" />
@@ -1806,7 +1879,7 @@ export function ConsoleWorkspace({
             {/* Canvas Toolbar: Zoom & Device Frame Switcher */}
             <div className={`mx-auto mb-3 flex max-w-full items-center justify-between gap-2 ${frameMode === "desktop" ? "w-[min(1100px,100%)]" : "w-[500px]"}`}>
               {/* Left: Refresh & Zoom Controls */}
-              <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-xs">
+              <div role="group" aria-label="Kontrol zoom kanvas" className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-xs">
                 <button
                   type="button"
                   onClick={refreshPreview}
@@ -1819,6 +1892,8 @@ export function ConsoleWorkspace({
 
                 <div className="h-4 w-px bg-slate-200" />
 
+                <span className="pl-1 text-[10px] font-bold uppercase tracking-[.08em] text-slate-400">Zoom</span>
+
                 <button
                   type="button"
                   onClick={() => setZoomScale((z) => Math.max(0.65, Number((z - 0.1).toFixed(2))))}
@@ -1828,9 +1903,14 @@ export function ConsoleWorkspace({
                   <ZoomOut size={13} />
                 </button>
 
-                <span className="min-w-10 text-center text-sm font-semibold text-slate-600">
+                <button
+                  type="button"
+                  onClick={() => setZoomScale(1)}
+                  title="Reset zoom ke 100%"
+                  className="min-w-11 rounded-lg px-1.5 py-1 text-center text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+                >
                   {Math.round(zoomScale * 100)}%
-                </span>
+                </button>
 
                 <button
                   type="button"
@@ -1841,14 +1921,6 @@ export function ConsoleWorkspace({
                   <ZoomIn size={13} />
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setZoomScale(1)}
-                  title="Reset Zoom (100%)"
-                  className="inline-flex h-7 items-center justify-center rounded-lg px-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
-                >
-                  100%
-                </button>
               </div>
 
               {/* Center/Right: Device Frame Switcher (Only desktop / clean / iOS / Android) */}
@@ -1857,7 +1929,7 @@ export function ConsoleWorkspace({
                   type="button"
                   onClick={() => setFrameMode("desktop")}
                   className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition ${
-                    frameMode === "desktop" ? "bg-slate-900 text-white shadow-xs" : "text-slate-600 hover:bg-slate-100"
+                    frameMode === "desktop" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-600 hover:bg-slate-100"
                   }`}
                   title="Tampilan Desktop Viewport"
                 >
@@ -1869,7 +1941,7 @@ export function ConsoleWorkspace({
                   type="button"
                   onClick={() => setFrameMode("ios")}
                   className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition ${
-                    frameMode === "ios" ? "bg-slate-900 text-white shadow-xs" : "text-slate-600 hover:bg-slate-100"
+                    frameMode === "ios" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-600 hover:bg-slate-100"
                   }`}
                   title="Tampilan Frame iPhone"
                 >
@@ -2025,9 +2097,17 @@ export function ConsoleWorkspace({
                 title="Tarik untuk mengubah lebar · klik dua kali untuk reset"
               ><span className="absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-slate-200 transition group-hover:w-0.5 group-hover:bg-emerald-500 group-focus:w-0.5 group-focus:bg-emerald-600" /></div>
             )}
-            <div className="editor-inspector-content min-w-0 space-y-3">
-              {/* Quick Actions Card: Full Icon Toolbar (Undo, Redo, Asset Manager, Save) - Sticky Header */}
-              <div className="sticky top-0 z-30 flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-[0_8px_24px_rgba(15,23,42,.08)] backdrop-blur-md">
+            <div className="editor-inspector-content min-w-0">
+              <TabbedInspectorSidebar
+                activeTab={inspectorTab}
+                onTabChange={(tab) => {
+                  setInspectorTab(tab);
+                  if (inspectorPanelRef.current) {
+                    inspectorPanelRef.current.scrollTop = 0;
+                  }
+                }}
+                toolbar={
+                  <div className="relative flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-[0_8px_24px_rgba(15,23,42,.08)] backdrop-blur-md">
                 <div className="flex items-center gap-1">
                   {/* Undo Button */}
                   <button
@@ -2077,36 +2157,77 @@ export function ConsoleWorkspace({
                       </button>
                     </>
                   )}
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsShortcutHelpOpen((open) => !open)}
+                      title="Pintasan keyboard"
+                      aria-label="Tampilkan pintasan keyboard"
+                      aria-expanded={isShortcutHelpOpen}
+                      className={`grid h-8 w-8 place-items-center rounded-xl transition active:scale-95 ${isShortcutHelpOpen ? "bg-emerald-50 text-emerald-700" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"}`}
+                    >
+                      <Keyboard size={15} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Right: Manual Save Trigger Button */}
-                <div className="flex items-center gap-1">
+                <div className="relative flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (!currentUser) requestLogin("Masuk dengan Google untuk menyimpan draft undangan.");
-                      else if (!draftReady) setUploadError("Draft akun sedang disiapkan...");
-                      else {
-                        void flushAutoSave();
-                      }
-                    }}
+                    onClick={handleManualSave}
                     title={
-                      autoSaveStatus === "saving"
+                      isSavingActive
                         ? "Menyimpan perubahan..."
+                        : isSavedFeedback
+                        ? "Tersimpan di cloud"
                         : autoSaveStatus === "unsaved"
                         ? "Simpan sekarang (Auto-save jeda 1.8s aktif)"
-                        : "Semua perubahan tersimpan"
+                        : "Semua perubahan tersimpan (Klik untuk simpan)"
                     }
+                    aria-label={isSavingActive ? "Menyimpan perubahan" : "Simpan perubahan"}
                     className={`grid h-8 w-8 place-items-center rounded-xl transition active:scale-95 ${
-                      autoSaveStatus === "saving"
+                      isSavingActive
                         ? "bg-emerald-100 text-emerald-700 shadow-xs"
+                        : isSavedFeedback
+                        ? "bg-emerald-50 text-emerald-600 shadow-xs"
                         : autoSaveStatus === "unsaved"
                         ? "text-amber-600 bg-amber-50 hover:bg-amber-100"
                         : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-700"
                     }`}
                   >
-                    {autoSaveStatus === "saving" ? <LoaderCircle size={15} className="animate-spin text-emerald-600" /> : <Save size={15} />}
+                    {isSavingActive ? (
+                      <LoaderCircle size={15} className="animate-spin text-emerald-600" />
+                    ) : isSavedFeedback ? (
+                      <Check size={15} className="text-emerald-600 animate-in zoom-in-50 duration-150" />
+                    ) : (
+                      <Save size={15} />
+                    )}
                   </button>
+
+                  {/* Floating Transient Pill directly under the save button */}
+                  {(isSavingActive || isSavedFeedback) && (
+                    <div
+                      className={`pointer-events-none absolute right-0 top-[calc(100%+6px)] z-50 flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1 text-[10px] font-bold shadow-xl transition-all duration-200 animate-in fade-in slide-in-from-top-1 ${
+                        isSavingActive
+                          ? "bg-slate-900 text-white border border-slate-700/80"
+                          : "bg-emerald-700 text-white border border-emerald-600"
+                      }`}
+                    >
+                      {isSavingActive ? (
+                        <>
+                          <LoaderCircle size={11} className="animate-spin text-emerald-400" />
+                          <span>Menyimpan...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check size={11} className="text-emerald-300" />
+                          <span>Tersimpan!</span>
+                        </>
+                      )}
+                    </div>
+                  )}
 
                   <div className="mx-0.5 h-4 w-px bg-slate-200" />
 
@@ -2120,16 +2241,32 @@ export function ConsoleWorkspace({
                     <PanelRightClose size={15} />
                   </button>
                 </div>
-              </div>
-
-              <SidebarAccordion
-                title="Custom Global"
-                subtitle={`${theme.label} · ${musicUrl ? "Musik aktif" : "Tanpa musik"}`}
-                icon={<Palette size={17} />}
-                open={globalEditorOpen}
-                className={globalEditorOpen ? "relative z-20" : "relative z-0"}
-                onToggle={() => setGlobalEditorOpen((value) => !value)}
-              >
+                {isShortcutHelpOpen && (
+                  <div className="absolute right-1.5 top-[calc(100%+8px)] z-50 w-52 rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+                    <p className="mb-2 text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-500">Pintasan</p>
+                    <div className="space-y-1.5 text-[11px] font-medium text-slate-600">
+                      <p className="flex items-center justify-between gap-3"><span>Simpan</span><kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">Ctrl S</kbd></p>
+                      <p className="flex items-center justify-between gap-3"><span>Urungkan</span><kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">Ctrl Z</kbd></p>
+                      <p className="flex items-center justify-between gap-3"><span>Ulangi</span><kbd className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">Ctrl Shift Z</kbd></p>
+                    </div>
+                  </div>
+                )}
+                  </div>
+                }
+                sectionContent={
+                  <div className="mt-3 min-w-0">
+                    <CollaborativeSectionInspector
+                      template={template}
+                      selected={selected}
+                      themeBackground={theme.colors.background}
+                      uploadError={uploadError}
+                      onOpenContentLibrary={() => openAssetLibrary("image", "content")}
+                      onOpenBackgroundLibrary={() => openAssetLibrary("image", "background")}
+                    />
+                  </div>
+                }
+                globalContent={
+                  <div className="mt-3 min-w-0">
                 <CollaborativeGlobalEditor
                   template={template}
                   themeId={themeId}
@@ -2144,25 +2281,9 @@ export function ConsoleWorkspace({
                   onOpenMusicLibrary={() => openAssetLibrary("audio", "music")}
                   onRequestLogin={requestLogin}
                 />
-              </SidebarAccordion>
-
-              <SidebarAccordion
-                title="Custom Section"
-                subtitle={selected ? `${selected.label} · ${selected.fields?.length ?? 0} field` : "Pilih section pada struktur"}
-                icon={<Settings2 size={17} />}
-                open={sectionEditorOpen}
-                className={sectionEditorOpen ? "relative z-10" : "relative z-0"}
-                onToggle={() => setSectionEditorOpen((value) => !value)}
-              >
-                <CollaborativeSectionInspector
-                  template={template}
-                  selected={selected}
-                  themeBackground={theme.colors.background}
-                  uploadError={uploadError}
-                  onOpenContentLibrary={() => openAssetLibrary("image", "content")}
-                  onOpenBackgroundLibrary={() => openAssetLibrary("image", "background")}
-                />
-              </SidebarAccordion>
+                  </div>
+                }
+              />
             </div>
           </aside>
 
