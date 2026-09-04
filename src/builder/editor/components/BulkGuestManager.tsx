@@ -691,8 +691,9 @@ export function BulkGuestManager({
       onRequirePublish();
       return;
     }
-    const slug = publishIdentifier || "ayuardi";
-    const link = buildInvitationUrl(slug, guest.name);
+    const link = publishUrl
+      ? `${publishUrl}${publishUrl.includes("?") ? "&" : "?"}for=${encodeURIComponent(guest.name.trim().replace(/\s+/g, " "))}`
+      : buildInvitationUrl(publishIdentifier || "", guest.name);
     await navigator.clipboard.writeText(link);
     showToast(`Tautan personal "${guest.name}" disalin!`);
   }

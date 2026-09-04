@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { db } from "@/db/client";
+import { invitations, payments } from "@/db/schema";
 import { getDraftAccess } from "@/modules/drafts/access";
 import { getTemplateById, getTemplateCatalogItem } from "@/templates/registry";
 
@@ -103,6 +106,42 @@ export async function POST(request: Request) {
       paymentResult.charge_details?.[0]?.qr?.qrUrl ||
       pgsData.qr_url ||
       pgsData.qr_image_url;
+
+    // Record pending transaction in dedicated payments table
+    const referenceId =
+      paymentResult.client_reference_id ||
+      paymentResult.reference_id ||
+      paymentResult.id ||
+      null;
+
+    const paymentRecordId = crypto.randomUUID();
+    await db.insert(payments).values({
+      id: paymentRecordId,
+      invitationId: draftId,
+      userId: access.user.id,
+      referenceId: referenceId ? String(referenceId) : null,
+      amount: totalAmount,
+      currency: "IDR",
+      mode,
+      identifier,
+      paymentMethod: method,
+      paymentChannel: channel,
+      status: "pending",
+      customerName: access.user.name,
+      customerEmail: access.user.email,
+      customerPhone: phone || access.user.phone || null,
+      rawResponse: pgsData,
+    });
+
+    // Also persist publishMode & target identifier on draft so callback knows user intention
+    await db
+      .update(invitations)
+      .set({
+        publishMode: mode,
+        slug: mode === "path" ? identifier : null,
+        subdomain: mode === "subdomain" ? identifier : null,
+      })
+      .where(eq(invitations.id, draftId));
 
     return NextResponse.json({
       ok: true,

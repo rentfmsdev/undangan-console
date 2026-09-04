@@ -189,3 +189,30 @@ export const invitationCollaborationSnapshots = mysqlTable("invitation_collabora
   index("snap_revision_idx").on(table.invitationId, table.revision),
 ]);
 
+export const payments = mysqlTable("payments", {
+  id: char("id", { length: 36 }).primaryKey(),
+  invitationId: char("invitation_id", { length: 36 }).notNull(),
+  userId: char("user_id", { length: 36 }).notNull(),
+  referenceId: varchar("reference_id", { length: 128 }),
+  amount: int("amount").notNull(),
+  currency: varchar("currency", { length: 10 }).notNull().default("IDR"),
+  mode: mysqlEnum("mode", ["path", "subdomain", "custom_domain"]).notNull().default("path"),
+  identifier: varchar("identifier", { length: 255 }).notNull(),
+  paymentMethod: varchar("payment_method", { length: 32 }).notNull().default("QR"),
+  paymentChannel: varchar("payment_channel", { length: 32 }).notNull().default("QRIS"),
+  status: mysqlEnum("status", ["pending", "paid", "expired", "failed"]).notNull().default("pending"),
+  customerName: varchar("customer_name", { length: 120 }),
+  customerEmail: varchar("customer_email", { length: 255 }),
+  customerPhone: varchar("customer_phone", { length: 30 }),
+  rawResponse: json("raw_response"),
+  paidAt: datetime("paid_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+}, (table) => [
+  index("payments_invitation_id_idx").on(table.invitationId),
+  index("payments_user_id_idx").on(table.userId),
+  index("payments_reference_id_idx").on(table.referenceId),
+  index("payments_status_idx").on(table.status),
+]);
+
+

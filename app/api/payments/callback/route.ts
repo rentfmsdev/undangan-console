@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "@/db/client";
-import { domainPublishRequests, invitationActivityLogs, invitations } from "@/db/schema";
+import { domainPublishRequests, invitationActivityLogs, invitations, payments } from "@/db/schema";
 import { getPublicationExpiresAt, getPublishRetentionDays } from "@/modules/publishing/retention-policy";
 
 export const runtime = "nodejs";
@@ -48,10 +48,46 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, message: `Ignored status: ${status}` });
   }
 
-  const targetId = metadata?.draftId || metadata?.invitationId;
+  // 1. Look up payment in `payments` table
+  let paymentRecord = null;
+  if (client_reference_id) {
+    const [p] = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.referenceId, client_reference_id))
+      .limit(1);
+    paymentRecord = p;
+  }
+
+  const targetId = metadata?.draftId || metadata?.invitationId || paymentRecord?.invitationId;
   if (!targetId) {
-    console.error("❌ [Payment Callback] Missing draftId or invitationId in metadata", metadata);
+    console.error("❌ [Payment Callback] Missing draftId or invitationId in metadata/payment", metadata);
     return NextResponse.json({ error: "Missing draftId or invitationId in metadata" }, { status: 400 });
+  }
+
+  if (!paymentRecord) {
+    const [p] = await db
+      .select()
+      .from(payments)
+      .where(and(eq(payments.invitationId, targetId), eq(payments.status, "pending")))
+      .orderBy(desc(payments.createdAt))
+      .limit(1);
+    paymentRecord = p;
+  }
+
+  const publishedAt = paid_at ? new Date(paid_at) : new Date();
+
+  // Update payments row to 'paid'
+  if (paymentRecord) {
+    await db
+      .update(payments)
+      .set({
+        status: "paid",
+        paidAt: publishedAt,
+        referenceId: client_reference_id || paymentRecord.referenceId,
+        amount: amount || paymentRecord.amount,
+      })
+      .where(eq(payments.id, paymentRecord.id));
   }
 
   const [draft] = await db
@@ -65,9 +101,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invitation not found" }, { status: 404 });
   }
 
-  const mode = metadata?.mode || draft.publishMode || "path";
-  const identifier = metadata?.identifier || draft.slug || draft.subdomain || "undangan";
-  const publishedAt = paid_at ? new Date(paid_at) : new Date();
+  // Strictly preserve user intention: metadata -> payments record -> draft.publishMode
+  const mode = metadata?.mode || paymentRecord?.mode || draft.publishMode || "path";
+  const identifier =
+    metadata?.identifier ||
+    paymentRecord?.identifier ||
+    (mode === "subdomain" ? draft.subdomain : draft.slug) ||
+    draft.slug ||
+    draft.subdomain ||
+    "undangan";
+
   const retentionDays = getPublishRetentionDays();
   const expiresAt = getPublicationExpiresAt(publishedAt, retentionDays);
 
@@ -75,7 +118,7 @@ export async function POST(request: Request) {
   const updatedOverrides = {
     ...existingOverrides,
     publishPricing: {
-      total: amount,
+      total: amount || paymentRecord?.amount || 0,
       pricingStatus: "paid",
       paidAt: publishedAt.toISOString(),
       referenceId: client_reference_id,
@@ -90,8 +133,8 @@ export async function POST(request: Request) {
     payment: {
       provider: "pivot",
       clientReferenceId: client_reference_id,
-      amount,
-      currency,
+      amount: amount || paymentRecord?.amount || 0,
+      currency: currency || "IDR",
       paidAt: publishedAt.toISOString(),
       status: "paid",
     },

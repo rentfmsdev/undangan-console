@@ -293,7 +293,7 @@ export function ConsoleWorkspace({
   const [publishNotice, setPublishNotice] = useState<{ tone: "success" | "custom"; message: string } | null>(null);
   const [isPublishOpen, setIsPublishOpen] = useState(false);
   const [publishMode, setPublishMode] = useState<"path" | "subdomain">("path");
-  const [publishIdentifier, setPublishIdentifier] = useState("ayuardi");
+  const [publishIdentifier, setPublishIdentifier] = useState("");
   const [publishUrl, setPublishUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -571,6 +571,27 @@ export function ConsoleWorkspace({
     return sections.filter((s) => s.label.toLowerCase().includes(q) || (s.description ?? "").toLowerCase().includes(q));
   }, [sections, sectionSearchQuery]);
 
+  const defaultPublishIdentifier = useMemo(() => {
+    if (publishIdentifier) return publishIdentifier;
+    const cat = (template.category || "").toLowerCase();
+    const clean = (val: string) => val.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/^-+|-+$/g, "");
+    if (cat === "wedding" || cat === "pernikahan") {
+      const mempelai = sections.find((s) => s.type === "mempelai" || s.type === "couple");
+      const bride = clean(String(mempelai?.defaultData?.brideShortName || ""));
+      const groom = clean(String(mempelai?.defaultData?.groomShortName || ""));
+      if (bride && groom) return `${bride}-${groom}`;
+    } else if (cat === "aqiqah") {
+      const baby = sections.find((s) => s.type === "biodata" || s.type === "baby" || s.type === "hero");
+      const name = clean(String(baby?.defaultData?.babyName || baby?.defaultData?.babyShortName || ""));
+      if (name) return `aqiqah-${name}`;
+    }
+    if (currentUser?.name) {
+      const cleanName = clean(currentUser.name);
+      if (cleanName) return cleanName;
+    }
+    return template.code;
+  }, [currentUser?.name, publishIdentifier, sections, template.category, template.code]);
+
   useEffect(() => {
     const savedWidth = Number(window.localStorage.getItem(`undangan-console:inspector-width:${template.code}`));
     if (Number.isFinite(savedWidth) && savedWidth >= 280 && savedWidth <= 620) {
@@ -655,28 +676,38 @@ export function ConsoleWorkspace({
     setDraftReady(false);
 
     const readLocalSnapshot = () => {
+      const raw = window.localStorage.getItem(localDraftKey);
+      if (!raw) return null;
       try {
-        const raw = window.localStorage.getItem(localDraftKey);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw) as LocalDraftSnapshot;
-        return parsed?.version === 1 && Array.isArray(parsed.sections) ? parsed : null;
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.themeId !== "string" || !Array.isArray(parsed?.sections)) return null;
+        return parsed as {
+          themeId: string;
+          musicUrl?: string | null;
+          sections: EditableSection[];
+          customColors?: Record<string, string>;
+          musicVolume?: number;
+          useContainer?: boolean;
+        };
       } catch {
         return null;
       }
     };
 
-    const applyState = (nextThemeId: string, nextMusicUrl: string, records: LocalDraftSnapshot["sections"], nextCustomColors?: { primary?: string; accent?: string; background?: string }, nextMusicVolume?: number, nextUseContainer?: boolean) => {
-      if (!active) return;
-      const hydrated = hydrateSections(template, records);
-      setThemeId(nextThemeId);
-      setMusicUrl(nextMusicUrl);
-      setMusicVolume(typeof nextMusicVolume === "number" ? nextMusicVolume : 0.6);
-      setCustomThemeColors(nextCustomColors ?? {});
-      if (typeof nextUseContainer === "boolean") {
-        setUseContainer(nextUseContainer);
-      }
-      setSections(hydrated);
-      setSelectedId(hydrated[0]?.id ?? "");
+    const applyState = (
+      theme: string,
+      music: string | null | undefined,
+      sectionsPayload: EditableSection[],
+      customColors?: Record<string, string>,
+      volume?: number,
+      container?: boolean
+    ) => {
+      setThemeId(theme);
+      setMusicUrl(music || "");
+      if (customColors) setCustomThemeColors(customColors);
+      if (typeof volume === "number") setMusicVolume(volume);
+      if (typeof container === "boolean") setUseContainer(container);
+      setSections(sectionsPayload);
       setDraftReady(true);
     };
 
@@ -690,9 +721,19 @@ export function ConsoleWorkspace({
       setDraftStatus(nextStatus);
       setIsPublished(nextStatus === "published");
       const customRequestIdentifier = typeof payload.draft.styleOverrides?.publishRequest?.identifier === "string" ? payload.draft.styleOverrides.publishRequest.identifier : "";
-      const savedIdentifier = payload.draft.slug || payload.draft.subdomain || customRequestIdentifier;
+      const savedIdentifier = payload.draft.subdomain || payload.draft.slug || customRequestIdentifier;
       if (savedIdentifier) setPublishIdentifier(savedIdentifier);
-      if (nextStatus === "published" && payload.draft.slug) setPublishUrl(buildInvitationUrl(payload.draft.slug));
+      if (payload.draft.publishMode === "subdomain") setPublishMode("subdomain");
+      else if (payload.draft.publishMode === "path") setPublishMode("path");
+
+      const rootDomain = "undangan.co";
+      if (nextStatus === "published") {
+        if (payload.draft.publishMode === "subdomain" && payload.draft.subdomain) {
+          setPublishUrl(`https://${payload.draft.subdomain}.${rootDomain}`);
+        } else if (payload.draft.slug) {
+          setPublishUrl(buildInvitationUrl(payload.draft.slug));
+        }
+      }
       if (nextStatus === "custom") {
         setPublishNotice({ tone: "custom", message: customRequestIdentifier ? `Request ${customRequestIdentifier} sedang menunggu proses admin.` : "Request custom sedang menunggu proses admin." });
       } else {
@@ -1419,8 +1460,13 @@ export function ConsoleWorkspace({
 
   function getWhatsAppMessage(preset: "formal" | "islami" | "casual" | "english", name: string) {
     const formattedName = name.trim().replace(/\s+/g, " ") || "Bapak/Ibu/Saudara/i";
-    const slug = publishIdentifier || "ayuardi";
-    const invitationPath = buildInvitationUrl(slug, formattedName);
+    const slug = publishIdentifier || defaultPublishIdentifier || template.code;
+    const rootDomain = "undangan.co";
+    const invitationPath =
+      publishUrl ||
+      (publishMode === "subdomain" && slug
+        ? `https://${slug}.${rootDomain}?for=${encodeURIComponent(formattedName)}`
+        : buildInvitationUrl(slug, formattedName));
 
     const cat = (template.category || "wedding").toLowerCase();
     const mempelaiSection = sections.find((s) => s.type === "mempelai" || s.type === "couple");
@@ -2491,7 +2537,7 @@ export function ConsoleWorkspace({
 
       {view === "wishes" && <section className="mx-auto max-w-3xl px-5 py-12"><div className="rounded-3xl border border-[#e5d7c8] bg-[#fffaf1] p-7 shadow-sm md:p-10"><div className="flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-emerald-700">Buku tamu</p><h1 className="mt-2 text-3xl font-extrabold">Ucapan & Kehadiran</h1><p className="mt-2 text-sm leading-6 text-[#806f67]">Ucapan tamu tersimpan di MySQL khusus untuk undangan ini.</p></div><span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700">{wishRecords.length} ucapan</span></div>{wishesLoading ? <div className="mt-7 grid place-items-center rounded-2xl border border-dashed border-[#d9c9b8] bg-white/70 p-10 text-sm text-[#9a887d]"><LoaderCircle className="mb-3 animate-spin text-emerald-600" size={28} />Memuat ucapan...</div> : wishRecords.length === 0 ? <div className="mt-7 rounded-2xl border border-dashed border-[#d9c9b8] bg-white/70 p-10 text-center text-sm text-[#9a887d]"><MessageCircleHeart className="mx-auto mb-3 text-emerald-600" size={30} />Belum ada ucapan pada undangan ini.</div> : <div className="mt-7 space-y-3">{wishRecords.map((wish) => <article key={wish.id} className="rounded-2xl border border-[#eadfd5] bg-white p-4 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm text-[#4f3034]">{wish.name}</strong><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">{wish.attendance}</span></div><p className="mt-2 text-sm leading-6 text-[#75645f]">{wish.message}</p><time className="mt-3 block text-[10px] text-[#a08c82]">{new Date(wish.createdAt).toLocaleString("id-ID")}</time></article>)}</div>}</div></section>}
 
-      <PublishModal open={isPublishOpen && Boolean(currentUser)} draftId={draftId} draftReady={draftReady} initialIdentifier={publishIdentifier} templatePrice={templatePrice} userPhone={currentUser?.phone} currentStatus={draftStatus} publishedUrl={publishUrl} onClose={() => setIsPublishOpen(false)} onResult={handlePublishResult} />
+      <PublishModal open={isPublishOpen && Boolean(currentUser)} draftId={draftId} draftReady={draftReady} initialIdentifier={publishIdentifier || defaultPublishIdentifier} templatePrice={templatePrice} userPhone={currentUser?.phone} currentStatus={draftStatus} publishedUrl={publishUrl} onClose={() => setIsPublishOpen(false)} onResult={handlePublishResult} />
 
       {publishNotice && <div className={`fixed left-1/2 top-20 z-[75] w-[min(92vw,620px)] -translate-x-1/2 rounded-2xl border p-4 shadow-[0_20px_60px_rgba(15,23,42,.24)] backdrop-blur ${publishNotice.tone === "success" ? "border-emerald-200 bg-emerald-50/95 text-emerald-950" : "border-amber-200 bg-amber-50/95 text-amber-950"}`} role="alert"><div className="flex items-start gap-3"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${publishNotice.tone === "success" ? "bg-emerald-600 text-white" : "bg-amber-500 text-white"}`}>{publishNotice.tone === "success" ? <Check size={18} /> : <LoaderCircle size={18} />}</span><div className="min-w-0 flex-1"><strong className="block text-sm">{publishNotice.tone === "success" ? "Publish berhasil!" : "Request custom diterima"}</strong><p className="mt-1 text-xs leading-5 opacity-80">{publishNotice.message}</p>{publishNotice.tone === "success" ? <button type="button" onClick={() => { setPublishNotice(null); setView("generator"); }} className="mt-3 rounded-xl bg-emerald-700 px-3 py-2 text-[10px] font-extrabold text-white hover:bg-emerald-800">Buka Generator</button> : <a href={makeAdminWhatsAppUrl(`Halo Admin, saya ingin menindaklanjuti request custom ${publishIdentifier} untuk draft ${draftId ?? "saya"}.`)} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2 text-[10px] font-extrabold text-white hover:bg-amber-700">Hubungi admin, klik di sini! <ExternalLink size={12} /></a>}</div><button type="button" onClick={() => setPublishNotice(null)} className="rounded-full p-1 opacity-55 hover:bg-black/5 hover:opacity-100" aria-label="Tutup pemberitahuan"><X size={16} /></button></div></div>}
 

@@ -23,7 +23,20 @@ const reservedRootPaths = new Set([
 ]);
 
 export function proxy(request: NextRequest) {
-  const rootDomain = (process.env.ROOT_DOMAIN ?? "undangan.co").toLowerCase();
+  let appUrlHost = "";
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    try {
+      appUrlHost = new URL(process.env.NEXT_PUBLIC_APP_URL).hostname.toLowerCase().replace(/^www\./, "");
+    } catch {
+      // ignore
+    }
+  }
+  const rootDomain = (
+    appUrlHost ||
+    (process.env.ROOT_DOMAIN && process.env.ROOT_DOMAIN !== "undangan.co" ? process.env.ROOT_DOMAIN : "") ||
+    "undang.site"
+  ).toLowerCase();
+
   const hostname = request.headers.get("host")?.split(":")[0].toLowerCase() ?? "";
   const { pathname } = request.nextUrl;
 
@@ -49,25 +62,21 @@ export function proxy(request: NextRequest) {
   const isRootDomain =
     hostname === rootDomain ||
     hostname === `www.${rootDomain}` ||
-    (process.env.NEXT_PUBLIC_APP_URL &&
-      (() => {
-        try {
-          const u = new URL(process.env.NEXT_PUBLIC_APP_URL).hostname.toLowerCase();
-          return hostname === u || hostname === `www.${u}`;
-        } catch {
-          return false;
-        }
-      })());
+    (appUrlHost && (hostname === appUrlHost || hostname === `www.${appUrlHost}`));
 
   // Rewrite root domain invitation paths (e.g. undang.site/budi-ani -> /i/budi-ani)
   if (isRootDomain && segments.length === 1 && /^[a-z0-9][a-z0-9-]*$/.test(firstSegment)) {
-    return NextResponse.rewrite(new URL(`/i/${firstSegment}`, request.url));
+    const targetUrl = request.nextUrl.clone();
+    targetUrl.pathname = `/i/${firstSegment}`;
+    return NextResponse.rewrite(targetUrl);
   }
 
   if (hostname.endsWith(`.${rootDomain}`)) {
     const subdomain = hostname.slice(0, -(rootDomain.length + 1));
-    if (subdomain && !reservedSubdomains.has(subdomain) && pathname === "/") {
-      return NextResponse.rewrite(new URL(`/i/${subdomain}`, request.url));
+    if (subdomain && !reservedSubdomains.has(subdomain) && (pathname === "/" || pathname === "")) {
+      const targetUrl = request.nextUrl.clone();
+      targetUrl.pathname = `/i/${subdomain}`;
+      return NextResponse.rewrite(targetUrl);
     }
   }
 

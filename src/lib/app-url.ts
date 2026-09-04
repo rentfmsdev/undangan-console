@@ -28,8 +28,8 @@ export function getAppBaseUrl(): string {
  */
 export function buildInvitationUrl(slug: string, guestName?: string): string {
   const baseUrl = getAppBaseUrl();
-  const cleanSlug = (slug || "ayuardi").replace(/^\/+|\/+$/g, "");
-  const path = `/i/${cleanSlug}`;
+  const cleanSlug = (slug || "").replace(/^\/+|\/+$/g, "");
+  const path = cleanSlug ? `/i/${cleanSlug}` : "";
 
   if (guestName && guestName.trim()) {
     const encoded = encodeURIComponent(guestName.trim().replace(/\s+/g, " "));
@@ -37,4 +37,61 @@ export function buildInvitationUrl(slug: string, guestName?: string): string {
   }
 
   return `${baseUrl}${path}`;
+}
+
+export function getRootDomain(): string {
+  if (typeof window !== "undefined" && window.location?.hostname) {
+    const host = window.location.hostname.toLowerCase();
+    if (host === "localhost" || /^[0-9.]+$/.test(host)) {
+      return host;
+    }
+    const parts = host.split(".");
+    if (parts.length >= 2) {
+      return parts.slice(-2).join(".");
+    }
+    return host;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
+  if (appUrl) {
+    try {
+      const u = new URL(appUrl);
+      const host = u.hostname.toLowerCase().replace(/^www\./, "");
+      if (host) return host;
+    } catch {
+      // ignore
+    }
+  }
+
+  const envDomain = process.env.ROOT_DOMAIN;
+  if (envDomain && envDomain !== "undangan.co") {
+    return envDomain.toLowerCase().replace(/^https?:\/\//, "").replace(/:\d+$/, "");
+  }
+
+  return "undang.site";
+}
+
+/**
+ * Builds a subdomain invitation URL.
+ * Example: https://budi.undang.site or https://budi.undang.site?for=Tamu
+ */
+export function buildSubdomainUrl(subdomain: string, guestName?: string): string {
+  const cleanSub = (subdomain || "").replace(/^\/+|\/+$/g, "");
+  const domain = getRootDomain();
+  const protocol =
+    typeof window !== "undefined" && window.location?.protocol === "http:"
+      ? "http"
+      : "https";
+  const port =
+    typeof window !== "undefined" && window.location?.port && (domain === "localhost" || domain.includes("localhost"))
+      ? `:${window.location.port}`
+      : "";
+  const base = `${protocol}://${cleanSub}.${domain}${port}`;
+
+  if (guestName && guestName.trim()) {
+    const encoded = encodeURIComponent(guestName.trim().replace(/\s+/g, " "));
+    return `${base}?for=${encoded}`;
+  }
+
+  return base;
 }

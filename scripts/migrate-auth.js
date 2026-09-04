@@ -12,6 +12,7 @@ async function run() {
         id CHAR(36) PRIMARY KEY,
         email VARCHAR(255) NOT NULL,
         name VARCHAR(120) NOT NULL,
+        phone VARCHAR(30) NULL DEFAULT NULL,
         avatar_url VARCHAR(1024),
         google_id VARCHAR(128),
         role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
@@ -21,6 +22,13 @@ async function run() {
         UNIQUE KEY users_google_id_unique (google_id)
       )
     `);
+
+    try {
+      await conn.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30) NULL DEFAULT NULL`);
+      await conn.query(`ALTER TABLE users MODIFY COLUMN phone VARCHAR(30) NULL DEFAULT NULL`);
+    } catch (e) {
+      // Column might already exist or modify error ignored
+    }
 
     await conn.query(`
       CREATE TABLE IF NOT EXISTS sessions (

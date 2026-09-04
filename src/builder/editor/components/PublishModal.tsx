@@ -24,7 +24,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
 import jsQR from "jsqr";
 import { makeAdminWhatsAppUrl } from "@/config/contact";
-import { getAppBaseUrl } from "@/lib/app-url";
+import { buildSubdomainUrl, getAppBaseUrl, getRootDomain } from "@/lib/app-url";
 
 type PublishMode = "path" | "subdomain" | "custom_domain";
 type Availability = "idle" | "checking" | "available" | "unavailable" | "invalid";
@@ -49,7 +49,7 @@ interface PaymentSessionData {
 }
 
 export type PublishResult =
-  | { status: "published"; url: string; mode: "path"; identifier: string }
+  | { status: "published"; url: string; mode: "path" | "subdomain"; identifier: string }
   | { status: "custom"; mode: "subdomain" | "custom_domain"; identifier: string };
 
 const pathPattern = /^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/;
@@ -99,10 +99,10 @@ export function PublishModal({
 }) {
   const [step, setStep] = useState<PaymentStep>("configure");
   const [mode, setMode] = useState<PublishMode>("path");
-  const [identifier, setIdentifier] = useState(cleanPath(initialIdentifier || "ayuardi"));
+  const [identifier, setIdentifier] = useState(cleanPath(initialIdentifier || ""));
   const [availability, setAvailability] = useState<Availability>("checking");
   const [availabilityMessage, setAvailabilityMessage] = useState("");
-  const [domainLabel, setDomainLabel] = useState(cleanDomainLabel(initialIdentifier || "ayuardi"));
+  const [domainLabel, setDomainLabel] = useState(cleanDomainLabel(initialIdentifier || ""));
   const [domainCandidates, setDomainCandidates] = useState<DomainCandidate[]>([]);
   const [domainCheck, setDomainCheck] = useState<"idle" | "checking" | "done" | "error">("idle");
   const [domainError, setDomainError] = useState("");
@@ -119,6 +119,14 @@ export function PublishModal({
 
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Sync initialIdentifier
+  useEffect(() => {
+    if (initialIdentifier) {
+      setIdentifier(cleanPath(initialIdentifier));
+      setDomainLabel(cleanDomainLabel(initialIdentifier));
+    }
+  }, [initialIdentifier]);
+
   // Sync customerPhone from userPhone prop
   useEffect(() => {
     if (userPhone) {
@@ -127,7 +135,7 @@ export function PublishModal({
   }, [userPhone]);
 
   const displayHost = getAppBaseUrl().replace(/^https?:\/\//, "");
-  const rootDomain = "undangan.co";
+  const rootDomain = getRootDomain();
   const subdomainFee = 50_000;
   const totalAmount = mode === "subdomain" ? templatePrice + subdomainFee : templatePrice;
 
@@ -218,11 +226,22 @@ export function PublishModal({
         const data = await res.json();
         if (active && data.paid) {
           window.clearInterval(pollInterval);
+          const finalMode = (data.publishMode || mode) as "path" | "subdomain";
+          const finalIdentifier =
+            data.identifier ||
+            (finalMode === "subdomain" ? data.subdomain : data.slug) ||
+            effectiveIdentifier;
+          const finalUrl =
+            data.url ||
+            (finalMode === "subdomain"
+              ? buildSubdomainUrl(finalIdentifier)
+              : `${window.location.origin}/i/${finalIdentifier}`);
+
           onResult({
             status: "published",
-            url: data.url || `${window.location.origin}/i/${effectiveIdentifier}`,
-            mode: "path",
-            identifier: effectiveIdentifier,
+            url: finalUrl,
+            mode: finalMode,
+            identifier: finalIdentifier,
           });
         }
       } catch {
@@ -234,7 +253,7 @@ export function PublishModal({
       active = false;
       window.clearInterval(pollInterval);
     };
-  }, [draftId, effectiveIdentifier, onResult, open, step]);
+  }, [draftId, effectiveIdentifier, mode, onResult, open, step]);
 
   // Decode QR code without frame (tanpa bingkai) and render directly onto canvas
   useEffect(() => {
@@ -462,11 +481,22 @@ export function PublishModal({
       });
       const data = await res.json();
       if (data.paid) {
+        const finalMode = (data.publishMode || mode) as "path" | "subdomain";
+        const finalIdentifier =
+          data.identifier ||
+          (finalMode === "subdomain" ? data.subdomain : data.slug) ||
+          effectiveIdentifier;
+        const finalUrl =
+          data.url ||
+          (finalMode === "subdomain"
+            ? buildSubdomainUrl(finalIdentifier)
+            : `${window.location.origin}/i/${finalIdentifier}`);
+
         onResult({
           status: "published",
-          url: data.url || `${window.location.origin}/i/${effectiveIdentifier}`,
-          mode: "path",
-          identifier: effectiveIdentifier,
+          url: finalUrl,
+          mode: finalMode,
+          identifier: finalIdentifier,
         });
       } else {
         alert("Pembayaran belum terdeteksi. Silakan selesaikan pembayaran QRIS terlebih dahulu.");
@@ -593,7 +623,7 @@ export function PublishModal({
                       <input
                         value={identifier}
                         onChange={(event) => changeIdentifier(event.target.value)}
-                        placeholder="ayuardi"
+                        placeholder="nama-anda"
                         className="min-w-0 flex-1 border-0 px-3 py-3 text-sm outline-none"
                       />
                       {mode === "subdomain" && (
@@ -619,7 +649,7 @@ export function PublishModal({
                       <input
                         value={domainLabel}
                         onChange={(event) => changeDomainLabel(event.target.value)}
-                        placeholder="ayuardi"
+                        placeholder="nama-anda"
                         className="min-w-0 flex-1 rounded-2xl border-0 px-4 py-3 text-sm outline-none"
                       />
                       {domainCheck === "checking" && (

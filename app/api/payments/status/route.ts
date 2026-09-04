@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { invitations } from "@/db/schema";
-import { buildInvitationUrl } from "@/lib/app-url";
+import { buildInvitationUrl, buildSubdomainUrl } from "@/lib/app-url";
 
 export const runtime = "nodejs";
 
@@ -32,7 +32,15 @@ export async function GET(request: Request) {
 
   const overrides = (draft.styleOverrides as Record<string, unknown>) || {};
   const isPaid = draft.status === "published" || Boolean(overrides.payment);
-  const liveUrl = draft.slug ? buildInvitationUrl(draft.slug) : null;
+  let liveUrl: string | null = null;
+  if (draft.publishMode === "subdomain" && draft.subdomain) {
+    liveUrl = buildSubdomainUrl(draft.subdomain);
+  } else if (draft.slug) {
+    liveUrl = buildInvitationUrl(draft.slug);
+  }
+
+  const effectiveIdentifier =
+    draft.publishMode === "subdomain" ? draft.subdomain : draft.slug;
 
   return NextResponse.json({
     paid: isPaid,
@@ -40,6 +48,7 @@ export async function GET(request: Request) {
     publishMode: draft.publishMode,
     slug: draft.slug,
     subdomain: draft.subdomain,
+    identifier: effectiveIdentifier,
     url: liveUrl,
     payment: overrides.payment ?? null,
   });
