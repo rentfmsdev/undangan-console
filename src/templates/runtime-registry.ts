@@ -13,6 +13,10 @@ import { KhitanKsatriaSource } from "./khitan-ksatria-jawa/source/KhitanKsatriaS
 import { KhitanKsatriaNavigationAdapter } from "./khitan-ksatria-jawa/navigation-adapter";
 import { normalizeKhitanSectionState } from "./khitan-ksatria-jawa/normalize-section-state";
 import { applyKhitanTemplateState, watchKhitanTemplateState, type KhitanPreviewSection } from "./khitan-ksatria-jawa/source/template-bridge";
+import { AqiqahLittleBloomSource } from "./aqiqah-little-bloom/source/AqiqahLittleBloomSource";
+import { AqiqahLittleBloomNavigationAdapter } from "./aqiqah-little-bloom/navigation-adapter";
+import { normalizeAqiqahSectionState } from "./aqiqah-little-bloom/normalize-section-state";
+import { applyAqiqahTemplateState, watchAqiqahTemplateState, type AqiqahPreviewSection, type AqiqahGlobalSettings } from "./aqiqah-little-bloom/source/template-bridge";
 
 export type RuntimeState = { sections: unknown[]; themeId: string; settings: Record<string, unknown> };
 export type StoredTemplateSection = { id: string; type: string; enabled: boolean; data: Record<string, unknown> };
@@ -58,7 +62,22 @@ const khitanKsatriaRuntime: TemplateRuntime = {
   watchState: ({ sections, themeId, settings }) => watchKhitanTemplateState(sections as KhitanPreviewSection[], themeId, (settings ?? {}) as Parameters<typeof watchKhitanTemplateState>[2]),
 };
 
-export const templateRuntimeRegistry: TemplateRuntime[] = [weddingLampungRuntime, birthdayCelestialRuntime, khitanKsatriaRuntime];
+const aqiqahLittleBloomRuntime: TemplateRuntime = {
+  templateId: "aqiqah-little-bloom",
+  code: "aqiqh",
+  Renderer: AqiqahLittleBloomSource,
+  createNavigationAdapter: () => new AqiqahLittleBloomNavigationAdapter(),
+  normalizeSections: normalizeAqiqahSectionState,
+  applyState: ({ sections, themeId, settings }) => applyAqiqahTemplateState(sections as AqiqahPreviewSection[], themeId, settings as AqiqahGlobalSettings),
+  watchState: ({ sections, themeId, settings }) => watchAqiqahTemplateState(sections as AqiqahPreviewSection[], themeId, settings as AqiqahGlobalSettings),
+};
+
+export const templateRuntimeRegistry: TemplateRuntime[] = [
+  weddingLampungRuntime,
+  birthdayCelestialRuntime,
+  khitanKsatriaRuntime,
+  aqiqahLittleBloomRuntime,
+];
 
 export function getTemplateRuntime(code: string) {
   return templateRuntimeRegistry.find((runtime) => runtime.code === code || runtime.templateId === code) ?? weddingLampungRuntime;

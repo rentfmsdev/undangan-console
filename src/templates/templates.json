@@ -121,5 +121,48 @@
       "beskap",
       "keraton"
     ]
+  },
+  {
+    "id": "aqiqah-little-bloom",
+    "code": "aqiqh",
+    "name": "Aqiqah Little Bloom",
+    "category": "aqiqah",
+    "categoryLabel": "Aqiqah & Kelahiran",
+    "description": "Undangan tasyakuran walimatul aqiqah & kelahiran buah hati dengan nuansa pastel lembut, ornamen awan bintang emas, doa tasyakuran, dan galeri manis.",
+    "price": 35000,
+    "rating": 5,
+    "favoriteCount": 186,
+    "releaseDate": "2026-09-04",
+    "status": "available",
+    "defaultView": "mobile",
+    "useContainer": true,
+    "covers": [
+      "/assets/aqiqah/baby-portrait.png"
+    ],
+    "themeColors": [
+      "#2b537d",
+      "#8f4453",
+      "#355e42"
+    ],
+    "features": [
+      "Opening Envelope",
+      "Hero Header",
+      "Ayat & Doa Aqiqah",
+      "Profil & Biodata Bayi",
+      "Rangkaian Acara",
+      "Galeri Foto Lightbox",
+      "Hadiah & Kado Digital",
+      "Buku Tamu & Ucapan",
+      "Doa Penutup"
+    ],
+    "tags": [
+      "aqiqah",
+      "kelahiran",
+      "baby",
+      "tasyakuran",
+      "islami",
+      "pastel",
+      "starlight"
+    ]
   }
 ]
