@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findOrCreateGoogleUser, SESSION_COOKIE_NAME } from "@/modules/auth/service";
 import {
+  getAppBaseUrl,
   isValidOAuthState,
   OAUTH_COOKIE_PATH,
   OAUTH_RETURN_TO_COOKIE_NAME,
@@ -15,7 +16,7 @@ function clearOAuthCookies(response: NextResponse) {
 }
 
 function oauthError(request: Request, code: string) {
-  return clearOAuthCookies(NextResponse.redirect(new URL(`/login?error=${code}`, request.url)));
+  return clearOAuthCookies(NextResponse.redirect(new URL(`/login?error=${code}`, getAppBaseUrl(request))));
 }
 
 export async function GET(request: NextRequest) {
@@ -24,10 +25,11 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get("state");
   const expectedState = request.cookies.get(OAUTH_STATE_COOKIE_NAME)?.value;
   const returnTo = sanitizeReturnTo(request.cookies.get(OAUTH_RETURN_TO_COOKIE_NAME)?.value);
+  const baseUrl = getAppBaseUrl(request);
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${new URL(request.url).origin}/api/auth/google/callback`;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${baseUrl}/api/auth/google/callback`;
 
   if (!code || !clientId || !clientSecret || !isValidOAuthState(state, expectedState)) {
     return oauthError(request, "invalid_oauth_state");
@@ -73,7 +75,7 @@ export async function GET(request: NextRequest) {
     });
 
     // 4. Set Session Cookie
-    const response = NextResponse.redirect(new URL(returnTo, request.url));
+    const response = NextResponse.redirect(new URL(returnTo, baseUrl));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

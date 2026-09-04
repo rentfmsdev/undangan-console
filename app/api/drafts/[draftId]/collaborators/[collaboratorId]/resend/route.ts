@@ -4,6 +4,7 @@ import { db } from "@/db/client";
 import { invitationCollaborators } from "@/db/schema";
 import { getDraftAccess } from "@/modules/drafts/access";
 import { generateInviteToken, hashInviteToken, logInvitationActivity, queueOutboxEmail } from "@/modules/collaboration/invitation";
+import { getAppBaseUrl } from "@/modules/auth/oauth-state";
 
 export async function POST(
   request: Request,
@@ -60,7 +61,7 @@ export async function POST(
     metadata: { targetEmail: collab.email, expiresAt: expiresAt.toISOString() },
   });
 
-  const origin = new URL(request.url).origin;
+  const origin = getAppBaseUrl(request);
   const inviteUrl = `${origin}/collaboration/invite/${rawToken}`;
 
   await queueOutboxEmail({

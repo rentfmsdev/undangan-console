@@ -7,10 +7,14 @@
 
     @collaboration path /collaboration-ws*
     handle @collaboration {
-        reverse_proxy collab:3001
+        reverse_proxy collab:3001 {
+            trusted_proxies private_ranges
+        }
     }
 
     handle {
-        reverse_proxy web:3000
+        reverse_proxy web:3000 {
+            trusted_proxies private_ranges
+        }
     }
 }

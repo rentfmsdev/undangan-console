@@ -4,6 +4,7 @@ import { db } from "@/db/client";
 import { invitationCollaborators, invitations, users } from "@/db/schema";
 import { getDraftAccess } from "@/modules/drafts/access";
 import { generateInviteToken, hashInviteToken, logInvitationActivity, queueOutboxEmail } from "@/modules/collaboration/invitation";
+import { getAppBaseUrl } from "@/modules/auth/oauth-state";
 import { z } from "zod";
 import crypto from "crypto";
 
@@ -191,7 +192,7 @@ export async function POST(
   });
 
   // Email Outbox
-  const origin = new URL(request.url).origin;
+  const origin = getAppBaseUrl(request);
   const inviteUrl = `${origin}/collaboration/invite/${rawToken}`;
   await queueOutboxEmail({
     type: "collaboration_invite",
