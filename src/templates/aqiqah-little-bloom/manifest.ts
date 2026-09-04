@@ -35,6 +35,7 @@ export const aqiqahLittleBloom = defineTemplate({
   name: "Aqiqah Little Bloom",
   description: "Undangan tasyakuran walimatul aqiqah & kelahiran buah hati dengan nuansa pastel lembut, ornamen awan bintang emas, doa tasyakuran, dan galeri manis.",
   price: 35000,
+  defaultMusicUrl: "/assets/audio/Playful-Sunshine.mp3",
   navigation: {
     scrollRootSelector: "[data-template-scroll-root]",
     sectionAttribute: "data-template-section",

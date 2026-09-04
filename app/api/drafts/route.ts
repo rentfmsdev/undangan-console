@@ -7,6 +7,7 @@ import { getSessionUser } from "@/modules/auth/service";
 import { createEditToken, createRecoveryCode, editCookieName, hashSecret } from "@/modules/anonymous-access/token";
 import { createDraftSchema } from "@/modules/drafts/validation";
 import { getTemplateByCode, getTemplateById, getTemplateCatalogItem } from "@/templates/registry";
+import { getDefaultStockMusic } from "@/config/stock-music";
 import { releaseExpiredPublications } from "@/modules/publishing/retention";
 
 export async function GET(request: Request) {
@@ -157,7 +158,9 @@ export async function POST(request: Request) {
       templateId: template.id,
       templateVersion: template.version,
       themeId: template.themes[0].id,
-      styleOverrides: {},
+      styleOverrides: {
+        musicUrl: template.defaultMusicUrl || getDefaultStockMusic(template.category).url,
+      },
     });
     await tx.insert(invitationSections).values(template.defaultSections.flatMap((type, order) => {
       const section = template.sections.find((item) => item.type === type);

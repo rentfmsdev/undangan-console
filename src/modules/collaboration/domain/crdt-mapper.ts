@@ -39,9 +39,23 @@ export function initYDocFromState(state: SharedDraftState, doc: Y.Doc = new Y.Do
     metadataMap.set("updatedAt", state.metadata?.updatedAt ?? Date.now());
 
     // 2. Global Settings
+    const defaultMusicMap: Record<string, string> = {
+      "aqiqah-little-bloom": "/assets/audio/Playful-Sunshine.mp3",
+      "birthday-celestial": "/assets/audio/happy-birthday-ukulele.mp3",
+      "wedding-lampung-elegance": "/assets/audio/easy-on-me.webm",
+      "khitan-ksatria-jawa": "/assets/audio/INSTRUMENTAL-JAWA.mp3",
+      "aqiqh": "/assets/audio/Playful-Sunshine.mp3",
+      "bdcel": "/assets/audio/happy-birthday-ukulele.mp3",
+      "hjydg": "/assets/audio/easy-on-me.webm",
+      "kjawa": "/assets/audio/INSTRUMENTAL-JAWA.mp3",
+      "khtnn": "/assets/audio/INSTRUMENTAL-JAWA.mp3",
+    };
+    const tId = state.metadata?.templateId || "hjydg";
+    const defaultMusic = defaultMusicMap[tId] || "/assets/audio/easy-on-me.webm";
+
     const globalSettingsMap = doc.getMap("globalSettings");
     globalSettingsMap.set("themeId", state.globalSettings?.themeId ?? "royal-blue-gold");
-    globalSettingsMap.set("musicUrl", typeof state.globalSettings?.musicUrl === "string" ? state.globalSettings.musicUrl : "");
+    globalSettingsMap.set("musicUrl", typeof state.globalSettings?.musicUrl === "string" ? state.globalSettings.musicUrl : defaultMusic);
     globalSettingsMap.set("musicVolume", state.globalSettings?.musicVolume ?? 0.6);
 
     const customColorsMap = new Y.Map();

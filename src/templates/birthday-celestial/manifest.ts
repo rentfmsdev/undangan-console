@@ -10,6 +10,7 @@ export const birthdayCelestial = defineTemplate({
   name: "Celestial Birthday",
   description: "Undangan ulang tahun modern dengan nuansa langit malam dan aksen bintang.",
   price: 35000,
+  defaultMusicUrl: "/assets/audio/happy-birthday-ukulele.mp3",
   navigation: { scrollRootSelector: "[data-template-scroll-root]", sectionAttribute: "data-template-section", openingSectionId: "opening-envelope" },
   defaultView: "mobile",
   themes: [

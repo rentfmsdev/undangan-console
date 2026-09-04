@@ -46,7 +46,11 @@ export function getStockMusicByUrl(url: string): StockMusicTrack | undefined {
   return stockMusicLibrary.find((track) => track.url === url);
 }
 
-export function getDefaultStockMusic(category?: string): StockMusicTrack {
+export function getDefaultStockMusic(category?: string, explicitUrl?: string): StockMusicTrack {
+  if (explicitUrl) {
+    const trackByUrl = getStockMusicByUrl(explicitUrl);
+    if (trackByUrl) return trackByUrl;
+  }
   const norm = normalizeMusicCategory(category);
   const recommended = stockMusicLibrary.filter((track) => {
     if (track.category === norm) return true;
@@ -54,8 +58,10 @@ export function getDefaultStockMusic(category?: string): StockMusicTrack {
     return false;
   });
 
-  const explicitDefault = recommended.find((track) => track.isDefault);
-  if (explicitDefault) return explicitDefault;
+  const exactCategoryDefault = recommended.find((track) => track.isDefault && track.category === norm);
+  if (exactCategoryDefault) return exactCategoryDefault;
+  const anyDefault = recommended.find((track) => track.isDefault);
+  if (anyDefault) return anyDefault;
   if (recommended.length > 0) return recommended[0];
   return stockMusicLibrary.find((track) => track.isDefault) ?? stockMusicLibrary[0];
 }

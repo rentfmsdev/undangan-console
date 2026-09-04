@@ -16,6 +16,7 @@ export const templateKitSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
   price: z.number().int().nonnegative().optional(),
+  defaultMusicUrl: z.string().optional(),
   themes: z.array(z.object({
     id: z.string().min(1),
     label: z.string().min(1),

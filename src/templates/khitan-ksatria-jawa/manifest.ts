@@ -35,6 +35,7 @@ export const khitanKsatriaJawa = defineTemplate({
   name: "Ksatria Khitan Jawa",
   description: "Undangan syukuran walimatul khitan bernuansa Keraton Jawa & Islami yang agung, gagah, dan berakhlak mulia.",
   price: 35000,
+  defaultMusicUrl: "/assets/audio/INSTRUMENTAL-JAWA.mp3",
   navigation: {
     scrollRootSelector: "[data-template-scroll-root]",
     sectionAttribute: "data-template-section",

@@ -608,7 +608,7 @@ export default function BirthdayCelestialSource({ invitationId, verifiedGuestNam
   return (
     <main className={`birthday-shell birthday-stage-${stage}`} data-template-scroll-root data-template-hydrated="true" data-opened={opened ? "true" : "false"}>
       <TemplateNavigationRuntime createAdapter={createBirthdayNavigationAdapter} />
-      <audio ref={musicRef} loop preload="metadata"><source src="/assets/audio/easy-on-me.webm" type="audio/webm" /></audio>
+      <audio ref={musicRef} loop preload="metadata"><source src="/assets/audio/happy-birthday-ukulele.mp3" type="audio/mpeg" /></audio>
 
       {!opened && (
         <section className="birthday-envelope-screen" data-template-section="opening-envelope" aria-label="Amplop undangan ulang tahun">

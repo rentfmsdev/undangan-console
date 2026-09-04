@@ -32,6 +32,7 @@ export type TemplateKit = {
   name: string;
   description: string;
   price?: number;
+  defaultMusicUrl?: string;
   themes: TemplateTheme[];
   sections: TemplateSection[];
   defaultSections: string[];
