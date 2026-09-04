@@ -436,6 +436,12 @@ button, input, textarea, select { font: inherit; }
     transition: grid-template-columns 220ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* A grid item otherwise keeps its content's intrinsic width and can spill out of the inspector column. */
+  .editor-inspector-panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .editor-workspace-grid.is-structure-collapsed {
     --structure-width: 0px;
   }
@@ -445,6 +451,12 @@ button, input, textarea, select { font: inherit; }
   }
 
   .editor-workspace-grid.is-resizing iframe { pointer-events: none; }
+}
+
+.editor-inspector-content,
+.editor-inspector-content > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .figma-canvas-dots {
