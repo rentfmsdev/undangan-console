@@ -2,8 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 
 const reservedSubdomains = new Set(["www", "console", "api", "admin", "mail", "app", "assets"]);
 
+const reservedRootPaths = new Set([
+  "api",
+  "demo",
+  "template-preview",
+  "editor",
+  "login",
+  "collaboration",
+  "i",
+  "uploads",
+  "assets",
+  "thumb",
+  "admin",
+  "console",
+  "dashboard",
+  "fav.png",
+  "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
+]);
+
 export function proxy(request: NextRequest) {
-  const rootDomain = process.env.ROOT_DOMAIN ?? "undangan.co";
+  const rootDomain = (process.env.ROOT_DOMAIN ?? "undangan.co").toLowerCase();
   const hostname = request.headers.get("host")?.split(":")[0].toLowerCase() ?? "";
   const { pathname } = request.nextUrl;
 
@@ -16,8 +36,32 @@ export function proxy(request: NextRequest) {
     return NextResponse.rewrite(uploadUrl);
   }
 
-  if ((hostname === rootDomain || hostname === `www.${rootDomain}`) && /^\/[a-z0-9][a-z0-9-]*$/.test(pathname)) {
-    return NextResponse.rewrite(new URL(`/i${pathname}`, request.url));
+  // Extract first path segment (e.g. /demo/foo -> demo, /template-preview -> template-preview)
+  const segments = pathname.split("/").filter(Boolean);
+  const firstSegment = segments[0]?.toLowerCase();
+
+  // Skip rewrite for reserved system routes or static files
+  if (firstSegment && (reservedRootPaths.has(firstSegment) || pathname.includes("."))) {
+    return NextResponse.next();
+  }
+
+  // Check if host is the root domain (configured in ROOT_DOMAIN or NEXT_PUBLIC_APP_URL)
+  const isRootDomain =
+    hostname === rootDomain ||
+    hostname === `www.${rootDomain}` ||
+    (process.env.NEXT_PUBLIC_APP_URL &&
+      (() => {
+        try {
+          const u = new URL(process.env.NEXT_PUBLIC_APP_URL).hostname.toLowerCase();
+          return hostname === u || hostname === `www.${u}`;
+        } catch {
+          return false;
+        }
+      })());
+
+  // Rewrite root domain invitation paths (e.g. undang.site/budi-ani -> /i/budi-ani)
+  if (isRootDomain && segments.length === 1 && /^[a-z0-9][a-z0-9-]*$/.test(firstSegment)) {
+    return NextResponse.rewrite(new URL(`/i/${firstSegment}`, request.url));
   }
 
   if (hostname.endsWith(`.${rootDomain}`)) {
