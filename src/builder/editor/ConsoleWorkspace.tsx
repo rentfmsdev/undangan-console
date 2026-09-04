@@ -1309,13 +1309,13 @@ export function ConsoleWorkspace({
               key={id}
               type="button"
               onClick={() => changeView(id)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-semibold transition ${
                 view === id
                   ? "bg-white text-emerald-700 shadow-xs border border-slate-200/60"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
               }`}
             >
-              <Icon size={13} className={view === id ? "text-emerald-600" : "text-slate-400"} />
+              <Icon size={12} className={view === id ? "text-emerald-600" : "text-slate-400"} />
               <span>{label}</span>
             </button>
           ))}
@@ -1404,11 +1404,11 @@ export function ConsoleWorkspace({
             key={id}
             type="button"
             onClick={() => changeView(id)}
-            className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition ${
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-semibold transition ${
               view === id ? "bg-emerald-600 text-white shadow-xs" : "text-slate-600"
             }`}
           >
-            <Icon size={13} />
+            <Icon size={12} />
             <span>{label}</span>
           </button>
         ))}
