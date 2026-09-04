@@ -9,6 +9,10 @@ import BirthdayCelestialSource from "./birthday-celestial/source/BirthdayCelesti
 import { BirthdayCelestialNavigationAdapter } from "./birthday-celestial/navigation-adapter";
 import { normalizeBirthdaySectionState } from "./birthday-celestial/normalize-section-state";
 import { applyBirthdayTemplateState, watchBirthdayTemplateState, type BirthdayPreviewSection } from "./birthday-celestial/source/template-bridge";
+import { KhitanKsatriaSource } from "./khitan-ksatria-jawa/source/KhitanKsatriaSource";
+import { KhitanKsatriaNavigationAdapter } from "./khitan-ksatria-jawa/navigation-adapter";
+import { normalizeKhitanSectionState } from "./khitan-ksatria-jawa/normalize-section-state";
+import { applyKhitanTemplateState, watchKhitanTemplateState, type KhitanPreviewSection } from "./khitan-ksatria-jawa/source/template-bridge";
 
 export type RuntimeState = { sections: unknown[]; themeId: string; settings: Record<string, unknown> };
 export type StoredTemplateSection = { id: string; type: string; enabled: boolean; data: Record<string, unknown> };
@@ -44,7 +48,17 @@ const birthdayCelestialRuntime: TemplateRuntime = {
   watchState: ({ sections, themeId, settings }) => watchBirthdayTemplateState(sections as BirthdayPreviewSection[], themeId, (settings ?? {}) as Parameters<typeof watchBirthdayTemplateState>[2]),
 };
 
-export const templateRuntimeRegistry: TemplateRuntime[] = [weddingLampungRuntime, birthdayCelestialRuntime];
+const khitanKsatriaRuntime: TemplateRuntime = {
+  templateId: "khitan-ksatria-jawa",
+  code: "khtnn",
+  Renderer: KhitanKsatriaSource,
+  createNavigationAdapter: () => new KhitanKsatriaNavigationAdapter(),
+  normalizeSections: normalizeKhitanSectionState,
+  applyState: ({ sections, themeId, settings }) => applyKhitanTemplateState(sections as KhitanPreviewSection[], themeId, (settings ?? {}) as Parameters<typeof applyKhitanTemplateState>[2]),
+  watchState: ({ sections, themeId, settings }) => watchKhitanTemplateState(sections as KhitanPreviewSection[], themeId, (settings ?? {}) as Parameters<typeof watchKhitanTemplateState>[2]),
+};
+
+export const templateRuntimeRegistry: TemplateRuntime[] = [weddingLampungRuntime, birthdayCelestialRuntime, khitanKsatriaRuntime];
 
 export function getTemplateRuntime(code: string) {
   return templateRuntimeRegistry.find((runtime) => runtime.code === code || runtime.templateId === code) ?? weddingLampungRuntime;

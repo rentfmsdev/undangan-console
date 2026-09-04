@@ -480,6 +480,7 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
               {filteredDrafts.map((draft) => {
                 const isPublished = draft.status === "published";
                 const isCustom = draft.status === "custom";
+                const isArchived = draft.status === "archived";
                 const isConfirmingDelete = confirmDeleteId === draft.id;
                 const isDeleting = deletingId === draft.id;
 
@@ -521,6 +522,10 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
                               ) : isCustom ? (
                                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[9px] font-extrabold text-amber-700">
                                   <Clock size={10} /> Custom
+                                </span>
+                              ) : isArchived ? (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[9px] font-extrabold text-rose-700">
+                                  <Clock size={10} /> Kedaluwarsa
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-500">

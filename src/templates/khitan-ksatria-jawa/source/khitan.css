@@ -1,0 +1,1193 @@
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,700&family=Dancing+Script:wght@600;700&family=Great+Vibes&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  --khitan-bg: #faf7f0;
+  --khitan-surface: #ffffff;
+  --khitan-primary: #1b382b;
+  --khitan-accent: #d4af37;
+  --khitan-text: #202d24;
+  --khitan-dark: #0e1f17;
+  --khitan-rich: #2d4a3b;
+  --khitan-mid: #517460;
+  --khitan-cream: #f7f1e1;
+  --khitan-border: #dcd1ba;
+  --khitan-muted: #6b7c71;
+
+  --khitan-font-display: 'Cinzel', serif;
+  --khitan-font-heading: 'Cormorant Garamond', serif;
+  --khitan-font-body: 'Plus Jakarta Sans', sans-serif;
+  --khitan-font-arabic: 'Amiri', serif;
+  --khitan-font-handwriting: 'Great Vibes', var(--font-great-vibes, var(--font-script, cursive));
+}
+
+/* Base resets inside template scope */
+.khitan-shell {
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  margin: 0 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  background-color: var(--khitan-bg);
+  color: var(--khitan-text);
+  font-family: var(--khitan-font-body);
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--khitan-border);
+}
+
+.khitan-shell[data-opened="false"] {
+  overflow: hidden !important;
+}
+
+.khitan-shell::-webkit-scrollbar {
+  display: none;
+}
+
+/* Fallback hiding for disabled sections */
+.khitan-shell [data-template-section][hidden] {
+  display: none !important;
+}
+
+/* Decorative Royal Javanese Batik Background Pattern */
+.khitan-batik-pattern {
+  background-image: radial-gradient(var(--khitan-border) 0.8px, transparent 0.8px), radial-gradient(var(--khitan-border) 0.8px, var(--khitan-bg) 0.8px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+}
+
+/* Hero Section: Strictly Mobile-First Deterministik 1 Viewport */
+.khitan-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100dvh;
+  max-height: 100dvh;
+  box-sizing: border-box;
+  padding: clamp(44px, 5.8vh, 56px) clamp(16px, 4vw, 20px) 72px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  background-color: var(--khitan-bg);
+  background-image:
+    radial-gradient(circle at 50% 30%, rgba(247, 241, 225, 0.9) 0%, rgba(250, 247, 240, 0.96) 75%),
+    radial-gradient(var(--khitan-border) 0.8px, transparent 0.8px),
+    radial-gradient(var(--khitan-border) 0.8px, var(--khitan-bg) 0.8px);
+  background-size: auto, 24px 24px, 24px 24px;
+  background-position: center, 0 0, 12px 12px;
+}
+
+/* Hero Corner Ornaments */
+.khitan-hero-corners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.khitan-hero-corner {
+  position: absolute;
+  width: clamp(44px, 11vw, 62px);
+  height: clamp(44px, 11vw, 62px);
+  opacity: 0.72;
+  filter: drop-shadow(0 2px 6px rgba(212, 175, 55, 0.25));
+}
+
+.khitan-hero-corner-tl {
+  top: clamp(8px, 1.8vh, 14px);
+  left: clamp(8px, 2vw, 14px);
+}
+
+.khitan-hero-corner-tr {
+  top: clamp(8px, 1.8vh, 14px);
+  right: clamp(8px, 2vw, 14px);
+  transform: scaleX(-1);
+}
+
+.khitan-hero-corner-bl {
+  bottom: clamp(8px, 1.8vh, 14px);
+  left: clamp(8px, 2vw, 14px);
+  transform: scaleY(-1);
+}
+
+.khitan-hero-corner-br {
+  bottom: clamp(8px, 1.8vh, 14px);
+  right: clamp(8px, 2vw, 14px);
+  transform: scale(-1);
+}
+
+/* Ambient Floating Dust Particles */
+.khitan-ambient-dust {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.khitan-dust-spark {
+  position: absolute;
+  background: radial-gradient(circle, #fff3cf 25%, #d4af37 80%, transparent 100%);
+  border-radius: 50%;
+  opacity: 0.55;
+  animation: khitan-dust-float 5s infinite ease-in-out alternate;
+}
+
+@keyframes khitan-dust-float {
+  0% {
+    transform: translateY(0) scale(0.85);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.15);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateY(-38px) scale(0.9);
+    opacity: 0.25;
+  }
+}
+
+.khitan-hero-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-width: 340px;
+  width: 100%;
+}
+
+.khitan-arabic-basmalah {
+  font-family: var(--khitan-font-arabic);
+  font-size: clamp(16px, 3.5vw, 20px);
+  color: var(--khitan-rich);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.khitan-hero-kicker {
+  font-family: var(--khitan-font-display);
+  font-size: clamp(9px, 2.2vw, 11px);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--khitan-accent);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.khitan-hero-guest {
+  margin-top: 4px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--khitan-accent);
+  padding: 3px 14px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(27, 56, 43, 0.08);
+}
+
+.khitan-hero-guest-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--khitan-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.khitan-hero-guest-name {
+  font-family: var(--khitan-font-heading);
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--khitan-primary);
+  letter-spacing: 0.02em;
+}
+
+.khitan-hero-avatar-wrap {
+  position: relative;
+  z-index: 2;
+  width: clamp(170px, 32vh, 235px);
+  height: clamp(210px, 40vh, 285px);
+  margin: auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Gunungan Wayang Crest behind Portrait Arch */
+.khitan-hero-gunungan-crest {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 96px;
+  z-index: 0;
+  opacity: 0.88;
+  filter: drop-shadow(0 -4px 10px rgba(170, 124, 17, 0.32));
+  pointer-events: none;
+}
+
+.khitan-hero-gunungan-crest img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.khitan-royal-arch-frame {
+  width: 100%;
+  height: 100%;
+  border-radius: 140px 140px 22px 22px;
+  padding: 5px;
+  background: linear-gradient(135deg, var(--khitan-accent), #fef5d6, var(--khitan-accent), #9b7218);
+  box-shadow: 0 16px 40px rgba(27, 56, 43, 0.22);
+  position: relative;
+  z-index: 1;
+}
+
+.khitan-royal-arch-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 135px 135px 18px 18px;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--khitan-surface);
+}
+
+.khitan-royal-arch-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+.khitan-hero-bottom {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  max-width: 360px;
+  width: 100%;
+}
+
+.khitan-hero-title {
+  font-family: var(--khitan-font-display);
+  font-size: clamp(18px, 4.8vw, 24px);
+  font-weight: 800;
+  color: var(--khitan-primary);
+  letter-spacing: 0.04em;
+  margin: 0;
+  text-wrap: balance;
+  line-height: 1.25;
+}
+
+/* Hero Kawung Divider */
+.khitan-hero-divider-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2px 0 1px;
+}
+
+.khitan-hero-divider {
+  width: clamp(130px, 38vw, 170px);
+  height: auto;
+  opacity: 0.85;
+  filter: drop-shadow(0 1px 3px rgba(212, 175, 55, 0.25));
+}
+
+.khitan-hero-date {
+  font-family: var(--khitan-font-heading);
+  font-size: clamp(12px, 3vw, 14px);
+  font-weight: 600;
+  color: var(--khitan-accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 2px 0 0;
+}
+
+.khitan-hero-copy {
+  font-size: clamp(10px, 2.4vw, 11px);
+  color: var(--khitan-muted);
+  line-height: 1.5;
+  margin-top: 4px;
+  max-width: 310px;
+  text-wrap: balance;
+}
+
+/* Content Sections Styling */
+.khitan-section {
+  padding: clamp(48px, 8vh, 72px) clamp(16px, 5vw, 28px);
+  max-width: 580px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.khitan-section-header {
+  text-align: center;
+  margin-bottom: clamp(24px, 4vh, 36px);
+}
+
+.khitan-section-eyebrow {
+  font-family: var(--khitan-font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--khitan-accent);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.khitan-section-title {
+  font-family: var(--khitan-font-display);
+  font-size: clamp(20px, 5vw, 26px);
+  font-weight: 800;
+  color: var(--khitan-primary);
+  letter-spacing: 0.04em;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.khitan-divider-gunungan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 10px auto;
+  color: var(--khitan-accent);
+}
+
+.khitan-divider-gunungan::before,
+.khitan-divider-gunungan::after {
+  content: "";
+  height: 1px;
+  width: 48px;
+  background: linear-gradient(90deg, transparent, var(--khitan-border), transparent);
+}
+
+/* Profile Section */
+.khitan-profile-card {
+  background: var(--khitan-surface);
+  border: 1px solid var(--khitan-border);
+  border-radius: 28px;
+  padding: clamp(24px, 4vw, 36px) clamp(18px, 4vw, 28px);
+  box-shadow: 0 12px 32px rgba(27, 56, 43, 0.06);
+  text-align: center;
+  position: relative;
+}
+
+.khitan-profile-avatar {
+  width: 135px;
+  height: 175px;
+  border-radius: 80px 80px 14px 14px;
+  overflow: hidden;
+  margin: 0 auto 16px;
+  padding: 3px;
+  background: linear-gradient(135deg, var(--khitan-accent), #fff8e8, var(--khitan-accent));
+  box-shadow: 0 10px 24px rgba(27, 56, 43, 0.12);
+}
+
+.khitan-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 77px 77px 12px 12px;
+  display: block;
+}
+
+/* Family Card with Parents (7.jpeg) */
+.khitan-family-card {
+  background: var(--khitan-surface);
+  border: 1.5px solid var(--khitan-accent);
+  border-radius: 24px;
+  padding: clamp(16px, 3vw, 22px);
+  box-shadow: 0 12px 32px rgba(27, 56, 43, 0.07);
+  margin-top: 18px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.khitan-family-avatar {
+  width: 100%;
+  max-width: 320px;
+  height: clamp(220px, 34vh, 290px);
+  border-radius: 18px;
+  overflow: hidden;
+  margin: 0 auto 14px;
+  padding: 3px;
+  background: linear-gradient(135deg, var(--khitan-accent), #fff6db, var(--khitan-accent), #9b7218);
+  box-shadow: 0 10px 24px rgba(27, 56, 43, 0.14);
+}
+
+.khitan-family-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
+  border-radius: 15px;
+  display: block;
+}
+
+.khitan-family-badge {
+  display: inline-block;
+  font-family: var(--khitan-font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--khitan-accent);
+  background: var(--khitan-cream);
+  padding: 3px 12px;
+  border-radius: 16px;
+  margin-bottom: 6px;
+}
+
+.khitan-family-title {
+  font-family: var(--khitan-font-display);
+  font-size: clamp(15px, 3.8vw, 18px);
+  font-weight: 700;
+  color: var(--khitan-primary);
+  margin: 0 0 6px;
+}
+
+.khitan-family-desc {
+  font-size: 11px;
+  color: var(--khitan-muted);
+  line-height: 1.5;
+  margin: 0 auto;
+  max-width: 300px;
+}
+
+.khitan-profile-name {
+  font-family: var(--khitan-font-display);
+  font-size: clamp(18px, 4.5vw, 22px);
+  font-weight: 800;
+  color: var(--khitan-primary);
+  margin: 0 0 4px;
+}
+
+.khitan-profile-nickname {
+  display: inline-block;
+  font-family: var(--khitan-font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--khitan-accent);
+  background: var(--khitan-cream);
+  padding: 3px 14px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+  letter-spacing: 0.05em;
+}
+
+.khitan-profile-parents {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--khitan-rich);
+  margin-bottom: 14px;
+}
+
+.khitan-profile-doa {
+  font-family: var(--khitan-font-heading);
+  font-size: clamp(13px, 3.2vw, 15px);
+  font-style: italic;
+  color: var(--khitan-text);
+  line-height: 1.6;
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px dashed var(--khitan-border);
+}
+
+/* Event Section */
+/* Unified Single Event Card */
+.khitan-unified-event-card {
+  background: var(--khitan-surface);
+  border: 1.5px solid var(--khitan-border);
+  border-radius: 28px;
+  padding: clamp(24px, 5vw, 34px) clamp(18px, 4vw, 26px);
+  box-shadow: 0 12px 36px rgba(27, 56, 43, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.khitan-unified-event-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--khitan-accent), var(--khitan-rich), var(--khitan-accent));
+}
+
+.khitan-event-session-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.khitan-event-badge {
+  font-family: var(--khitan-font-display);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--khitan-accent);
+  background: var(--khitan-cream);
+  padding: 3px 12px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+.khitan-event-name {
+  font-family: var(--khitan-font-display);
+  font-size: clamp(16px, 4.2vw, 19px);
+  font-weight: 700;
+  color: var(--khitan-primary);
+  margin: 0;
+}
+
+.khitan-event-time {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--khitan-rich);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.khitan-event-inner-divider {
+  width: 75%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--khitan-border), transparent);
+  margin: 2px auto;
+}
+
+.khitan-event-location-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--khitan-border);
+  border-radius: 20px;
+  padding: 16px;
+}
+
+.khitan-event-loc-title {
+  font-family: var(--khitan-font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--khitan-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.khitan-event-loc-address {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--khitan-muted);
+  margin: 0;
+  max-width: 320px;
+}
+
+/* Event Action Buttons - Separated OUTSIDE the Card */
+.khitan-event-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.khitan-btn-event-action {
+  flex: 1;
+  min-width: 140px;
+  max-width: 195px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-family: var(--khitan-font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.khitan-btn-map {
+  background: var(--khitan-primary);
+  color: #ffffff;
+  border: 1.5px solid var(--khitan-primary);
+  box-shadow: 0 4px 14px rgba(27, 56, 43, 0.22);
+}
+
+.khitan-btn-map:hover {
+  background: var(--khitan-rich);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(27, 56, 43, 0.3);
+}
+
+.khitan-btn-calendar {
+  background: linear-gradient(135deg, #fffcf5, var(--khitan-cream));
+  color: var(--khitan-primary);
+  border: 1.5px solid var(--khitan-accent);
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.18);
+}
+
+.khitan-btn-calendar:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.3);
+}
+
+/* Gift Section */
+.khitan-gift-card {
+  background: var(--khitan-surface);
+  border: 1px solid var(--khitan-border);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(27, 56, 43, 0.05);
+  margin-bottom: 14px;
+}
+
+.khitan-bank-badge {
+  font-family: var(--khitan-font-display);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--khitan-primary);
+  letter-spacing: 0.08em;
+}
+
+.khitan-bank-acc {
+  font-family: var(--khitan-font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--khitan-text);
+  margin: 6px 0;
+}
+
+.khitan-bank-holder {
+  font-size: 11px;
+  color: var(--khitan-muted);
+}
+
+.khitan-btn-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--khitan-cream);
+  color: var(--khitan-primary);
+  border: 1px solid var(--khitan-border);
+  border-radius: 12px;
+  padding: 6px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+.khitan-btn-copy:hover {
+  background: var(--khitan-border);
+}
+
+/* Wishes Section */
+.khitan-wishes-wrap {
+  background: var(--khitan-surface);
+  border: 1px solid var(--khitan-border);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(27, 56, 43, 0.05);
+}
+
+.khitan-form-group {
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.khitan-form-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--khitan-text);
+  margin-bottom: 5px;
+}
+
+.khitan-input,
+.khitan-textarea,
+.khitan-select {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--khitan-border);
+  background: var(--khitan-bg);
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--khitan-text);
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.khitan-input:focus,
+.khitan-textarea:focus,
+.khitan-select:focus {
+  border-color: var(--khitan-accent);
+}
+
+
+
+.khitan-wish-item {
+  background: var(--khitan-bg);
+  border: 1px solid var(--khitan-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.khitan-wish-author {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--khitan-primary);
+}
+
+.khitan-wish-text {
+  font-size: 11px;
+  color: var(--khitan-text);
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
+/* Closing / Footer Section */
+.khitan-closing {
+  position: relative;
+  z-index: 2;
+  padding: clamp(60px, 9vh, 90px) 24px 140px;
+  text-align: center;
+  background: radial-gradient(circle at 50% 40%, var(--khitan-cream) 0%, var(--khitan-bg) 85%);
+}
+
+.khitan-closing-title {
+  font-family: var(--khitan-font-display);
+  font-size: clamp(22px, 5.5vw, 30px);
+  font-weight: 800;
+  color: var(--khitan-primary);
+  margin: 10px 0;
+}
+
+.khitan-closing-sub {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--khitan-muted);
+  max-width: 420px;
+  margin: 0 auto 18px;
+}
+
+.khitan-closing-family {
+  font-family: var(--khitan-font-heading);
+  font-size: clamp(14px, 3.8vw, 17px);
+  font-weight: 700;
+  color: var(--khitan-rich);
+  margin-top: 14px;
+}
+
+.khitan-kawung-divider {
+  width: min(280px, 85%);
+  height: 32px;
+  object-fit: contain;
+  margin: 8px auto 14px;
+  display: block;
+}
+
+.khitan-section-divider {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 0 20px;
+}
+
+.khitan-section-divider img {
+  width: min(320px, 88%);
+  height: 34px;
+  object-fit: contain;
+  display: block;
+  opacity: 0.95;
+}
+
+/* Floating Audio Player Button - Placed at Top Right Safe Zone (Stationary / Diam) */
+.khitan-audio-btn {
+  position: fixed;
+  top: 72px;
+  right: calc(50% - 224px);
+  z-index: 60;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(27, 56, 43, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid var(--khitan-accent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--khitan-accent);
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+@media (max-width: 480px) {
+  .khitan-audio-btn {
+    right: 14px;
+  }
+}
+
+.khitan-audio-btn:hover {
+  background: var(--khitan-primary);
+  opacity: 0.95;
+}
+
+/* Section Wishes */
+section[data-template-section="wishes"] {
+  position: relative;
+  z-index: 2;
+  padding-bottom: 30px;
+}
+
+.khitan-btn-submit {
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--khitan-accent);
+  background: var(--khitan-primary);
+  color: #ffffff;
+  font-family: var(--khitan-font-display);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin: 14px 0 20px;
+  box-shadow: 0 6px 18px rgba(27, 56, 43, 0.25);
+  position: relative;
+  z-index: 5;
+}
+
+.khitan-wishes-list {
+  margin-top: 16px;
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 30px;
+}
+
+/* Traditional Royal Keraton Bottom Navigation Bar */
+.khitan-bottom-nav {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  max-width: calc(min(480px, 100vw) - 24px);
+  width: max-content;
+  background: linear-gradient(180deg, rgba(27, 56, 43, 0.96) 0%, rgba(14, 31, 23, 0.98) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid var(--khitan-accent);
+  border-radius: 26px;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  box-shadow:
+    0 10px 32px rgba(14, 31, 23, 0.45),
+    0 0 0 1px rgba(212, 175, 55, 0.25),
+    inset 0 1px 1px rgba(255, 244, 200, 0.25);
+}
+
+.khitan-bottom-nav::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ffe599, transparent);
+  pointer-events: none;
+}
+
+.khitan-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 5px 9px;
+  min-width: 44px;
+  border-radius: 18px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #dcd1ba;
+  font-family: var(--khitan-font-display);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  white-space: nowrap;
+}
+
+.khitan-nav-item svg {
+  stroke: #c5a86a;
+  transition: all 0.25s ease;
+}
+
+.khitan-nav-item:hover {
+  color: #fff4d0;
+  background: rgba(212, 175, 55, 0.14);
+}
+
+.khitan-nav-item:hover svg {
+  stroke: #ffd978;
+  transform: translateY(-1px);
+}
+
+/* Active State: Royal Keraton Gold Plaque */
+.khitan-nav-item.is-active {
+  background: linear-gradient(135deg, #dfbc4f 0%, #fff2be 50%, #b88a1b 100%);
+  color: var(--khitan-dark);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 3px 12px rgba(0, 0, 0, 0.28),
+    inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  font-weight: 800;
+  transform: translateY(-1px);
+}
+
+.khitan-nav-item.is-active svg {
+  stroke: var(--khitan-dark);
+  stroke-width: 2.2;
+}
+
+/* Javanese Corner Ornaments for Cards */
+.khitan-card-with-corners {
+  position: relative;
+}
+
+.khitan-corner-ornament {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.khitan-corner-tl { top: 6px; left: 6px; }
+.khitan-corner-tr { top: 6px; right: 6px; transform: scaleX(-1); }
+.khitan-corner-bl { bottom: 6px; left: 6px; transform: scaleY(-1); }
+.khitan-corner-br { bottom: 6px; right: 6px; transform: scale(-1); }
+
+/* Gunungan Wayang Icon */
+.khitan-gunungan-icon {
+  width: 32px;
+  height: 48px;
+  margin: 0 auto 6px;
+  display: block;
+}
+
+
+
+/* Live Countdown Timer */
+.khitan-countdown-wrap {
+  margin: 18px 0 6px;
+  text-align: center;
+  width: 100%;
+}
+
+.khitan-countdown-title {
+  font-family: var(--khitan-font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--khitan-accent);
+  margin-bottom: 8px;
+}
+
+.khitan-countdown-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.khitan-countdown-box {
+  background: var(--khitan-surface);
+  border: 1.5px solid var(--khitan-accent);
+  border-radius: 12px;
+  padding: 6px 10px;
+  min-width: 44px;
+  box-shadow: 0 4px 12px rgba(27, 56, 43, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.khitan-countdown-num {
+  font-family: var(--khitan-font-display);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--khitan-primary);
+  line-height: 1.1;
+}
+
+.khitan-countdown-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--khitan-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+/* Celebratory Berkah Banner in Wishes Section */
+.khitan-berkah-banner {
+  background: linear-gradient(135deg, var(--khitan-surface) 0%, var(--khitan-cream) 100%);
+  border: 1.5px solid var(--khitan-accent);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 6px 20px rgba(27, 56, 43, 0.08);
+}
+
+.khitan-berkah-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.khitan-berkah-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--khitan-primary);
+  color: var(--khitan-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(27, 56, 43, 0.15);
+}
+
+.khitan-berkah-info {
+  flex: 1;
+  text-align: left;
+}
+
+.khitan-berkah-title {
+  font-family: var(--khitan-font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--khitan-primary);
+  margin: 0 0 3px;
+}
+
+.khitan-berkah-desc {
+  font-size: 10.5px;
+  color: var(--khitan-muted);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.khitan-btn-berkah-action {
+  width: 100%;
+  background: linear-gradient(135deg, var(--khitan-primary), var(--khitan-rich));
+  border: 1.5px solid var(--khitan-accent);
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 14px;
+  font-family: var(--khitan-font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(27, 56, 43, 0.2);
+}
+
+.khitan-btn-berkah-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(27, 56, 43, 0.28);
+}
+
+.khitan-confetti-btn svg {
+  color: var(--khitan-accent);
+}
+
+/* Atmospheric Floating Dust / Sparks */
+.khitan-ambient-dust {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.khitan-dust-spark {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--khitan-accent);
+  box-shadow: 0 0 6px var(--khitan-accent);
+  opacity: 0;
+  animation: khitan-float-up 6s infinite linear;
+}
+
+@keyframes khitan-float-up {
+  0% { transform: translateY(100vh) scale(0.4); opacity: 0; }
+  30% { opacity: 0.7; }
+  80% { opacity: 0.7; }
+  100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+}

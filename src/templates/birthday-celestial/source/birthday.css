@@ -1,0 +1,300 @@
+:root {
+    --p: #5b3f88;
+    --a: #efb94f;
+    --bg: #f8f5ff;
+    --surface: #fff;
+    --dark: #201637;
+    --rich: #38245e;
+    --text: #30254b;
+    --muted: #766d91
+}
+
+.birthday-shell {
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, sans-serif
+}
+
+.birthday-shell section,
+.birthday-shell footer {
+    padding: 72px 28px;
+    text-align: center;
+    position: relative
+}
+
+.birthday-hero,
+.birthday-closing {
+    color: #fff;
+    background: radial-gradient(circle at top, var(--rich), var(--dark) 70%)
+}
+
+.birthday-stars {
+    position: absolute;
+    inset: 0;
+    opacity: .45;
+    background-image: radial-gradient(var(--a) 1px, transparent 1px);
+    background-size: 35px 35px
+}
+
+.birthday-hero>*:not(.birthday-stars) {
+    position: relative
+}
+
+.birthday-hero p,
+.birthday-event small,
+.birthday-gallery small,
+.birthday-wishes small {
+    letter-spacing: .18em;
+    font-size: 10px;
+    font-weight: 700
+}
+
+.birthday-hero h1,
+.birthday-closing p {
+    margin: 18px 0 14px;
+    font: 56px/1 cursive;
+    color: #fff
+}
+
+.birthday-hero b {
+    color: var(--a);
+    letter-spacing: .12em;
+    font-size: 12px
+}
+
+.birthday-event {
+    background: var(--surface)
+}
+
+.birthday-event h2,
+.birthday-gallery h2,
+.birthday-wishes h2 {
+    margin: 10px 0;
+    font: 42px/1 cursive;
+    color: var(--p)
+}
+
+.birthday-event p {
+    font-weight: 700
+}
+
+.birthday-event address {
+    margin: 24px auto 0;
+    max-width: 300px;
+    padding: 18px;
+    border: 1px solid color-mix(in srgb, var(--a) 50%, transparent);
+    border-radius: 18px;
+    font-style: normal;
+    color: var(--muted)
+}
+
+.birthday-gallery {
+    background: color-mix(in srgb, var(--bg) 85%, white)
+}
+
+.birthday-gallery .birthday-gallery-legacy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 24px
+}
+
+.birthday-gallery img {
+    width: 100%;
+    height: 170px;
+    object-fit: cover;
+    border-radius: 18px
+}
+
+.birthday-gallery img:first-child {
+    grid-row: span 2;
+    height: 350px
+}
+
+.birthday-gallery p,
+.birthday-wishes p {
+    color: var(--muted);
+    line-height: 1.6
+}
+
+.birthday-wishes {
+    background: var(--surface)
+}
+
+.birthday-wishes > button {
+    margin-top: 20px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--p);
+    color: #fff;
+    padding: 13px 22px;
+    font-weight: 700
+}
+
+.birthday-closing {
+    min-height: 300px;
+    display: grid;
+    place-content: center
+}
+
+.birthday-closing span {
+    max-width: 330px;
+    line-height: 1.7;
+    color: color-mix(in srgb, #fff 85%, var(--a))
+}
+
+.birthday-envelope-screen {
+    position: fixed !important;
+    z-index: 100;
+    inset: 0;
+    min-height: 100%;
+    display: grid;
+    place-content: center;
+    gap: 18px;
+    overflow: hidden;
+    color: #fff;
+    background: radial-gradient(circle at 50% 18%, var(--rich), var(--dark) 65%)
+}
+
+.birthday-envelope-screen:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: .34;
+    background-image: radial-gradient(var(--a) 1px, transparent 1.5px);
+    background-size: 30px 30px
+}
+
+.birthday-envelope-screen>* {
+    position: relative
+}
+
+.birthday-envelope-stars {
+    color: var(--a);
+    font-size: 25px;
+    letter-spacing: 1.1em
+}
+
+.birthday-envelope-screen>p {
+    margin: 0;
+    letter-spacing: .25em;
+    font-size: 10px;
+    font-weight: 700
+}
+
+.birthday-envelope-screen>h1 {
+    margin: 0;
+    font: 58px/.88 cursive
+}
+
+.birthday-envelope-screen>span {
+    color: var(--a);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .18em
+}
+
+.birthday-envelope {
+    position: relative;
+    width: min(82vw, 430px);
+    height: 245px;
+    margin: 13px auto 0;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--a) 45%, #fff), color-mix(in srgb, var(--p) 28%, #fff));
+    box-shadow: 0 25px 45px #0005
+}
+
+.birthday-envelope>i {
+    position: absolute;
+    inset: 0;
+    display: block;
+    clip-path: polygon(0 0, 50% 52%, 100% 0);
+    background: linear-gradient(145deg, #fff8e8, color-mix(in srgb, var(--a) 48%, #fff));
+    z-index: 2
+}
+
+.birthday-envelope>i+i {
+    clip-path: polygon(0 100%, 50% 52%, 100% 100%);
+    background: color-mix(in srgb, var(--p) 20%, #fff);
+    z-index: 3
+}
+
+.birthday-letter {
+    position: absolute;
+    z-index: 1;
+    left: 12%;
+    right: 12%;
+    top: 16px;
+    padding: 20px 10px 55px;
+    background: #fffdf8;
+    color: var(--text);
+    transition: transform .7s ease
+}
+
+.birthday-letter small,
+.birthday-letter strong,
+.birthday-letter em {
+    display: block
+}
+
+.birthday-letter small {
+    font-size: 9px;
+    letter-spacing: .14em
+}
+
+.birthday-letter strong {
+    margin: 8px;
+    font: 33px cursive
+}
+
+.birthday-letter em {
+    font-size: 10px;
+    color: var(--muted)
+}
+
+.birthday-envelope button {
+    position: absolute;
+    z-index: 5;
+    left: 50%;
+    top: 50%;
+    width: 78px;
+    height: 78px;
+    transform: translate(-50%, -50%);
+    border: 4px solid color-mix(in srgb, var(--a) 50%, #fff);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 25%, var(--mid, var(--rich)), var(--rich));
+    color: var(--a);
+    box-shadow: 0 0 0 7px #fff3, 0 9px 22px #0005
+}
+
+.birthday-envelope button b,
+.birthday-envelope button small {
+    display: block
+}
+
+.birthday-envelope button b {
+    font-size: 26px
+}
+
+.birthday-envelope button small {
+    font-size: 8px
+}
+
+.birthday-envelope-screen aside {
+    font-size: 11px;
+    color: color-mix(in srgb, #fff 70%, var(--a));
+    animation: birthdayPulse 1.6s ease-in-out infinite
+}
+
+.birthday-shell.is-open .birthday-envelope-screen {
+    display: none
+}
+
+@keyframes birthdayPulse {
+    50% {
+        opacity: .45;
+        transform: translateY(3px)
+    }
+}

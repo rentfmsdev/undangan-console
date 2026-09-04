@@ -11,9 +11,11 @@ import {
 } from "@/db/schema";
 import { getDraftAccess } from "@/modules/drafts/access";
 import { updateDraftSchema, validateDraftForTemplate } from "@/modules/drafts/validation";
+import { releaseExpiredPublications } from "@/modules/publishing/retention";
 
 export async function GET(_: Request, { params }: { params: Promise<{ draftId: string }> }) {
   const { draftId } = await params;
+  await releaseExpiredPublications();
   const access = await getDraftAccess(draftId);
   if (!access.authorized || !access.draft) {
     return NextResponse.json({ error: "Draft tidak dapat diakses." }, { status: 401 });
@@ -119,4 +121,3 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ draftId
 
   return NextResponse.json({ ok: true, deletedId: draftId });
 }
-

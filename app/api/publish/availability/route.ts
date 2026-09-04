@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db/client";
 import { invitations } from "@/db/schema";
 import { getSessionUser } from "@/modules/auth/service";
+import { releaseExpiredPublications } from "@/modules/publishing/retention";
 
 const reservedNames = new Set(["www", "console", "api", "admin", "mail", "app", "assets", "demo", "editor"]);
 const identifierPattern = /^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/;
@@ -18,6 +19,8 @@ export async function GET(request: Request) {
   if ((mode !== "path" && mode !== "subdomain") || !identifierPattern.test(identifier) || reservedNames.has(identifier)) {
     return NextResponse.json({ available: false, reason: "Nama belum valid atau termasuk alamat yang dicadangkan." });
   }
+
+  await releaseExpiredPublications();
 
   const column = mode === "path" ? invitations.slug : invitations.subdomain;
   const condition = excludeDraftId ? and(eq(column, identifier), ne(invitations.id, excludeDraftId)) : eq(column, identifier);

@@ -7,12 +7,14 @@ import { getSessionUser } from "@/modules/auth/service";
 import { createEditToken, createRecoveryCode, editCookieName, hashSecret } from "@/modules/anonymous-access/token";
 import { createDraftSchema } from "@/modules/drafts/validation";
 import { getTemplateByCode, getTemplateById, getTemplateCatalogItem } from "@/templates/registry";
+import { releaseExpiredPublications } from "@/modules/publishing/retention";
 
 export async function GET(request: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Silakan masuk terlebih dahulu." }, { status: 401 });
   const templateCode = new URL(request.url).searchParams.get("templateCode")?.trim().toLowerCase();
   const template = templateCode ? getTemplateByCode(templateCode) : null;
+  await releaseExpiredPublications();
 
   // 1. Owned drafts
   const ownedRecords = await db

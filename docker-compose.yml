@@ -1,0 +1,143 @@
+name: undangan-console
+
+x-app: &app
+  image: undangan-console:local
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      NEXT_PUBLIC_COLLAB_WS_URL: ${NEXT_PUBLIC_COLLAB_WS_URL}
+      NEXT_PUBLIC_ADMIN_WHATSAPP: ${NEXT_PUBLIC_ADMIN_WHATSAPP}
+      NEXT_PUBLIC_ENABLE_DEV_AUTH: ${NEXT_PUBLIC_ENABLE_DEV_AUTH}
+  env_file:
+    - .env
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: ${DOCKER_DATABASE_URL}
+    NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    NEXT_PUBLIC_COLLAB_WS_URL: ${NEXT_PUBLIC_COLLAB_WS_URL}
+    COLLAB_PORT: ${COLLAB_PORT}
+    COLLAB_ALLOWED_ORIGIN: ${COLLAB_ALLOWED_ORIGIN}
+    COLLAB_REDIS_HOST: ${DOCKER_COLLAB_REDIS_HOST}
+    COLLAB_REDIS_PORT: ${COLLAB_REDIS_PORT}
+    COLLAB_REDIS_USERNAME: ${COLLAB_REDIS_USERNAME}
+    COLLAB_REDIS_PASSWORD: ${COLLAB_REDIS_PASSWORD}
+    COLLAB_REDIS_DATABASE: ${COLLAB_REDIS_DATABASE}
+    COLLAB_REDIS_TLS: ${COLLAB_REDIS_TLS}
+  networks:
+    - undangan
+
+services:
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT}:80"
+    volumes:
+      - ./deploy/caddy/Caddyfile.docker:/etc/caddy/Caddyfile:ro
+    depends_on:
+      web:
+        condition: service_healthy
+      collab:
+        condition: service_healthy
+    networks:
+      - undangan
+
+  web:
+    <<: *app
+    restart: unless-stopped
+    command: ["npm", "run", "start"]
+    init: true
+    stop_grace_period: 30s
+    volumes:
+      - uploads:/app/public/uploads
+      - wishes:/app/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  collab:
+    <<: *app
+    restart: unless-stopped
+    command: ["npm", "run", "start:collab"]
+    init: true
+    stop_grace_period: 15s
+    ports:
+      - "127.0.0.1:${COLLAB_PORT}:3001"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  migrate:
+    <<: *app
+    command: ["npm", "run", "db:migrate"]
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - undangan
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - undangan
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_data:
+  redis_data:
+  uploads:
+  wishes:
+
+networks:
+  undangan:
+    driver: bridge

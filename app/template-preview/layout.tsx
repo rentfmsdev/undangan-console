@@ -6,5 +6,19 @@ const monogram = Dancing_Script({ subsets: ["latin"], weight: ["600", "700"], va
 const sans = Manrope({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-manrope", display: "swap" });
 
 export default function WeddingPreviewLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`${serif.variable} ${script.variable} ${monogram.variable} ${sans.variable}`} style={{ "--font-serif": "var(--font-cormorant)", "--font-script": "var(--font-great-vibes)", "--font-monogram": "var(--font-dancing-script)", "--font-sans": "var(--font-manrope)" } as React.CSSProperties}>{children}</div>;
+  return (
+    <div
+      className={`${serif.variable} ${script.variable} ${monogram.variable} ${sans.variable}`}
+      style={
+        {
+          "--font-serif": "var(--font-cormorant)",
+          "--font-script": "var(--font-great-vibes)",
+          "--font-monogram": "var(--font-dancing-script)",
+          "--font-sans": "var(--font-manrope)",
+        } as React.CSSProperties
+      }
+    >
+      {children}
+    </div>
+  );
 }

@@ -549,9 +549,22 @@ export function applyWeddingTemplateState(sections: WeddingPreviewSection[], the
 
   const audio = document.querySelector<HTMLAudioElement>(".invitation-shell audio");
   const audioSource = audio?.querySelector<HTMLSourceElement>("source");
-  if (audio && audioSource && settings.musicUrl !== undefined && audioSource.getAttribute("src") !== settings.musicUrl) {
-    audioSource.setAttribute("src", settings.musicUrl);
-    audio.load();
+  if (audio && audioSource && settings.musicUrl !== undefined) {
+    const targetUrl = typeof settings.musicUrl === "string" ? settings.musicUrl.trim() : "";
+    if (!targetUrl) {
+      // User selected "Tanpa musik"
+      audio.pause();
+      audio.currentTime = 0;
+      audioSource.removeAttribute("src");
+      audioSource.src = "";
+      audio.load();
+    } else if (audioSource.getAttribute("src") !== targetUrl) {
+      audioSource.setAttribute("src", targetUrl);
+      audio.load();
+      if (document.querySelector<HTMLElement>("[data-template-scroll-root]")?.dataset.opened === "true") {
+        void audio.play().catch(() => undefined);
+      }
+    }
   }
   if (audio && typeof settings.musicVolume === "number") {
     const vol = Math.max(0, Math.min(1, settings.musicVolume));

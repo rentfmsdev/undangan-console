@@ -55,7 +55,7 @@ export function CollaborativeSectionInspector({
 
       {/* Dynamic Fields List */}
       <div className="space-y-3">
-        {(selected.fields ?? []).map((field) => {
+        {(selected.fields ?? []).filter((field) => !(selected.type === "gift" && ["bank2", "account2", "holder2"].includes(field.key))).map((field) => {
           const value = typeof defaultData[field.key] === "string" ? String(defaultData[field.key]) : "";
           const textStyles =
             defaultData.textStyles && typeof defaultData.textStyles === "object"
@@ -88,11 +88,80 @@ export function CollaborativeSectionInspector({
         })}
       </div>
 
+      {selected.type === "gift" && ([
+        { key: "showBank", label: "Tampilkan rekening", description: "Sembunyikan data rekening tanpa menghapus isinya.", icon: "¤" },
+        { key: "showQris", label: "Tampilkan QRIS", description: "Gambar tetap tersimpan saat disembunyikan.", icon: "▦" },
+      ] as const).map((control, index) => (
+        <div key={control.key} className={`${index ? "mt-2" : "mt-5"} flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-3`}>
+          <div className="flex items-center justify-between gap-3">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-violet-100 text-violet-700" aria-hidden="true">{control.icon}</span>
+            <div className="min-w-0">
+              <strong className="block text-xs font-extrabold text-slate-800">{control.label}</strong>
+              <span className="mt-0.5 block text-[10px] text-slate-500">{control.description}</span>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={defaultData[control.key] !== false}
+              disabled={isViewer}
+              onClick={() => updateField(selected.id, control.key, defaultData[control.key] === false)}
+              className={`relative h-6 w-11 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                defaultData[control.key] !== false ? "border-emerald-600 bg-emerald-600 shadow-sm shadow-emerald-200" : "border-slate-300 bg-slate-200"
+              }`}
+            >
+              <span className={`absolute left-0.5 top-0.5 h-4.5 w-4.5 rounded-full bg-white shadow-sm transition-transform ${defaultData[control.key] !== false ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+            <span className={`text-[9px] font-extrabold uppercase tracking-[.1em] ${defaultData[control.key] !== false ? "text-emerald-700" : "text-slate-400"}`}>{defaultData[control.key] !== false ? "Aktif" : "Nonaktif"}</span>
+          </div>
+        </div>
+      ))}
+
+      {selected.type === "gift" && (
+        <div className="mt-2 rounded-xl border border-dashed border-violet-200 bg-white p-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <strong className="block text-xs font-extrabold text-slate-800">Rekening kedua</strong>
+              <span className="mt-0.5 block text-[10px] text-slate-500">Tambahkan bank atau e-wallet lain.</span>
+            </div>
+            {defaultData.hasSecondAccount === true ? (
+              <button type="button" disabled={isViewer} onClick={() => updateFields(selected.id, { hasSecondAccount: false })} className="rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold text-rose-600 hover:bg-rose-50 disabled:opacity-50">Hapus</button>
+            ) : (
+              <button type="button" disabled={isViewer} onClick={() => updateFields(selected.id, { hasSecondAccount: true })} className="rounded-lg bg-violet-600 px-3 py-1.5 text-[10px] font-extrabold text-white shadow-sm shadow-violet-200 hover:bg-violet-700 disabled:opacity-50">+ Tambah rekening</button>
+            )}
+          </div>
+          {defaultData.hasSecondAccount === true && (
+            <div className="mt-3 grid gap-2.5 border-t border-violet-100 pt-3">
+              {[
+                ["bank2", "Nama bank / e-wallet kedua", "Contoh: DANA"],
+                ["account2", "Nomor rekening kedua", "Nomor rekening atau e-wallet"],
+                ["holder2", "Nama pemilik kedua", "Nama pemilik rekening"],
+              ].map(([key, label, placeholder]) => (
+                <label key={key} className="block">
+                  <span className="mb-1 block text-[10px] font-bold text-slate-600">{label}</span>
+                  <input
+                    type="text"
+                    value={typeof defaultData[key] === "string" ? defaultData[key] : ""}
+                    placeholder={placeholder}
+                    disabled={isViewer}
+                    onFocus={() => broadcastFieldFocus?.(selected.id, key)}
+                    onBlur={() => broadcastFieldFocus?.(selected.id, null)}
+                    onChange={(event) => updateField(selected.id, key, event.target.value)}
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-violet-500 focus:bg-white disabled:opacity-50"
+                  />
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Component Photo Field (Single image or Gallery) */}
-      {defaultData.imageLabel !== undefined && (
+      {(defaultData.imageLabel !== undefined || selected.type === "gallery" || Boolean(selected.capabilities?.gallery) || Boolean(selected.capabilities?.image)) && (
         <div className="mt-5 border-t border-slate-100 pt-4">
           <AssetUploadField
-            title="Foto komponen"
+            title={selected.type === "gallery" ? "Foto galeri (Maks 4)" : "Foto komponen"}
             urls={
               selected.type === "gallery"
                 ? Array.isArray(defaultData.imageUrls)
@@ -102,7 +171,7 @@ export function CollaborativeSectionInspector({
                 ? [defaultData.imageUrl]
                 : []
             }
-            hint={String(defaultData.imageLabel || "Pilih foto dari Asset Manager")}
+            hint={String(defaultData.imageLabel || (selected.type === "gallery" ? "Pilih foto dari Asset Manager (Maks 4)" : "Pilih foto dari Asset Manager"))}
             onOpenLibrary={onOpenContentLibrary}
             onRemove={(index) => {
               if (selected.type === "gallery") {

@@ -1,18 +1,36 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { findOrCreateGoogleUser, SESSION_COOKIE_NAME } from "@/modules/auth/service";
+import {
+  isValidOAuthState,
+  OAUTH_COOKIE_PATH,
+  OAUTH_RETURN_TO_COOKIE_NAME,
+  OAUTH_STATE_COOKIE_NAME,
+  sanitizeReturnTo,
+} from "@/modules/auth/oauth-state";
 
-export async function GET(request: Request) {
+function clearOAuthCookies(response: NextResponse) {
+  response.cookies.set(OAUTH_STATE_COOKIE_NAME, "", { maxAge: 0, path: OAUTH_COOKIE_PATH });
+  response.cookies.set(OAUTH_RETURN_TO_COOKIE_NAME, "", { maxAge: 0, path: OAUTH_COOKIE_PATH });
+  return response;
+}
+
+function oauthError(request: Request, code: string) {
+  return clearOAuthCookies(NextResponse.redirect(new URL(`/login?error=${code}`, request.url)));
+}
+
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
-  const returnTo = state ? decodeURIComponent(state) : "/";
+  const expectedState = request.cookies.get(OAUTH_STATE_COOKIE_NAME)?.value;
+  const returnTo = sanitizeReturnTo(request.cookies.get(OAUTH_RETURN_TO_COOKIE_NAME)?.value);
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${new URL(request.url).origin}/api/auth/google/callback`;
 
-  if (!code || !clientId || !clientSecret) {
-    return NextResponse.redirect(new URL(`/login?error=invalid_oauth_params`, request.url));
+  if (!code || !clientId || !clientSecret || !isValidOAuthState(state, expectedState)) {
+    return oauthError(request, "invalid_oauth_state");
   }
 
   try {
@@ -31,8 +49,8 @@ export async function GET(request: Request) {
 
     const tokens = await tokenResponse.json();
     if (!tokenResponse.ok || !tokens.access_token) {
-      console.error("Failed to exchange code for token:", tokens);
-      return NextResponse.redirect(new URL(`/login?error=token_exchange_failed`, request.url));
+      console.error("Failed to exchange Google OAuth code:", tokenResponse.status, tokens?.error ?? "unknown_error");
+      return oauthError(request, "token_exchange_failed");
     }
 
     // 2. Fetch user profile from Google API
@@ -41,9 +59,9 @@ export async function GET(request: Request) {
     });
 
     const profile = await userinfoResponse.json();
-    if (!userinfoResponse.ok || !profile.email) {
-      console.error("Failed to fetch user profile:", profile);
-      return NextResponse.redirect(new URL(`/login?error=userinfo_failed`, request.url));
+    if (!userinfoResponse.ok || !profile.email || profile.verified_email !== true) {
+      console.error("Failed to fetch Google user profile:", userinfoResponse.status);
+      return oauthError(request, "userinfo_failed");
     }
 
     // 3. Single Action: Find or Create User in DB
@@ -64,18 +82,23 @@ export async function GET(request: Request) {
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });
 
-    return response;
+    return clearOAuthCookies(response);
   } catch (error) {
     console.error("Google Auth Callback Exception:", error);
-    return NextResponse.redirect(new URL(`/login?error=internal_auth_error`, request.url));
+    return oauthError(request, "internal_auth_error");
   }
 }
 
 // POST endpoint to handle single-action Direct/Mock Google Sign-In for instant testing
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_ENABLE_DEV_AUTH !== "true") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   try {
     const body = await request.json();
-    const { email, name, avatarUrl, googleId, returnTo = "/" } = body;
+    const { email, name, avatarUrl, googleId } = body;
+    const returnTo = sanitizeReturnTo(body.returnTo);
 
     if (!email) {
       return NextResponse.json({ error: "Email diperlukan" }, { status: 400 });
@@ -91,15 +114,15 @@ export async function POST(request: Request) {
     const response = NextResponse.json({ success: true, user, returnTo });
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60,
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Direct Google Auth Error:", error);
-    return NextResponse.json({ error: error?.message || "Gagal masuk" }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Gagal masuk" }, { status: 500 });
   }
 }

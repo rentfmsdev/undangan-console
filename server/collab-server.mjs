@@ -16,6 +16,13 @@ const MAX_DOCUMENT_UPDATE_BYTES = 1_000_000;
 const VALID_SURFACES = new Set(["canvas", "preview", "left-sidebar", "right-sidebar"]);
 const DRAFT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REDIS_CHANNEL = "undangan:collaboration:events";
+const RETENTION_DAYS = parsePositiveInteger(process.env.PUBLISH_RETENTION_DAYS, 30, 3650);
+const RETENTION_SWEEP_MINUTES = parsePositiveInteger(process.env.PUBLISH_RETENTION_SWEEP_MINUTES, 60, 1440);
+
+function parsePositiveInteger(value, fallback, maximum) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 1 && parsed <= maximum ? parsed : fallback;
+}
 
 const dbPool = mysql.createPool({
   uri: DB_URL,
@@ -35,6 +42,21 @@ setInterval(async () => {
     console.error("[Collab Server] DB KeepAlive ping error:", err.message);
   }
 }, 45000);
+
+async function releaseExpiredPublications() {
+  const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  const [result] = await dbPool.query(
+    `UPDATE invitations
+     SET status = 'archived', slug = NULL, subdomain = NULL
+     WHERE status = 'published'
+       AND publish_mode IN ('path', 'subdomain')
+       AND (published_at IS NULL OR published_at <= ?)`,
+    [cutoff],
+  );
+  if (result.affectedRows > 0) {
+    console.log(`[Collab Server] Released ${result.affectedRows} expired publication identifier(s).`);
+  }
+}
 const server = createServer((req, res) => {
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -227,7 +249,7 @@ async function loadRoomSnapshot(draftId, ydoc) {
 
     const globals = ydoc.getMap("globalSettings");
     globals.set("themeId", inv.themeId || "royal-blue-gold");
-    globals.set("musicUrl", typeof overrides.musicUrl === "string" ? overrides.musicUrl : "/assets/audio/easy-on-me.webm");
+    globals.set("musicUrl", typeof overrides.musicUrl === "string" ? overrides.musicUrl : "");
     globals.set("musicVolume", typeof overrides.musicVolume === "number" ? overrides.musicVolume : 0.6);
     const colors = new Y.Map();
     if (overrides.customColors && typeof overrides.customColors === "object") {
@@ -723,11 +745,17 @@ wss.on("connection", async (ws, req) => {
 });
 
 const pingInterval = setInterval(() => wss.clients.forEach((ws) => ws.ping()), 20_000);
+const retentionSweepInterval = setInterval(() => {
+  void releaseExpiredPublications().catch((error) => {
+    console.error("[Collab Server] Publication retention sweep failed:", error.message);
+  });
+}, RETENTION_SWEEP_MINUTES * 60_000);
 wss.on("close", () => clearInterval(pingInterval));
 
 async function gracefulShutdown(signal) {
   console.log(`[Collab Server] Received ${signal}, flushing all active rooms before shutdown...`);
   clearInterval(pingInterval);
+  clearInterval(retentionSweepInterval);
 
   const flushTasks = [];
   for (const [draftId, room] of rooms.entries()) {
@@ -766,5 +794,8 @@ process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 server.listen(PORT, () => {
   console.log(`[Collab Server] ws://localhost:${PORT}`);
+  void releaseExpiredPublications().catch((error) => {
+    console.error("[Collab Server] Initial publication retention sweep failed:", error.message);
+  });
   void startRedisSubscriber();
 });

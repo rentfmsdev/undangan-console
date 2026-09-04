@@ -43,10 +43,10 @@ function LoginForm() {
   const router = useRouter();
   const returnTo = searchParams.get("returnTo") || "/";
   const errorParam = searchParams.get("error");
+  const devAuthEnabled = process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_ENABLE_DEV_AUTH === "true";
 
   const [isLoading, setIsLoading] = useState(false);
   const [customEmail, setCustomEmail] = useState("");
-  const [showDirectModal, setShowDirectModal] = useState(false);
 
   const handleGoogleOAuth = () => {
     setIsLoading(true);
@@ -127,7 +127,7 @@ function LoginForm() {
             {errorParam && (
               <div className="mt-5 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-700">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span>Terjadi kendala autentikasi. Silakan coba lagi atau gunakan login cepat.</span>
+                <span>Terjadi kendala autentikasi. Silakan coba masuk kembali dengan Google.</span>
               </div>
             )}
 
@@ -147,40 +147,24 @@ function LoginForm() {
                 <span>Lanjutkan dengan Google</span>
               </button>
 
-              <div className="relative my-6 text-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200" />
-                </div>
-                <span className="relative bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Single Action Auth
-                </span>
-              </div>
-
-              {/* Direct Instant Email Sign-In (1-Click Signup/Login) */}
-              <form onSubmit={handleQuickLogin} className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Atau masuk dengan email langsung
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={customEmail}
-                    onChange={(e) => setCustomEmail(e.target.value)}
-                    placeholder="nama@email.com"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:ring-3 focus:ring-blue-100"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading || !customEmail}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-95 disabled:opacity-50"
-                >
-                  {isLoading ? <LoaderCircle size={15} className="animate-spin" /> : <Zap size={14} />}
-                  <span>Masuk / Daftar Otomatis</span>
-                </button>
-              </form>
+              {devAuthEnabled && (
+                <>
+                  <div className="relative my-6 text-center">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+                    <span className="relative bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Development only</span>
+                  </div>
+                  <form onSubmit={handleQuickLogin} className="space-y-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-bold text-slate-700">Login email untuk pengujian lokal</label>
+                      <input type="email" required value={customEmail} onChange={(e) => setCustomEmail(e.target.value)} placeholder="nama@email.com" className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs text-slate-900 outline-none transition focus:border-blue-600 focus:ring-3 focus:ring-blue-100" />
+                    </div>
+                    <button type="submit" disabled={isLoading || !customEmail} className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-95 disabled:opacity-50">
+                      {isLoading ? <LoaderCircle size={15} className="animate-spin" /> : <Zap size={14} />}
+                      <span>Login pengujian</span>
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
 
             {/* Feature points */}

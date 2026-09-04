@@ -11,6 +11,7 @@
     "favoriteCount": 248,
     "releaseDate": "2026-08-30",
     "status": "available",
+    "defaultView": "mobile",
     "covers": [
       "/thumb/wedding-elegance.png"
     ],
@@ -40,6 +41,85 @@
       "envelope",
       "gold",
       "audio"
+    ]
+  },
+  {
+    "id": "birthday-celestial",
+    "code": "bdcel",
+    "name": "Celestial Birthday",
+    "category": "ulang-tahun",
+    "categoryLabel": "Ulang Tahun",
+    "description": "Undangan ulang tahun modern dengan nuansa langit malam dan aksen bintang.",
+    "price": 35000,
+    "rating": 5,
+    "favoriteCount": 370,
+    "releaseDate": "2026-09-03",
+    "status": "available",
+    "defaultView": "mobile",
+    "covers": [
+      "/thumb/birthday-celestial.png"
+    ],
+    "themeColors": [
+      "#5b3f88",
+      "#ad5268",
+      "#357b78"
+    ],
+    "features": [
+      "Opening Envelope",
+      "Hero Ulang Tahun",
+      "Detail Acara",
+      "Galeri",
+      "Ucapan",
+      "Preset Tema"
+    ],
+    "tags": [
+      "ulang tahun",
+      "birthday",
+      "celestial",
+      "party"
+    ]
+  },
+  {
+    "id": "khitan-ksatria-jawa",
+    "code": "khtnn",
+    "name": "Ksatria Khitan Jawa",
+    "category": "khitanan",
+    "categoryLabel": "Khitanan",
+    "description": "Undangan syukuran walimatul khitan bernuansa Keraton Jawa & Islami yang agung, gagah, dan berakhlak mulia.",
+    "price": 35000,
+    "rating": 5,
+    "favoriteCount": 142,
+    "releaseDate": "2026-09-03",
+    "status": "available",
+    "defaultView": "mobile",
+    "useContainer": true,
+    "covers": [
+      "/thumb/khitan-1.png",
+      "/assets/khitanan/1.jpeg"
+    ],
+    "themeColors": [
+      "#1b382b",
+      "#16213e",
+      "#5c3d2e"
+    ],
+    "features": [
+      "Opening Envelope",
+      "Hero Ksatria",
+      "Profil Ananda",
+      "Rangkaian Acara",
+      "Galeri Foto Lightbox",
+      "Hadiah Digital & QRIS",
+      "Buku Tamu & Ucapan",
+      "Doa Penutup"
+    ],
+    "tags": [
+      "khitanan",
+      "walimatul khitan",
+      "jawa",
+      "adat",
+      "islami",
+      "beskap",
+      "keraton"
     ]
   }
 ]

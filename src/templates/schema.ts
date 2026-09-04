@@ -39,6 +39,8 @@ export const templateKitSchema = z.object({
     sectionAttribute: z.string().min(1),
     openingSectionId: z.string().nullable(),
   }),
+  defaultView: z.enum(["mobile", "desktop"]).optional(),
+  useContainer: z.boolean().optional(),
 }).superRefine((template, context) => {
   const sectionTypes = new Set(template.sections.map((section) => section.type));
   for (const type of template.defaultSections) {
@@ -69,6 +71,8 @@ export const templateCatalogItemSchema = z.object({
   themeColors: z.array(z.string()).min(1),
   features: z.array(z.string()).min(1),
   tags: z.array(z.string()).optional(),
+  defaultView: z.enum(["mobile", "desktop"]).optional(),
+  useContainer: z.boolean().optional(),
 });
 
 export const templateCatalogListSchema = z.array(templateCatalogItemSchema);

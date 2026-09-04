@@ -1,0 +1,1654 @@
+/* ==========================================================================
+   SECTION 2 EVENT ACTION BUTTONS & VENUE CARD
+   ========================================================================== */
+
+.birthday-countdown-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 16px auto 26px;
+  width: 100%;
+}
+
+.birthday-event-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.birthday-btn-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  stroke: currentColor;
+}
+
+/* Primary Button: Tambah ke Kalender - Dynamic Theme Primary Gradient */
+.birthday-calendar-btn {
+  background: linear-gradient(135deg, var(--p) 0%, color-mix(in srgb, var(--p) 78%, black) 100%);
+  color: #ffffff !important;
+  border: 1.5px solid color-mix(in srgb, var(--p) 85%, white);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--p) 30%, transparent), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.birthday-calendar-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--p) 45%, transparent);
+  filter: brightness(1.08);
+}
+
+.birthday-calendar-btn:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button: Buka Google Maps */
+.birthday-map-btn,
+.birthday-map-link {
+  background: color-mix(in srgb, var(--surface) 90%, var(--p) 10%);
+  color: var(--p) !important;
+  border: 1.5px solid color-mix(in srgb, var(--p) 35%, transparent);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.birthday-map-btn:hover,
+.birthday-map-link:hover {
+  background: var(--p);
+  color: #ffffff !important;
+  border-color: var(--p);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--p) 35%, transparent);
+}
+
+.birthday-map-btn:active,
+.birthday-map-link:active {
+  transform: translateY(0);
+}
+
+/* ── REDESIGNED VENUE / LOCATION CARD ── */
+.birthday-venue-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+  padding: 22px 20px 20px;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--surface) 88%, var(--p) 5%);
+  border: 1.5px solid color-mix(in srgb, var(--a) 40%, transparent);
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+}
+
+.birthday-venue-label {
+  display: block;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 10px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+/* Reset default raw address tag and apply elegant typography */
+.birthday-event address,
+.birthday-venue-address {
+  margin: 0 0 16px !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  font-style: normal !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: var(--p) !important;
+  line-height: 1.4 !important;
+  text-align: center;
+}
+
+/* The invitation card must remain readable for long guest names. */
+.birthday-envelope-screen {
+  box-sizing: border-box;
+  align-content: center;
+  gap: clamp(12px, 2.3vh, 20px);
+  padding: 34px 20px 42px;
+}
+
+.birthday-envelope-screen > h1 {
+  max-width: min(86vw, 440px);
+  font-size: clamp(45px, 13vw, 65px);
+  line-height: .94;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.birthday-envelope {
+  width: min(84vw, 440px);
+  height: 270px;
+  margin-top: 4px;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.birthday-letter {
+  z-index: 4;
+  top: 20px;
+  right: 7%;
+  left: 7%;
+  box-sizing: border-box;
+  min-height: 146px;
+  padding: 22px 18px 18px;
+  overflow: hidden;
+  border-radius: 3px;
+  box-shadow: 0 12px 26px rgba(35, 22, 57, .16);
+  text-align: center;
+  transition: transform .78s cubic-bezier(.22, .88, .3, 1), opacity .32s ease;
+}
+
+.birthday-letter small { font-size: 9px; letter-spacing: .18em; }
+
+.birthday-letter strong {
+  max-width: 100%;
+  margin: 8px 0 6px;
+  overflow-wrap: anywhere;
+  color: var(--dark);
+  font-family: "Dancing Script", cursive;
+  font-size: clamp(25px, 7.2vw, 35px);
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.birthday-letter em {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.birthday-flap-top { z-index: 3 !important; transform-origin: 50% 0; transition: transform .72s cubic-bezier(.22,.88,.3,1); }
+.birthday-flap-bottom { z-index: 2 !important; }
+.birthday-envelope button { z-index: 6; transition: transform .42s ease, opacity .25s ease, box-shadow .25s ease; }
+.birthday-envelope button:not(:disabled):hover { box-shadow: 0 0 0 9px #fff3, 0 10px 30px color-mix(in srgb, var(--a) 35%, transparent); }
+.birthday-envelope button:disabled { cursor: wait; }
+
+.birthday-stage-opening .birthday-letter { transform: translateY(-88px) rotate(-1.5deg); }
+.birthday-stage-opening .birthday-flap-top { transform: rotateX(168deg); }
+.birthday-stage-opening .birthday-envelope button { transform: translate(-50%, -50%) scale(.82); opacity: .55; }
+.birthday-stage-opening .birthday-envelope-screen aside { animation: none; }
+
+@media (max-height: 720px) {
+  .birthday-envelope-screen { gap: 10px; padding-block: 20px 26px; }
+  .birthday-envelope-screen > h1 { font-size: clamp(40px, 11vw, 54px); }
+  .birthday-envelope { height: 242px; }
+  .birthday-letter { min-height: 130px; padding-top: 17px; }
+}
+
+/* ==========================================================================
+   HERO SECTION (SPACIOUS CELESTIAL STAR PRESENTATION & COHESIVE WITH ENVELOPE)
+   ========================================================================== */
+
+/* ── HERO OUTER SHELL (STICKY PARALLAX HERO) ── */
+.birthday-hero-full {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1 !important;
+  isolation: isolate;
+  padding: clamp(40px, 5.8vh, 52px) 0 clamp(12px, 2vh, 20px) !important;
+  background: radial-gradient(circle at 50% 18%, var(--rich), var(--dark) 65%) !important;
+  color: #ffffff !important;
+}
+
+.birthday-hero-full .birthday-stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0.34;
+  background-image: radial-gradient(var(--a) 1px, transparent 1.5px);
+  background-size: 30px 30px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── TOP ZONE: kicker at the very top (in flow, never overlaps) ── */
+.birthday-hero-top {
+  position: relative !important;
+  z-index: 5 !important;
+  align-self: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  padding: 0 clamp(18px, 4vw, 28px) !important;
+  margin-top: 0 !important;
+  margin-bottom: clamp(6px, 1.2vh, 14px) !important;
+  box-sizing: border-box !important;
+}
+
+.birthday-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 20px;
+  border: 1px solid color-mix(in srgb, var(--a) 55%, transparent);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  color: var(--a);
+  font-size: clamp(8.5px, 2.1vw, 10.5px);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 14px color-mix(in srgb, var(--a) 25%, transparent);
+}
+
+/* Date hidden per user request: "jangan ada tanggal ingat ini hero masih ada halaman lain" */
+.birthday-hero-subtitle {
+  display: none !important;
+}
+
+/* ── MIDDLE ZONE: Giant Star + Title on top-right flank ── */
+.birthday-hero-mid {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+  min-height: 0;
+  z-index: 2;
+  overflow: visible;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+/* Giant Star: anchored to the left, 20% bleeds off left edge */
+.birthday-hero-photo-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  /* Substantially enlarged star as requested: "besarkan lagi startnya" */
+  width: clamp(370px, 98vw, 490px);
+  height: clamp(370px, 98vw, 490px);
+  /* Shift left so exactly 20% of the frame bleeds off the left edge */
+  margin-left: calc(clamp(370px, 98vw, 490px) * -0.20);
+}
+
+/* Title lowered to the upper-right flank of the star (spacious, no clashing descenders) */
+.birthday-hero-title-wrap {
+  position: absolute;
+  right: clamp(14px, 4vw, 28px);
+  top: clamp(10px, 2.2vh, 26px);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  max-width: min(65vw, 300px);
+  pointer-events: auto;
+}
+
+.birthday-hero-title {
+  margin: 0 !important;
+  font-family: var(--font-great-vibes, cursive) !important;
+  font-size: clamp(32px, 8.8vw, 48px) !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0.02em !important;
+  color: #ffffff !important;
+  text-align: right !important;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.9),
+    0 0 22px color-mix(in srgb, var(--a) 85%, #fff),
+    0 0 38px var(--a),
+    0 0 58px color-mix(in srgb, var(--a) 60%, transparent),
+    0 4px 20px rgba(0, 0, 0, 0.9);
+  filter: drop-shadow(0 0 8px rgba(239, 185, 79, 0.5));
+  animation: birthdayTitleGlowPulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes birthdayTitleGlowPulse {
+  0% {
+    text-shadow:
+      0 0 8px rgba(255, 255, 255, 0.85),
+      0 0 20px color-mix(in srgb, var(--a) 80%, #fff),
+      0 0 34px var(--a),
+      0 0 52px color-mix(in srgb, var(--a) 50%, transparent),
+      0 4px 18px rgba(0, 0, 0, 0.9);
+    filter: drop-shadow(0 0 6px rgba(239, 185, 79, 0.35));
+  }
+  100% {
+    text-shadow:
+      0 0 14px rgba(255, 255, 255, 0.95),
+      0 0 28px color-mix(in srgb, var(--a) 95%, #fff),
+      0 0 48px var(--a),
+      0 0 72px color-mix(in srgb, var(--a) 70%, transparent),
+      0 4px 22px rgba(0, 0, 0, 0.9);
+    filter: drop-shadow(0 0 12px rgba(239, 185, 79, 0.65));
+  }
+}
+
+/* ──── Star Frame Elements ──── */
+.birthday-hero-star-halo {
+  position: absolute;
+  inset: -14px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--a) 35%, transparent) 0%, transparent 72%);
+  filter: blur(16px);
+  pointer-events: none;
+}
+
+.birthday-hero-star-border {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffffff 18%, var(--a) 55%, color-mix(in srgb, var(--a) 75%, black) 100%);
+  clip-path: polygon(50% 0%, 64% 18%, 85% 15%, 82% 36%, 100% 50%, 82% 64%, 85% 85%, 64% 82%, 50% 100%, 36% 82%, 15% 85%, 18% 64%, 0% 50%, 18% 36%, 15% 15%, 36% 18%);
+  padding: 4px;
+  box-sizing: border-box;
+  filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.5));
+  transition: transform 0.35s ease, filter 0.35s ease;
+}
+
+.birthday-hero-star-border:hover {
+  transform: scale(1.02);
+  filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 18px color-mix(in srgb, var(--a) 45%, transparent));
+}
+
+.birthday-hero-photo {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(50% 0%, 64% 18%, 85% 15%, 82% 36%, 100% 50%, 82% 64%, 85% 85%, 64% 82%, 50% 100%, 36% 82%, 15% 85%, 18% 64%, 0% 50%, 18% 36%, 15% 15%, 36% 18%);
+  background-color: color-mix(in srgb, var(--rich) 60%, var(--dark));
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.birthday-hero-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  color: var(--a);
+  user-select: none;
+}
+
+.birthday-hero-placeholder-icon {
+  font-size: clamp(32px, 8vw, 44px);
+  color: var(--a);
+  line-height: 1;
+}
+
+.birthday-hero-placeholder-label {
+  font-size: clamp(9px, 2.4vw, 11px);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #ffffff 85%, var(--a));
+}
+
+.birthday-hero-photo.has-image .birthday-hero-placeholder {
+  display: none !important;
+}
+
+/* ── BOTTOM ZONE: full width, centered ── */
+.birthday-hero-bottom {
+  position: relative;
+  z-index: 3;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: clamp(4px, 1vh, 8px);
+  flex-shrink: 0;
+  width: 100%;
+  padding: 0 clamp(18px, 4vw, 28px);
+  box-sizing: border-box;
+}
+
+/* ── 2 Birthday Candles Component (Placed in space above "Mari rayakan") ── */
+.birthday-hero-candles {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: clamp(2px, 0.6vh, 6px);
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.55));
+}
+
+.birthday-candles-svg {
+  width: clamp(68px, 18vw, 86px);
+  height: auto;
+  overflow: visible;
+}
+
+.flame-1 {
+  animation: candleFlameFlicker1 2.2s ease-in-out infinite alternate;
+  transform-origin: 38px 21px;
+}
+
+.flame-2 {
+  animation: candleFlameFlicker2 2.6s ease-in-out infinite alternate 0.35s;
+  transform-origin: 62px 26px;
+}
+
+.halo-1 {
+  animation: candleHaloPulse 2.0s ease-in-out infinite alternate;
+  transform-origin: 38px 17px;
+}
+
+.halo-2 {
+  animation: candleHaloPulse 2.4s ease-in-out infinite alternate 0.5s;
+  transform-origin: 62px 24px;
+}
+
+@keyframes candleFlameFlicker1 {
+  0% { transform: scale(1) rotate(-1deg); }
+  25% { transform: scale(1.08, 0.94) rotate(2deg) skewX(2deg); }
+  50% { transform: scale(0.95, 1.05) rotate(-2deg); }
+  75% { transform: scale(1.04, 0.98) rotate(1.5deg); }
+  100% { transform: scale(1) rotate(-1deg); }
+}
+
+@keyframes candleFlameFlicker2 {
+  0% { transform: scale(1) rotate(1deg); }
+  30% { transform: scale(0.95, 1.06) rotate(-2.5deg) skewX(-2deg); }
+  60% { transform: scale(1.06, 0.95) rotate(2deg); }
+  85% { transform: scale(0.98, 1.02) rotate(-1deg); }
+  100% { transform: scale(1) rotate(1deg); }
+}
+
+@keyframes candleHaloPulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.9); }
+  50% { opacity: 0.95; transform: scale(1.2); }
+}
+
+.birthday-hero-copy {
+  margin: 0 !important;
+  color: color-mix(in srgb, #ffffff 80%, var(--a));
+  font-size: clamp(10.5px, 2.6vw, 13px) !important;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.birthday-hero-guest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: clamp(10px, 2.6vw, 12px);
+  color: color-mix(in srgb, #ffffff 85%, var(--a));
+}
+
+.birthday-guest-label {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  opacity: 0.82;
+}
+
+.birthday-guest-name {
+  color: var(--a);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.birthday-scroll-cue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: color-mix(in srgb, #ffffff 58%, var(--a));
+  font-size: clamp(7.5px, 2vw, 8.5px) !important;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.birthday-scroll-cue b {
+  color: var(--a);
+  font-size: 13px;
+  animation: birthdayBounce 1.5s ease-in-out infinite;
+  display: inline-block;
+  line-height: 1;
+}
+
+@keyframes birthdayBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+/* Compact screens */
+@media (max-height: 620px) {
+  .birthday-hero-photo-wrap {
+    width: clamp(280px, 82vw, 360px);
+    height: clamp(280px, 82vw, 360px);
+    margin-left: calc(clamp(280px, 82vw, 360px) * -0.20);
+  }
+  .birthday-hero-title {
+    font-size: 28px !important;
+  }
+  .birthday-hero-title-wrap {
+    top: 2px;
+    right: 12px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 600px) {
+  .birthday-hero-photo-wrap {
+    width: clamp(450px, 85vw, 580px);
+    height: clamp(450px, 85vw, 580px);
+    margin-left: calc(clamp(450px, 85vw, 580px) * -0.20);
+  }
+  .birthday-hero-title {
+    font-size: 68px !important;
+  }
+  .birthday-hero-title-wrap {
+    top: 18px;
+    right: 36px;
+  }
+}
+
+/* ==========================================================================
+   STACKING CARDS PARALLAX (HERO STUCK -> EVENT STUCK -> GALLERY SLIDES OVER)
+   ========================================================================== */
+
+/* Ensure hidden / disabled sections are strictly hidden regardless of specificity */
+.birthday-shell section[hidden],
+.birthday-shell [data-template-section][hidden],
+.birthday-shell section[style*="display: none"],
+.birthday-shell [data-template-section][style*="display: none"],
+.birthday-shell [data-template-section].is-hidden {
+  display: none !important;
+}
+
+/* Section 2: Detail Acara (Card 2 - Sticks over Hero) */
+.birthday-event {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+  min-height: 100dvh !important;
+  box-sizing: border-box !important;
+  display: flex;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: color-mix(in srgb, var(--surface) 93%, transparent) !important;
+  backdrop-filter: blur(28px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
+  border-top-left-radius: 36px !important;
+  border-top-right-radius: 36px !important;
+  box-shadow: 0 -24px 50px rgba(0, 0, 0, 0.65), 0 -4px 14px rgba(0, 0, 0, 0.35) !important;
+  border-top: 1.5px solid color-mix(in srgb, var(--a) 45%, transparent) !important;
+  padding: 52px 24px 56px !important;
+  margin-top: 0 !important;
+}
+
+/* Subtle decorative pill handle at top of Section 2 sheet */
+.birthday-event::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 4px;
+  background: color-mix(in srgb, var(--p) 35%, transparent);
+  border-radius: 999px;
+  margin: -24px auto 28px;
+}
+
+/* Section 3: Little Moments / Gallery (Card 3 - Sticks over Event) */
+.birthday-gallery {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  min-height: 100dvh !important;
+  box-sizing: border-box !important;
+  display: flex;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: color-mix(in srgb, var(--bg) 92%, white) !important;
+  border-top-left-radius: 36px !important;
+  border-top-right-radius: 36px !important;
+  box-shadow: 0 -24px 50px rgba(0, 0, 0, 0.65), 0 -4px 14px rgba(0, 0, 0, 0.35) !important;
+  border-top: 1.5px solid color-mix(in srgb, var(--a) 45%, transparent) !important;
+  padding: 52px 24px 56px !important;
+  margin-top: 0 !important;
+}
+
+.birthday-gallery::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 4px;
+  background: color-mix(in srgb, var(--p) 35%, transparent);
+  border-radius: 999px;
+  margin: -24px auto 28px;
+}
+
+/* Section 4: Kirim Ucapan / Wishes (Card 4 - Sticks over Gallery) */
+.birthday-wishes {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 4 !important;
+  min-height: 100dvh !important;
+  box-sizing: border-box !important;
+  display: flex;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--surface) !important;
+  border-top-left-radius: 36px !important;
+  border-top-right-radius: 36px !important;
+  box-shadow: 0 -24px 50px rgba(0, 0, 0, 0.65), 0 -4px 14px rgba(0, 0, 0, 0.35) !important;
+  border-top: 1.5px solid color-mix(in srgb, var(--a) 45%, transparent) !important;
+  padding: 52px 24px 56px !important;
+  margin-top: 0 !important;
+}
+
+.birthday-wishes::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 4px;
+  background: color-mix(in srgb, var(--p) 35%, transparent);
+  border-radius: 999px;
+  margin: -24px auto 28px;
+}
+
+/* Section 5: Closing (Card 5 - Final Card over Wishes) */
+.birthday-closing {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 5 !important;
+  min-height: 100dvh !important;
+  box-sizing: border-box !important;
+  display: flex;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: radial-gradient(circle at 50% 30%, var(--rich), var(--dark) 70%) !important;
+  color: #ffffff !important;
+  border-top-left-radius: 36px !important;
+  border-top-right-radius: 36px !important;
+  box-shadow: 0 -24px 50px rgba(0, 0, 0, 0.65), 0 -4px 14px rgba(0, 0, 0, 0.35) !important;
+  border-top: 1.5px solid color-mix(in srgb, var(--a) 45%, transparent) !important;
+  padding: 52px 24px 56px !important;
+  margin-top: 0 !important;
+}
+
+.birthday-closing::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 4px;
+  background: color-mix(in srgb, var(--a) 50%, transparent);
+  border-radius: 999px;
+  margin: -24px auto 28px;
+}
+
+/* ==========================================================================
+   FESTIVE PARTY ASSETS: BUNTING PENNANTS & FLOATING BALLOONS
+   ========================================================================== */
+
+/* Festive Hanging Bunting Pennants across the top of Section Wishes */
+.birthday-bunting-wrap {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  right: 0;
+  height: 44px;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.birthday-bunting-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Festive Floating Balloon Clusters on the sides */
+.birthday-balloon-cluster {
+  position: absolute;
+  width: clamp(52px, 14vw, 76px);
+  height: clamp(80px, 20vw, 115px);
+  pointer-events: none;
+  z-index: 1;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.08));
+}
+
+.birthday-balloon-left {
+  left: clamp(-10px, 1vw, 6px);
+  top: -24px;
+  animation: balloonSwayLeft 4.6s ease-in-out infinite alternate;
+}
+
+.birthday-balloon-right {
+  right: clamp(-10px, 1vw, 6px);
+  top: -24px;
+  transform: scaleX(-1);
+  animation: balloonSwayRight 4.9s ease-in-out infinite alternate;
+}
+
+.birthday-balloon-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+@keyframes balloonSwayLeft {
+  0% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-7px) rotate(4deg); }
+  100% { transform: translateY(0) rotate(-3deg); }
+}
+
+@keyframes balloonSwayRight {
+  0% { transform: scaleX(-1) translateY(0) rotate(-3deg); }
+  50% { transform: scaleX(-1) translateY(-7px) rotate(4deg); }
+  100% { transform: scaleX(-1) translateY(0) rotate(-3deg); }
+}
+
+/* ==========================================================================
+   PROMINENT CELEBRATION DATE & SCHEDULE CARD (HIGH NOTICEABILITY)
+   ========================================================================== */
+
+.birthday-schedule-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 350px;
+  margin: 12px auto 18px;
+  padding: 14px 16px 12px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 92%, var(--p) 6%) 0%, color-mix(in srgb, var(--surface) 86%, var(--a) 10%) 100%);
+  border: 1.5px solid color-mix(in srgb, var(--a) 55%, transparent);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  z-index: 2;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.birthday-schedule-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--a) 25%, transparent);
+}
+
+.birthday-schedule-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.birthday-sched-day-badge {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.birthday-sched-date-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1;
+}
+
+.birthday-sched-day-name {
+  font-size: clamp(15px, 4vw, 17px);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  color: var(--p);
+  text-transform: uppercase;
+}
+
+.birthday-sched-dot {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--a);
+  opacity: 0.7;
+}
+
+.birthday-sched-day-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--a) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--a) 55%, transparent);
+  font-size: clamp(17px, 4.5vw, 19px);
+  font-weight: 900;
+  color: var(--p);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--a) 25%, transparent);
+}
+
+.birthday-sched-month-year {
+  font-size: clamp(15px, 4vw, 17px);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  color: var(--p);
+}
+
+.birthday-sched-hairline {
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--a) 45%, transparent) 50%, transparent 100%);
+  margin: 10px auto 8px;
+}
+
+.birthday-schedule-bottom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--p);
+}
+
+.birthday-sched-clock-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  stroke: var(--a);
+  animation: clockTickPulse 3s ease-in-out infinite;
+}
+
+.birthday-sched-time-val {
+  font-size: clamp(12.5px, 3.2vw, 14px);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--p);
+  line-height: 1;
+}
+
+/* ── CELESTIAL COUNTDOWN TIMER IN SECTION 2 ── */
+.birthday-countdown {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(5px, 1.6vw, 9px);
+  margin: 18px auto 24px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--a) 40%, transparent);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.birthday-countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: clamp(46px, 11.5vw, 58px);
+  padding: 6px 4px;
+  background: color-mix(in srgb, var(--surface) 92%, var(--p));
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--a) 28%, transparent);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+}
+
+.birthday-countdown-num {
+  font-family: var(--font-display, "Great Vibes", cursive), Arial, sans-serif;
+  font-size: clamp(22px, 5.5vw, 28px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--p);
+  text-shadow: 0 2px 8px color-mix(in srgb, var(--a) 30%, transparent);
+}
+
+.birthday-countdown-lbl {
+  font-size: clamp(8px, 1.9vw, 9.5px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.birthday-countdown-sep {
+  color: var(--a);
+  font-size: clamp(14px, 3.8vw, 18px);
+  font-weight: 800;
+  line-height: 1;
+  opacity: 0.85;
+  animation: countdownColonBlink 1.5s ease-in-out infinite;
+}
+
+@keyframes countdownColonBlink {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.3; }
+}
+
+/* ==========================================================================
+   PARTY TRUMPETS (ANCHORED OUTSIDE THE STAR PHOTO FRAME)
+   ========================================================================== */
+
+.birthday-trumpet {
+  position: absolute;
+  width: clamp(58px, 15vw, 82px);
+  height: clamp(58px, 15vw, 82px);
+  pointer-events: none;
+  z-index: 10;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.55));
+}
+
+.birthday-trumpet-left {
+  left: clamp(-46px, -11vw, -30px);
+  bottom: clamp(-6px, -1.2vh, 8px);
+  transform: rotate(10deg);
+  animation: trumpetSwayLeft 3.6s ease-in-out infinite alternate;
+}
+
+.birthday-trumpet-right {
+  right: clamp(-46px, -11vw, -30px);
+  bottom: clamp(-6px, -1.2vh, 8px);
+  transform: scaleX(-1) rotate(10deg);
+  animation: trumpetSwayRight 3.6s ease-in-out infinite alternate;
+}
+
+.birthday-trumpet-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+@keyframes trumpetSwayLeft {
+  0% { transform: rotate(8deg) translateY(0); }
+  50% { transform: rotate(14deg) translateY(-6px) scale(1.05); }
+  100% { transform: rotate(8deg) translateY(0); }
+}
+
+@keyframes trumpetSwayRight {
+  0% { transform: scaleX(-1) rotate(8deg) translateY(0); }
+  50% { transform: scaleX(-1) rotate(14deg) translateY(-6px) scale(1.05); }
+  100% { transform: scaleX(-1) rotate(8deg) translateY(0); }
+}
+
+/* Floating Celestial Sparkles around the Star Frame */
+.birthday-floating-sparkles {
+  position: absolute;
+  inset: -16px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.birthday-floating-sparkles .sparkle {
+  position: absolute;
+  color: var(--a, #efb94f);
+  line-height: 1;
+  user-select: none;
+  text-shadow: 0 0 10px var(--a, #efb94f);
+  animation: sparkleTwinkle 3.2s ease-in-out infinite alternate;
+}
+
+.birthday-floating-sparkles .s1 {
+  top: 4%;
+  left: 12%;
+  font-size: 16px;
+  animation-delay: 0.2s;
+}
+
+.birthday-floating-sparkles .s2 {
+  top: 8%;
+  right: 12%;
+  font-size: 13px;
+  animation-delay: 0.9s;
+}
+
+.birthday-floating-sparkles .s3 {
+  bottom: 6%;
+  left: 14%;
+  font-size: 15px;
+  animation-delay: 1.6s;
+}
+
+.birthday-floating-sparkles .s4 {
+  bottom: 8%;
+  right: 14%;
+  font-size: 18px;
+  animation-delay: 0.5s;
+}
+
+.birthday-floating-sparkles .s5 {
+  top: 48%;
+  right: -8px;
+  font-size: 12px;
+  animation-delay: 1.2s;
+}
+
+@keyframes sparkleTwinkle {
+  0% {
+    opacity: 0.25;
+    transform: scale(0.75) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25) rotate(25deg);
+    filter: drop-shadow(0 0 8px var(--a, #efb94f));
+  }
+  100% {
+    opacity: 0.35;
+    transform: scale(0.9) rotate(-10deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .birthday-scroll-cue b,
+  .birthday-horn-btn,
+  .birthday-floating-sparkles .sparkle {
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   COMPLETELY HIDE SCROLLBARS (FULL IMMERSIVE MOBILE EXPERIENCE)
+   - Eliminates all visible scrollbars across all browsers
+   - Touch, trackpad, and mouse wheel scrolling remain 100% functional
+   ========================================================================== */
+
+html,
+body,
+.birthday-shell {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.birthday-shell::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+  display: none !important;
+  background: transparent !important;
+}
+
+/* ==========================================================================
+   SECTION 4: WISHES STREAM & INTERACTIVE WISH MODAL
+   ========================================================================== */
+
+.birthday-wishes-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--a, #efb94f);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.birthday-wishes-title {
+  font-family: var(--font-dancing-script, cursive);
+  font-size: clamp(32px, 5.5vw, 44px);
+  color: var(--p, #5b3f88);
+  margin: 0 0 8px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.15;
+}
+
+.birthday-wishes-subtitle {
+  font-size: clamp(12.5px, 2vw, 14px);
+  color: var(--muted, #766d91);
+  text-align: center;
+  max-width: 320px;
+  line-height: 1.45;
+  margin: 0 auto 16px;
+}
+
+/* Open Modal Trigger Button */
+.birthday-open-wish-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 26px;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--a, #efb94f) 50%, transparent);
+  background: linear-gradient(135deg, var(--p, #5b3f88), color-mix(in srgb, var(--p, #5b3f88) 82%, black));
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--p, #5b3f88) 35%, transparent), 0 2px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 20px;
+}
+
+.birthday-open-wish-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--p, #5b3f88) 45%, transparent);
+}
+
+.birthday-open-wish-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.birthday-wish-btn-icon {
+  width: 17px;
+  height: 17px;
+  stroke: var(--a, #efb94f);
+}
+
+/* Wishes Stream List */
+.birthday-wish-stream {
+  width: 100%;
+  max-width: 420px;
+  max-height: clamp(220px, 36vh, 320px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 6px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--p) 30%, transparent) transparent;
+}
+
+.birthday-wish-stream::-webkit-scrollbar {
+  width: 4px;
+}
+
+.birthday-wish-stream::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--p) 30%, transparent);
+  border-radius: 999px;
+}
+
+.birthday-wish-card {
+  background: color-mix(in srgb, var(--surface, #ffffff) 85%, var(--bg, #f8f5ff));
+  border: 1px solid color-mix(in srgb, var(--p, #5b3f88) 12%, transparent);
+  border-radius: 18px;
+  padding: 13px 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.birthday-wish-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+}
+
+.birthday-wish-card-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 7px;
+}
+
+.birthday-wish-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--p, #5b3f88) 25%, #fff), color-mix(in srgb, var(--a, #efb94f) 25%, #fff));
+  border: 1.5px solid color-mix(in srgb, var(--a, #efb94f) 40%, transparent);
+  color: var(--p, #5b3f88);
+  font-weight: 800;
+  font-size: 14px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.birthday-wish-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.birthday-wish-author {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dark, #201637);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.birthday-wish-subline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+}
+
+.birthday-attendance-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.birthday-attendance-badge.is-attending {
+  background: #e6f7f2;
+  color: #12634d;
+}
+
+.birthday-attendance-badge.is-maybe {
+  background: #fef5e7;
+  color: #925f00;
+}
+
+.birthday-attendance-badge.is-absent {
+  background: #fdf0f3;
+  color: #9f2b45;
+}
+
+.birthday-wish-time-dot {
+  color: var(--muted, #766d91);
+}
+
+.birthday-wish-date {
+  color: var(--muted, #766d91);
+  font-size: 10.5px;
+}
+
+.birthday-wish-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text, #30254b);
+  margin: 0;
+  word-break: break-word;
+}
+
+/* Modal Backdrop */
+.birthday-wish-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(14, 8, 28, 0.68);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: modalFadeIn 0.22s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ==========================================================================
+   INTERACTIVE WISH MODAL (CELESTIAL LUXURY STYLING)
+   ========================================================================== */
+
+/* Modal Card */
+.birthday-wish-modal {
+  position: relative;
+  width: 100%;
+  max-width: 395px;
+  background: #ffffff;
+  border-radius: 32px;
+  border: 1.5px solid color-mix(in srgb, var(--a, #efb94f) 45%, transparent);
+  box-shadow: 0 32px 75px rgba(22, 14, 45, 0.32), 0 6px 20px rgba(0, 0, 0, 0.08);
+  padding: 32px 24px 26px;
+  animation: modalPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  text-align: center;
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Reset button inheritance inside modal */
+.birthday-wish-modal button {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+}
+
+/* Minimal Elegant Close Button */
+.birthday-modal-close {
+  position: absolute !important;
+  top: 18px !important;
+  right: 18px !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  max-width: 34px !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  background: #f4f4f7 !important;
+  color: #71717a !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  z-index: 10 !important;
+}
+
+.birthday-modal-close:hover {
+  background: #ebebed !important;
+  color: #18181b !important;
+  transform: scale(1.08);
+}
+
+/* Header */
+.birthday-modal-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.birthday-modal-kicker {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--a, #efb94f);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.birthday-modal-title {
+  font-family: var(--font-dancing-script, 'Dancing Script', cursive) !important;
+  font-size: clamp(30px, 5.5vw, 36px) !important;
+  font-weight: 700 !important;
+  color: var(--p, #5b3f88) !important;
+  margin: 0 0 6px !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.01em;
+}
+
+.birthday-modal-sub {
+  font-size: 12.5px !important;
+  color: var(--muted, #766d91) !important;
+  margin: 0 auto !important;
+  line-height: 1.45 !important;
+  max-width: 290px;
+}
+
+/* Form Layout */
+.birthday-wish-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  text-align: left;
+}
+
+.birthday-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+}
+
+.birthday-field-label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  color: var(--dark, #201637) !important;
+  text-transform: uppercase;
+  display: block;
+}
+
+.birthday-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.birthday-char-count {
+  font-size: 11px;
+  color: var(--muted, #766d91);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* Input Fields */
+.birthday-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.birthday-input-icon {
+  position: absolute;
+  left: 14px;
+  width: 17px;
+  height: 17px;
+  stroke: var(--muted, #766d91);
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.birthday-input-text {
+  width: 100% !important;
+  padding: 12px 14px 12px 40px !important;
+  border-radius: 16px !important;
+  border: 1.5px solid color-mix(in srgb, var(--p, #5b3f88) 18%, #dde0e8) !important;
+  background: #fbfbfd !important;
+  font-size: 13px !important;
+  color: var(--text, #30254b) !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease !important;
+}
+
+.birthday-input-text:focus {
+  outline: none !important;
+  border-color: var(--p, #5b3f88) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--p, #5b3f88) 16%, transparent), 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+.birthday-input-textarea {
+  width: 100% !important;
+  padding: 12px 15px !important;
+  border-radius: 16px !important;
+  border: 1.5px solid color-mix(in srgb, var(--p, #5b3f88) 18%, #dde0e8) !important;
+  background: #fbfbfd !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  color: var(--text, #30254b) !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+  resize: none !important;
+  min-height: 84px !important;
+  transition: all 0.2s ease !important;
+}
+
+.birthday-input-textarea:focus {
+  outline: none !important;
+  border-color: var(--p, #5b3f88) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--p, #5b3f88) 16%, transparent), 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Sleek Segmented Control for RSVP */
+.birthday-rsvp-segmented {
+  display: flex !important;
+  gap: 8px !important;
+  width: 100% !important;
+  background: #f1f2f6 !important;
+  padding: 4px !important;
+  border-radius: 18px !important;
+  box-sizing: border-box !important;
+}
+
+.birthday-rsvp-pill {
+  flex: 1 1 0% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 10px 4px !important;
+  margin: 0 !important;
+  border-radius: 14px !important;
+  border: 1.5px solid transparent !important;
+  background: transparent !important;
+  color: #52525b !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+}
+
+.birthday-rsvp-pill:hover:not(.is-selected) {
+  background: rgba(255, 255, 255, 0.6) !important;
+  color: #18181b !important;
+}
+
+.birthday-rsvp-pill.is-selected {
+  background: #ffffff !important;
+  color: var(--p, #5b3f88) !important;
+  font-weight: 700 !important;
+  border-color: color-mix(in srgb, var(--p, #5b3f88) 25%, transparent) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  transform: translateY(-0.5px);
+}
+
+.birthday-rsvp-emoji {
+  font-size: 14px !important;
+  line-height: 1 !important;
+}
+
+.birthday-rsvp-text {
+  font-size: 12px !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* Submit Button in Modal */
+.birthday-submit-wish-btn {
+  width: 100% !important;
+  padding: 13px 24px !important;
+  margin: 6px 0 0 0 !important;
+  border-radius: 18px !important;
+  border: 1.5px solid color-mix(in srgb, var(--a, #efb94f) 50%, transparent) !important;
+  background: linear-gradient(135deg, var(--p, #5b3f88), color-mix(in srgb, var(--p, #5b3f88) 82%, black)) !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--p, #5b3f88) 35%, transparent) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.birthday-submit-wish-btn:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--p, #5b3f88) 45%, transparent) !important;
+}
+
+.birthday-submit-wish-btn:active:not(:disabled) {
+  transform: translateY(0) !important;
+}
+
+.birthday-submit-wish-btn:disabled {
+  opacity: 0.65 !important;
+  cursor: not-allowed !important;
+}
+
+.birthday-btn-star {
+  color: var(--a, #efb94f) !important;
+  font-size: 14px !important;
+}
+
+/* Modal Success View */
+.birthday-modal-success {
+  padding: 24px 10px 18px;
+  text-align: center;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.birthday-success-icon {
+  font-size: 44px;
+  margin-bottom: 12px;
+  animation: birthdayPulse 1.2s infinite;
+}
+
+.birthday-modal-success h4 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--p, #5b3f88);
+  margin: 0 0 6px;
+}
+
+.birthday-modal-success p {
+  font-size: 13px;
+  color: var(--muted, #766d91);
+  margin: 0;
+  line-height: 1.45;
+}

@@ -1,0 +1,342 @@
+/* Khitanan Photo Gallery & Fullscreen Lightbox */
+
+.khitan-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(10px, 2.5vw, 14px);
+  margin-top: 20px;
+}
+
+.khitan-gallery-item {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  background: var(--khitan-surface);
+  border: 2px solid var(--khitan-border);
+  box-shadow: 0 8px 20px rgba(27, 56, 43, 0.08);
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.khitan-gallery-item:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(27, 56, 43, 0.16);
+  border-color: var(--khitan-accent);
+}
+
+.khitan-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.khitan-gallery-item:hover img {
+  transform: scale(1.05);
+}
+
+/* Star/Pin decoration */
+.khitan-gallery-item::after {
+  content: "✦";
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 10px;
+  color: var(--khitan-accent);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+/* Fullscreen Lightbox Modal */
+.khitan-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(14, 31, 23, 0.94);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: khitan-fade-in 0.2s ease-out;
+}
+
+@keyframes khitan-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.khitan-lightbox-content {
+  position: relative;
+  max-width: 480px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.khitan-lightbox-img-wrap {
+  width: 100%;
+  max-height: 75vh;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 2px solid var(--khitan-accent);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  background: #000000;
+}
+
+.khitan-lightbox-img-wrap img {
+  width: 100%;
+  height: auto;
+  max-height: 75vh;
+  object-fit: contain;
+  display: block;
+}
+
+.khitan-lightbox-close {
+  position: absolute;
+  top: -46px;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.khitan-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.khitan-lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.khitan-lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.khitan-lightbox-prev {
+  left: -20px;
+}
+
+.khitan-lightbox-next {
+  right: -20px;
+}
+
+.khitan-lightbox-counter {
+  margin-top: 10px;
+  font-family: var(--khitan-font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--khitan-accent);
+}
+
+/* 3D Coverflow Gallery Styles */
+.khitan-3d-gallery-wrapper {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.khitan-gallery-mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.khitan-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--khitan-border);
+  background: var(--khitan-surface);
+  color: var(--khitan-muted);
+  font-family: var(--khitan-font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.khitan-toggle-pill.is-active {
+  background: var(--khitan-primary);
+  border-color: var(--khitan-accent);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(27, 56, 43, 0.2);
+}
+
+.khitan-coverflow-viewport {
+  position: relative;
+  width: 100%;
+  height: clamp(320px, 46vh, 380px);
+  perspective: 1000px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.khitan-coverflow-stage {
+  position: relative;
+  width: 220px;
+  height: 290px;
+  transform-style: preserve-3d;
+}
+
+.khitan-coverflow-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  background: var(--khitan-surface);
+  border: 2px solid var(--khitan-border);
+  box-shadow: 0 10px 30px rgba(27, 56, 43, 0.12);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  transform-origin: center center;
+}
+
+.khitan-coverflow-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.khitan-coverflow-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 3D Positions */
+.khitan-card-active {
+  transform: translate3d(0, 0, 70px) scale(1.05);
+  border-color: var(--khitan-accent);
+  box-shadow: 0 20px 45px rgba(212, 175, 55, 0.32);
+  z-index: 10;
+  opacity: 1;
+}
+
+.khitan-card-prev {
+  transform: translate3d(-60%, 0, 0) rotateY(32deg) scale(0.86);
+  z-index: 5;
+  opacity: 0.65;
+  filter: brightness(0.85);
+}
+
+.khitan-card-next {
+  transform: translate3d(60%, 0, 0) rotateY(-32deg) scale(0.86);
+  z-index: 5;
+  opacity: 0.65;
+  filter: brightness(0.85);
+}
+
+.khitan-card-hidden {
+  transform: translate3d(0, 0, -100px) scale(0.6);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.khitan-card-badge-zoom {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(27, 56, 43, 0.85);
+  backdrop-filter: blur(6px);
+  color: #ffffff;
+  border: 1px solid var(--khitan-accent);
+  padding: 4px 12px;
+  border-radius: 14px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+}
+
+.khitan-coverflow-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+  z-index: 15;
+}
+
+.khitan-coverflow-arrow {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--khitan-surface);
+  border: 1.5px solid var(--khitan-accent);
+  color: var(--khitan-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(27, 56, 43, 0.1);
+  transition: transform 0.2s;
+}
+
+.khitan-coverflow-arrow:hover {
+  transform: scale(1.1);
+}
+
+.khitan-coverflow-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.khitan-coverflow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--khitan-border);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.khitan-coverflow-dot.is-active {
+  width: 18px;
+  border-radius: 8px;
+  background: var(--khitan-accent);
+}

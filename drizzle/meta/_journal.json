@@ -85,6 +85,13 @@
       "when": 1788366731690,
       "tag": "0011_calm_robbie_robertson",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1788510599712,
+      "tag": "0012_reconcile_collaboration_tables",
+      "breakpoints": true
     }
   ]
 }

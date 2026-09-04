@@ -40,6 +40,8 @@ export type TemplateKit = {
     sectionAttribute: string;
     openingSectionId: string | null;
   };
+  defaultView?: "mobile" | "desktop";
+  useContainer?: boolean;
 };
 
 export type TemplateCatalogCategory = "pernikahan" | "khitanan" | "aqiqah" | "ulang-tahun" | "wisuda" | string;
@@ -60,4 +62,6 @@ export type TemplateCatalogItem = {
   themeColors: string[];
   features: string[];
   tags?: string[];
+  defaultView?: "mobile" | "desktop";
+  useContainer?: boolean;
 };

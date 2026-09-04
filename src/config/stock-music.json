@@ -6,7 +6,9 @@
     "genre": "Romantis",
     "category": "wedding",
     "categoryLabel": "Pernikahan",
-    "categories": ["wedding"],
+    "categories": [
+      "wedding"
+    ],
     "url": "/assets/audio/easy-on-me.webm",
     "duration": "3:44",
     "isDefault": true
@@ -18,7 +20,9 @@
     "genre": "Akustik Romantis",
     "category": "wedding",
     "categoryLabel": "Pernikahan",
-    "categories": ["wedding"],
+    "categories": [
+      "wedding"
+    ],
     "url": "/assets/audio/a-thousand-years.mp3",
     "duration": "4:45",
     "isDefault": false
@@ -30,7 +34,13 @@
     "genre": "Klasik Elegan",
     "category": "general",
     "categoryLabel": "Umum & Pernikahan",
-    "categories": ["wedding", "birthday", "khitanan", "aqiqah", "general"],
+    "categories": [
+      "wedding",
+      "birthday",
+      "khitanan",
+      "aqiqah",
+      "general"
+    ],
     "url": "/assets/audio/canon-in-d-pachelbels.webm",
     "duration": "4:12",
     "isDefault": false
@@ -42,8 +52,10 @@
     "genre": "Folk Romantis",
     "category": "wedding",
     "categoryLabel": "Pernikahan",
-    "categories": ["wedding"],
-    "url": "/assets/audio/easy-on-me.webm",
+    "categories": [
+      "wedding"
+    ],
+    "url": "/assets/audio/Banda-Neira-Sampai-Jadi-Debu.mp3",
     "duration": "3:58",
     "isDefault": false
   },
@@ -54,7 +66,9 @@
     "genre": "Pop Instrumental",
     "category": "wedding",
     "categoryLabel": "Pernikahan",
-    "categories": ["wedding"],
+    "categories": [
+      "wedding"
+    ],
     "url": "/assets/audio/easy-on-me.webm",
     "duration": "4:23",
     "isDefault": false
@@ -66,8 +80,10 @@
     "genre": "Ceria & Hangat",
     "category": "birthday",
     "categoryLabel": "Ulang Tahun",
-    "categories": ["birthday"],
-    "url": "/assets/audio/easy-on-me.webm",
+    "categories": [
+      "birthday"
+    ],
+    "url": "/assets/audio/happy-birthday-ukulele.mp3",
     "duration": "2:30",
     "isDefault": true
   },
@@ -78,21 +94,11 @@
     "genre": "Party & Ceria",
     "category": "birthday",
     "categoryLabel": "Ulang Tahun",
-    "categories": ["birthday"],
+    "categories": [
+      "birthday"
+    ],
     "url": "/assets/audio/a-thousand-years.mp3",
     "duration": "3:15",
-    "isDefault": false
-  },
-  {
-    "id": "stock-sweet-seventeen",
-    "title": "Sweet 17 Moments",
-    "artist": "Piano Ballad & Emotional Strings",
-    "genre": "Pop Piano",
-    "category": "birthday",
-    "categoryLabel": "Ulang Tahun",
-    "categories": ["birthday"],
-    "url": "/assets/audio/canon-in-d-pachelbels.webm",
-    "duration": "3:40",
     "isDefault": false
   },
   {
@@ -102,8 +108,10 @@
     "genre": "Kids & Family",
     "category": "birthday",
     "categoryLabel": "Ulang Tahun",
-    "categories": ["birthday"],
-    "url": "/assets/audio/easy-on-me.webm",
+    "categories": [
+      "birthday"
+    ],
+    "url": "/assets/audio/Playful-Sunshine.mp3",
     "duration": "2:45",
     "isDefault": false
   },
@@ -114,45 +122,27 @@
     "genre": "Religius & Syahdu",
     "category": "khitanan",
     "categoryLabel": "Khitanan",
-    "categories": ["khitanan", "aqiqah"],
-    "url": "/assets/audio/canon-in-d-pachelbels.webm",
+    "categories": [
+      "khitanan",
+      "aqiqah"
+    ],
+    "url": "/assets/audio/Sholawat-Badar.mp3",
     "duration": "3:50",
-    "isDefault": true
+    "isDefault": false
   },
   {
-    "id": "stock-tasyakuran-barakah",
-    "title": "Tasyakuran & Doa Barakah",
-    "artist": "Oud, Flute & Acoustic Piano",
-    "genre": "Tradisional Islami",
+    "id": "instrument-jawa",
+    "title": "Instrument Jawa",
+    "artist": "Instrumental",
+    "genre": "Tradisional",
     "category": "khitanan",
     "categoryLabel": "Khitanan",
-    "categories": ["khitanan", "aqiqah"],
-    "url": "/assets/audio/easy-on-me.webm",
+    "categories": [
+      "khitanan",
+      "aqiqah"
+    ],
+    "url": "/assets/audio/INSTRUMENTAL-JAWA.mp3",
     "duration": "4:05",
-    "isDefault": false
-  },
-  {
-    "id": "stock-doa-buah-hati",
-    "title": "Doa Kasih Buah Hati",
-    "artist": "Lullaby Harp & Soft Strings",
-    "genre": "Lullaby & Lembut",
-    "category": "aqiqah",
-    "categoryLabel": "Aqiqah",
-    "categories": ["aqiqah"],
-    "url": "/assets/audio/easy-on-me.webm",
-    "duration": "3:10",
     "isDefault": true
-  },
-  {
-    "id": "stock-cahaya-syukur",
-    "title": "Cahaya Syukur",
-    "artist": "Piano & Cello Hangat",
-    "genre": "Nada Syukur",
-    "category": "aqiqah",
-    "categoryLabel": "Aqiqah",
-    "categories": ["aqiqah"],
-    "url": "/assets/audio/canon-in-d-pachelbels.webm",
-    "duration": "3:30",
-    "isDefault": false
   }
 ]

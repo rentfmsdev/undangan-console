@@ -1,0 +1,16 @@
+{
+    auto_https off
+}
+
+:80 {
+    encode zstd gzip
+
+    @collaboration path /collaboration-ws*
+    handle @collaboration {
+        reverse_proxy collab:3001
+    }
+
+    handle {
+        reverse_proxy web:3000
+    }
+}

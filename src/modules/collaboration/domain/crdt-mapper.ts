@@ -41,7 +41,7 @@ export function initYDocFromState(state: SharedDraftState, doc: Y.Doc = new Y.Do
     // 2. Global Settings
     const globalSettingsMap = doc.getMap("globalSettings");
     globalSettingsMap.set("themeId", state.globalSettings?.themeId ?? "royal-blue-gold");
-    globalSettingsMap.set("musicUrl", state.globalSettings?.musicUrl ?? "/assets/audio/easy-on-me.webm");
+    globalSettingsMap.set("musicUrl", typeof state.globalSettings?.musicUrl === "string" ? state.globalSettings.musicUrl : "");
     globalSettingsMap.set("musicVolume", state.globalSettings?.musicVolume ?? 0.6);
 
     const customColorsMap = new Y.Map();
@@ -167,7 +167,7 @@ export function extractStateFromYDoc(doc: Y.Doc): SharedDraftState {
     },
     globalSettings: {
       themeId: (globalSettingsMap.get("themeId") as string) || "royal-blue-gold",
-      musicUrl: (globalSettingsMap.get("musicUrl") as string) || "/assets/audio/easy-on-me.webm",
+      musicUrl: typeof globalSettingsMap.get("musicUrl") === "string" ? (globalSettingsMap.get("musicUrl") as string) : "",
       musicVolume: Number(globalSettingsMap.get("musicVolume") ?? 0.6),
       customColors,
     },

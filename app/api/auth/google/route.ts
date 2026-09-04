@@ -1,8 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  createOAuthState,
+  OAUTH_COOKIE_PATH,
+  OAUTH_RETURN_TO_COOKIE_NAME,
+  OAUTH_STATE_COOKIE_NAME,
+  sanitizeReturnTo,
+} from "@/modules/auth/oauth-state";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const returnTo = searchParams.get("returnTo") || "/";
+  const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${new URL(request.url).origin}/api/auth/google/callback`;
@@ -16,6 +23,7 @@ export async function GET(request: Request) {
   }
 
   const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
+  const state = createOAuthState();
   const options = {
     redirect_uri: redirectUri,
     client_id: clientId,
@@ -26,9 +34,19 @@ export async function GET(request: Request) {
       "https://www.googleapis.com/auth/userinfo.profile",
       "https://www.googleapis.com/auth/userinfo.email",
     ].join(" "),
-    state: encodeURIComponent(returnTo),
+    state,
   };
 
   const qs = new URLSearchParams(options);
-  return NextResponse.redirect(`${rootUrl}?${qs.toString()}`);
+  const response = NextResponse.redirect(`${rootUrl}?${qs.toString()}`);
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: OAUTH_COOKIE_PATH,
+    maxAge: 10 * 60,
+  };
+  response.cookies.set(OAUTH_STATE_COOKIE_NAME, state, cookieOptions);
+  response.cookies.set(OAUTH_RETURN_TO_COOKIE_NAME, returnTo, cookieOptions);
+  return response;
 }

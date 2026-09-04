@@ -5,6 +5,8 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { invitations, wishes } from "@/db/schema";
 import { getDraftAccess } from "@/modules/drafts/access";
+import { isPublicationExpired } from "@/modules/publishing/retention-policy";
+import { checkRateLimit, getRequestClientIp } from "@/modules/security/rate-limit";
 
 const wishSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -32,7 +34,7 @@ async function getInvitation(invitationId: string) {
 async function canReadInvitation(invitationId: string) {
   const invitation = await getInvitation(invitationId);
   if (!invitation) return false;
-  if (invitation.status === "published") return true;
+  if (invitation.status === "published" && !isPublicationExpired(invitation)) return true;
   const access = await getDraftAccess(invitationId);
   return access.authorized;
 }
@@ -58,7 +60,17 @@ export async function POST(request: Request) {
   const invitationId = new URL(request.url).searchParams.get("invitationId")?.trim();
   if (!invitationId) return NextResponse.json({ error: "Undangan belum dipublish." }, { status: 400 });
   const invitation = await getInvitation(invitationId);
-  if (!invitation || invitation.status !== "published") return NextResponse.json({ error: "Undangan tidak ditemukan." }, { status: 404 });
+  if (!invitation || invitation.status !== "published" || isPublicationExpired(invitation)) {
+    return NextResponse.json({ error: "Undangan tidak ditemukan atau masa tayangnya telah berakhir." }, { status: 404 });
+  }
+  const clientIp = getRequestClientIp(request);
+  const rateLimit = checkRateLimit(`wishes:${invitationId}:${clientIp}`, 8, 10 * 60 * 1000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Terlalu banyak ucapan dikirim. Silakan coba lagi beberapa saat." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+    );
+  }
   const parsed = wishSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Nama, kehadiran, atau ucapan tidak valid." }, { status: 400 });
 

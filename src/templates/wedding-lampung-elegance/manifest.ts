@@ -22,6 +22,7 @@ export const weddingLampungElegance = defineTemplate({
     sectionAttribute: "data-template-section",
     openingSectionId: "opening-envelope",
   },
+  defaultView: "mobile",
   themes: [
     {
       id: "blue-gold",

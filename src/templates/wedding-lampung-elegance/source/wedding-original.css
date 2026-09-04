@@ -31,12 +31,8 @@ nextjs-portal {
   pointer-events: none !important;
 }
 
-html {
+.wedding-scroll-root {
   scroll-behavior: smooth;
-  background: var(--maroon);
-}
-
-body {
   margin: 0;
   color: var(--ink);
   background:

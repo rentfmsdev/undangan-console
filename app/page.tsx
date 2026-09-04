@@ -21,6 +21,11 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
+  UsersRound,
+  Wand2,
+  Send,
+  CheckCircle2,
+  Instagram,
 } from "lucide-react";
 import { templatesCatalog } from "@/templates/registry";
 import type { TemplateCatalogItem } from "@/templates/contracts";
@@ -107,7 +112,7 @@ export default function MarketplaceHomePage() {
       .then((data) => {
         if (data.user) setCurrentUser(data.user);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleLogout = async () => {
@@ -121,12 +126,12 @@ export default function MarketplaceHomePage() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur px-4 py-3.5 sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white shadow-sm transition group-hover:scale-105">
-              <Sparkles size={20} />
+            <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl transition group-hover:scale-105">
+              <Image src="/assets/fav.png" width={40} height={40} alt="Undangan Studio" className="h-full w-full object-cover" priority />
             </div>
             <div>
               <span className="block text-base font-extrabold text-slate-900 leading-tight">Undangan Studio</span>
-              <span className="block text-[11px] font-semibold text-slate-500">Marketplace & Template Builder</span>
+              <span className="block text-[11px] font-semibold text-slate-500">Marketplace & Builder</span>
             </div>
           </Link>
 
@@ -141,47 +146,61 @@ export default function MarketplaceHomePage() {
         </div>
       </header>
 
-      {/* Hero Header */}
-      <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-white via-emerald-50/25 to-slate-50 px-4 py-12 sm:px-8 sm:py-16 text-center">
-        <div className="mx-auto max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
-            <Sparkles size={13} className="text-emerald-600" />
-            <span>Koleksi Template Undangan Digital Interaktif</span>
+      {/* Product landing hero */}
+      <section className="relative overflow-hidden border-b border-slate-200 bg-[radial-gradient(circle_at_8%_18%,rgba(16,185,129,.15),transparent_28%),radial-gradient(circle_at_90%_6%,rgba(59,130,246,.12),transparent_26%),linear-gradient(180deg,#fff_0%,#f8fafc_100%)] px-4 py-12 sm:px-8 sm:py-20">
+        <div className="pointer-events-none absolute inset-0 opacity-[.42] [background-image:linear-gradient(rgba(16,185,129,.10)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,.10)_1px,transparent_1px)] [background-size:32px_32px]" />
+        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
+          <div className="max-w-2xl">
+            <h1 className="mt-5 text-2xl font-black tracking-[-.04em] text-slate-950 sm:text-4xl sm:leading-[1.04]">
+              Buat undangan yang terasa <span className="text-emerald-600">istimewa.</span>
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+              Pilih template, ubah isi dan visual secara realtime, lalu ajak pasangan atau keluarga menyempurnakan undangan dari satu studio yang sama.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <a href="#templates" className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 hover:-translate-y-0.5">Mulai undangan pertama <ArrowRight size={16} /></a>
+              {/* <Link href="/demo/wedding-elegance" className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-extrabold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"><Eye size={16} /> Lihat demo</Link> */}
+            </div>
+            <div className="mt-8 grid grid-cols-1 gap-2.5 sm:grid-cols-4">
+              {["Tanpa instal aplikasi", "Tersimpan otomatis", "Manajemen Tamu", "Siap dibagikan"].map((item) => <div key={item} className="flex items-center gap-2 text-xs font-bold text-slate-600"><CheckCircle2 size={15} className="text-emerald-600" />{item}</div>)}
+            </div>
           </div>
 
-          <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-            Pilih & Buat Undangan Impian Anda
-          </h1>
-
-          <p className="mt-4 text-sm sm:text-base leading-relaxed text-slate-600">
-            Kustomisasi tata letak, warna tema, teks, musik, hingga foto dengan mudah melalui live visual editor.
-            Pilih template di bawah dan mulai edit langsung secara instan!
-          </p>
-
-          {/* Search Box */}
-          <div className="relative mx-auto mt-8 max-w-xl">
-            <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari nama template, kategori, atau fitur (misal: Lampung, Envelope, Batik)..."
-              className="w-full rounded-2xl border border-slate-300 bg-white py-3.5 pl-11 pr-10 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-              >
-                <X size={15} />
-              </button>
-            )}
+          <div className="relative mx-auto w-full max-w-[630px]">
+            <div className="absolute -inset-5 rounded-[40px] bg-emerald-200/35 blur-3xl" />
+            <Image src="/assets/landing/sparkle-orbit.svg" width={180} height={160} alt="" aria-hidden="true" className="pointer-events-none absolute -left-16 -top-12 z-10 w-32 sm:w-40" />
+            <Image src="/assets/landing/leafy-corner.svg" width={215} height={180} alt="" aria-hidden="true" className="pointer-events-none absolute -bottom-14 -right-12 z-10 w-36 sm:w-48" />
+            <Image src="/assets/landing/collab-cursor.svg" width={92} height={100} alt="" aria-hidden="true" className="pointer-events-none absolute -right-5 top-1/4 z-20 hidden w-16 sm:block" />
+            <div className="relative rounded-[30px] border border-emerald-200/70 bg-gradient-to-br from-white via-emerald-50 to-sky-50 p-2 shadow-[0_28px_70px_rgba(15,23,42,.22)]">
+              <div className="pointer-events-none absolute inset-3 rounded-[23px] border border-white/90" />
+              <div className="relative overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-1 shadow-inner">
+                <Image
+                  src="/assets/editor-mockup.png"
+                  width={2859}
+                  height={1671}
+                  priority
+                  alt="Tampilan visual editor Undangan Studio dengan preview undangan realtime"
+                  className="h-auto w-full rounded-[19px]"
+                />
+              </div>
+            </div>
+            <div className="absolute -bottom-4 left-6 inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-white px-3 py-2 text-[10px] font-extrabold text-slate-700 shadow-lg shadow-slate-300/50"><span className="h-2 w-2 rounded-full bg-emerald-500" />Perubahan tersimpan realtime</div>
           </div>
         </div>
       </section>
 
+      <section className="border-b border-slate-200 bg-white px-4 py-6 sm:px-8">
+        <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-3">
+          {[
+            [Wand2, "Edit dengan visual", "Teks, warna, font, foto, musik, dan section tampil langsung di preview."],
+            [UsersRound, "Kolaborasi dengan pasangan", "Undang pasangan atau keluarga untuk ikut menyempurnakan satu undangan."],
+            [Send, "Terbitkan & bagikan", "Generator nama tamu dan link undangan siap dibagikan setelah dipublikasikan."],
+          ].map(([Icon, title, description], index) => { const FeatureIcon = Icon as typeof Wand2; return <article key={title as string} className="landing-feature-card group relative flex gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/60 p-4" style={{ animationDelay: `${index * 3.33}s` }}><span className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700 transition duration-300 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-emerald-600/25"><FeatureIcon size={19} /></span><div className="relative z-10"><h2 className="text-sm font-extrabold text-slate-900 transition group-hover:text-emerald-700">{title as string}</h2><p className="mt-1 text-xs leading-relaxed text-slate-500">{description as string}</p><span className="mt-2 inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 opacity-0 transition duration-300 group-hover:opacity-100">Pelajari fitur <ArrowRight size={11} /></span></div></article>; })}
+        </div>
+      </section>
+
       {/* Main Content Area */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-12">
+      <main id="templates" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-8 sm:px-8 sm:py-12">
         {/* Filter and Sorting Toolbar */}
         <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 lg:flex-row lg:items-center lg:justify-between">
           {/* Category Tabs */}
@@ -192,11 +211,10 @@ export default function MarketplaceHomePage() {
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
-                    active
-                      ? "bg-emerald-600 text-white shadow-sm"
-                      : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${active
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900"
+                    }`}
                 >
                   {category.label}
                 </button>
@@ -286,9 +304,8 @@ export default function MarketplaceHomePage() {
                           e.preventDefault();
                           toggleFavorite(template.code);
                         }}
-                        className={`grid h-8 w-8 place-items-center rounded-full backdrop-blur-md shadow-sm transition active:scale-90 ${
-                          isFav ? "bg-rose-500 text-white shadow-rose-500/30" : "bg-white/90 text-slate-700 hover:bg-white"
-                        }`}
+                        className={`grid h-8 w-8 place-items-center rounded-full backdrop-blur-md shadow-sm transition active:scale-90 ${isFav ? "bg-rose-500 text-white shadow-rose-500/30" : "bg-white/90 text-slate-700 hover:bg-white"
+                          }`}
                         aria-label="Simpan ke favorit"
                       >
                         <Heart size={15} className={isFav ? "fill-white" : ""} />
@@ -337,9 +354,8 @@ export default function MarketplaceHomePage() {
                                   {covers.map((_, idx) => (
                                     <span
                                       key={idx}
-                                      className={`h-1.5 rounded-full transition-all ${
-                                        idx === activeCoverIdx ? "w-3 bg-white" : "w-1.5 bg-white/50"
-                                      }`}
+                                      className={`h-1.5 rounded-full transition-all ${idx === activeCoverIdx ? "w-3 bg-white" : "w-1.5 bg-white/50"
+                                        }`}
                                     />
                                   ))}
                                 </div>
@@ -446,7 +462,7 @@ export default function MarketplaceHomePage() {
                     {/* Actions */}
                     <div className="mt-6 grid grid-cols-2 gap-2.5 pt-4 border-t border-slate-100">
                       <Link
-                        href={`/demo/${template.code}`}
+                        href={`/demo/${template.id}`}
                         className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 whitespace-nowrap transition hover:bg-slate-50 hover:border-slate-300 active:scale-95"
                       >
                         <Eye size={14} />
@@ -478,6 +494,46 @@ export default function MarketplaceHomePage() {
           </div>
         )}
       </main>
+
+      <section aria-labelledby="upcoming-templates-title" className="px-4 pb-2 sm:px-8">
+        <div className="relative mx-auto grid max-w-7xl overflow-hidden rounded-[32px] bg-slate-950 px-6 py-9 text-white shadow-[0_28px_70px_rgba(15,23,42,.2)] sm:px-10 sm:py-12 lg:grid-cols-[1fr_.72fr] lg:items-center lg:gap-12">
+          <div className="pointer-events-none absolute -left-24 -top-28 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-sky-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px)] [background-size:34px_34px]" />
+
+          <div className="relative z-10 max-w-2xl">
+            <h2 id="upcoming-templates-title" className="text-2xl font-black tracking-[-.035em] sm:text-3xl">
+              Nantikan template-template baru yang lebih modern.
+            </h2>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
+              Undangan Studio akan terus diperbarui dengan desain yang lebih segar, kategori acara yang semakin lengkap, dan pengalaman editor yang makin nyaman digunakan.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {["Desain modern", "Kategori baru", "Update berkelanjutan"].map((item) => (
+                <span key={item} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold text-slate-200">
+                  <CheckCircle2 size={13} className="text-emerald-400" /> {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative z-10 mt-9 grid grid-cols-3 items-end gap-3 lg:mt-0" aria-hidden="true">
+            {[
+              ["Pernikahan", "from-emerald-300 to-teal-500", "h-28 sm:h-36"],
+              ["Perayaan", "from-violet-300 to-indigo-500", "h-36 sm:h-48"],
+              ["Acara spesial", "from-amber-200 to-orange-500", "h-24 sm:h-32"],
+            ].map(([label, gradient, height], index) => (
+              <div key={label} className={`${height} relative overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br ${gradient} p-3 shadow-2xl ${index === 1 ? "-translate-y-2" : ""}`}>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_15%,rgba(255,255,255,.55),transparent_30%)]" />
+                <div className="relative flex h-full flex-col justify-between">
+                  <Sparkles size={16} className="text-white/90" />
+                  <span className="text-[9px] font-black uppercase tracking-[.12em] text-white sm:text-[10px]">{label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Live Preview Modal */}
       {previewTemplate && (
@@ -597,19 +653,16 @@ export default function MarketplaceHomePage() {
         </div>
       )}
 
-      {/* Simple Footer */}
-      <footer className="mt-16 border-t border-slate-200 bg-white px-4 py-8 text-center text-xs text-slate-500">
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="grid h-6 w-6 place-items-center rounded-lg bg-emerald-600 text-white text-[10px] font-bold">
-              U
-            </div>
-            <span className="font-bold text-slate-700">Undangan Studio &copy; {new Date().getFullYear()}</span>
+      <footer className="mt-16 border-t border-white/10 bg-slate-950 px-4 py-9 text-center text-xs text-slate-400 sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 sm:flex-row">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-8 w-8 place-items-center overflow-hidden rounded-xl"><Image src="/assets/fav.png" width={32} height={32} alt="Undangan Studio" className="h-full w-full object-cover" /></div>
+            <div className="text-left"><span className="block text-sm font-extrabold text-white">Undangan Studio</span><span className="block text-[10px] text-slate-500">&copy; {new Date().getFullYear()} · Semua hak dilindungi</span></div>
           </div>
-
-          <p className="text-[11px] text-slate-400">
-            Platform builder undangan digital modular Next.js + Tailwind CSS.
-          </p>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-medium text-slate-400">Powered by <b className="font-bold text-slate-200">CV. Twin Digital Investama</b></span>
+            <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram Twin Digital Investama" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-slate-300 transition hover:border-emerald-400 hover:bg-emerald-400 hover:text-slate-950"><Instagram size={16} /></a>
+          </div>
         </div>
       </footer>
       {/* My Invitations Modal */}

@@ -660,7 +660,9 @@ function WeddingInvitation({
   const openInvitation = () => {
     if (stage !== "sealed") return;
     const music = musicRef.current;
-    if (music) {
+    const source = music?.querySelector<HTMLSourceElement>("source");
+    const hasValidSource = Boolean(source && source.getAttribute("src"));
+    if (music && hasValidSource) {
       music.currentTime = 0;
       music.muted = true;
       const customVol = typeof window !== "undefined" && typeof (window as unknown as { __weddingMusicVolume?: number }).__weddingMusicVolume === "number" ? (window as unknown as { __weddingMusicVolume?: number }).__weddingMusicVolume! : 0.60;
@@ -675,9 +677,12 @@ function WeddingInvitation({
     window.setTimeout(() => setStage("leaving"), 3650);
     window.setTimeout(() => {
       const delayedMusic = musicRef.current;
-      if (delayedMusic) {
+      const delayedSource = delayedMusic?.querySelector<HTMLSourceElement>("source");
+      const canPlay = Boolean(delayedSource && delayedSource.getAttribute("src"));
+      if (delayedMusic && canPlay) {
         delayedMusic.currentTime = 0;
         delayedMusic.muted = false;
+        void delayedMusic.play().catch(() => {});
       }
       setStage("opened");
       const scrollRoot = document.querySelector<HTMLElement>("[data-template-scroll-root]");

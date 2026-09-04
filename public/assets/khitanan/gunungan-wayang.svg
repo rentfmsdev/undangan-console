@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff1be" />
+      <stop offset="35%" stop-color="#d4af37" />
+      <stop offset="70%" stop-color="#aa7c11" />
+      <stop offset="100%" stop-color="#eac864" />
+    </linearGradient>
+    <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#725000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Outer Gunungan Silhouette -->
+  <path d="M 100,10
+           C 115,45 135,70 155,95
+           C 175,120 185,150 185,185
+           C 185,225 165,260 145,275
+           L 135,275 C 135,285 130,295 100,295
+           C 70,295 65,285 65,275
+           L 55,275
+           C 35,260 15,225 15,185
+           C 15,150 25,120 45,95
+           C 65,70 85,45 100,10 Z"
+        fill="none" stroke="url(#goldGrad)" stroke-width="3" filter="url(#goldGlow)" />
+
+  <!-- Inner Border Line -->
+  <path d="M 100,25
+           C 112,55 128,78 145,100
+           C 162,123 172,150 172,182
+           C 172,216 154,248 136,262
+           L 64,262
+           C 46,248 28,216 28,182
+           C 28,150 38,123 55,100
+           C 72,78 88,55 100,25 Z"
+        fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-dasharray="4,2" />
+
+  <!-- Central Stem / Tree of Life (Pohon Hayat) -->
+  <line x1="100" y1="35" x2="100" y2="260" stroke="url(#goldGrad)" stroke-width="2.5" />
+
+  <!-- Keraton Gate / Gapura Paduraksa Silhouette at base -->
+  <path d="M 75,260 L 75,200 C 75,185 85,175 100,175 C 115,175 125,185 125,200 L 125,260" fill="none" stroke="url(#goldGrad)" stroke-width="2" />
+  <path d="M 82,260 L 82,205 C 82,192 90,185 100,185 C 110,185 118,192 118,205 L 118,260" fill="none" stroke="url(#goldGrad)" stroke-width="1" />
+  <circle cx="100" cy="165" r="4" fill="url(#goldGrad)" />
+
+  <!-- Symmetrical Branches & Leaves (Sulur Wayang) -->
+  <!-- Level 1 (Top) -->
+  <path d="M 100,60 C 115,55 125,65 118,78 C 110,75 105,70 100,72" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" />
+  <path d="M 100,60 C 85,55 75,65 82,78 C 90,75 95,70 100,72" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" />
+
+  <!-- Level 2 -->
+  <path d="M 100,90 C 125,80 145,95 130,115 C 118,110 110,102 100,105" fill="none" stroke="url(#goldGrad)" stroke-width="1.8" />
+  <path d="M 100,90 C 75,80 55,95 70,115 C 82,110 90,102 100,105" fill="none" stroke="url(#goldGrad)" stroke-width="1.8" />
+
+  <!-- Level 3 -->
+  <path d="M 100,125 C 135,115 160,135 142,158 C 128,150 118,140 100,143" fill="none" stroke="url(#goldGrad)" stroke-width="2" />
+  <path d="M 100,125 C 65,115 40,135 58,158 C 72,150 82,140 100,143" fill="none" stroke="url(#goldGrad)" stroke-width="2" />
+
+  <!-- Level 4 (Wide Base Branches) -->
+  <path d="M 100,160 C 145,150 170,175 150,205 C 135,195 125,182 100,185" fill="none" stroke="url(#goldGrad)" stroke-width="2" />
+  <path d="M 100,160 C 55,150 30,175 50,205 C 65,195 75,182 100,185" fill="none" stroke="url(#goldGrad)" stroke-width="2" />
+
+  <!-- Crown Finial (Mustika Puncak) -->
+  <circle cx="100" cy="14" r="3.5" fill="url(#goldGrad)" />
+  <path d="M 97,20 Q 100,10 103,20 Z" fill="url(#goldGrad)" />
+</svg>

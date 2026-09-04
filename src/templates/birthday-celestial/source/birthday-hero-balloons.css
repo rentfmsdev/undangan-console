@@ -1,0 +1,36 @@
+.birthday-hero-balloons {
+  position: absolute !important;
+  top: clamp(22px, 3.8vh, 36px) !important;
+  right: clamp(10px, 3.5vw, 24px) !important;
+  z-index: 1 !important;
+  width: clamp(75px, 20vw, 105px) !important;
+  max-width: none !important;
+  opacity: 0.75 !important;
+  pointer-events: none !important;
+  filter: saturate(1.1) drop-shadow(0 10px 20px rgba(0, 0, 0, 0.28)) !important;
+  animation: birthdayHeroBalloonsFloat 7s ease-in-out infinite !important;
+}
+
+@keyframes birthdayHeroBalloonsFloat {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-6px, 10px) rotate(1.5deg); }
+}
+
+@media (max-height: 720px) {
+  .birthday-hero-balloons {
+    top: 6px !important;
+    right: 8px !important;
+    width: clamp(65px, 18vw, 85px) !important;
+    opacity: 0.65 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .birthday-hero-balloons { animation: none; }
+}
+
+/* State from the editor must always win over decorative display rules. */
+[data-template-section].is-hidden,
+[data-template-section][hidden] {
+  display: none !important;
+}

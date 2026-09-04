@@ -1,0 +1,13 @@
+[
+  {
+    "id": "demo-sidebar-slot-1",
+    "enabled": true,
+    "title": "Space Iklan Tersedia",
+    "description": "Pasang promosi brand, MUA, dekorasi, atau vendor Anda di sini.",
+    "badge": "Iklan",
+    "imageUrl": "",
+    "linkUrl": "",
+    "ctaText": "Pasang Iklan",
+    "isPlaceholder": true
+  }
+]

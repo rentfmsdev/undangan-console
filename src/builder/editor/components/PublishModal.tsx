@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, CheckCircle2, Crown, ExternalLink, Globe2, Link2, LoaderCircle, MessageCircle, RefreshCw, ShieldCheck, X, XCircle } from "lucide-react";
+import { Check, CheckCircle2, Copy, Crown, ExternalLink, Globe2, Link2, LoaderCircle, MessageCircle, RefreshCw, ShieldCheck, X, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { makeAdminWhatsAppUrl } from "@/config/contact";
+import { getAppBaseUrl } from "@/lib/app-url";
 
 type PublishMode = "path" | "subdomain" | "custom_domain";
 type Availability = "idle" | "checking" | "available" | "unavailable" | "invalid";
@@ -27,7 +28,7 @@ function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
 }
 
-export function PublishModal({ open, draftId, draftReady, initialIdentifier, templatePrice, onClose, onResult }: { open: boolean; draftId: string | null; draftReady: boolean; initialIdentifier: string; templatePrice: number; onClose: () => void; onResult: (result: PublishResult) => void }) {
+export function PublishModal({ open, draftId, draftReady, initialIdentifier, templatePrice, currentStatus = "draft", publishedUrl = "", onClose, onResult }: { open: boolean; draftId: string | null; draftReady: boolean; initialIdentifier: string; templatePrice: number; currentStatus?: "draft" | "published" | "custom"; publishedUrl?: string; onClose: () => void; onResult: (result: PublishResult) => void }) {
   const [mode, setMode] = useState<PublishMode>("path");
   const [identifier, setIdentifier] = useState(cleanPath(initialIdentifier || "ayuardi"));
   const [availability, setAvailability] = useState<Availability>("checking");
@@ -39,6 +40,7 @@ export function PublishModal({ open, draftId, draftReady, initialIdentifier, tem
   const [selectedDomain, setSelectedDomain] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const displayHost = getAppBaseUrl().replace(/^https?:\/\//, "");
   const rootDomain = "undangan.co";
   const subdomainFee = 50_000;
   const subdomainTotal = templatePrice + subdomainFee;
@@ -48,10 +50,10 @@ export function PublishModal({ open, draftId, draftReady, initialIdentifier, tem
   const effectiveIdentifier = mode === "custom_domain" ? selectedDomain : identifier;
 
   useEffect(() => {
-    if (!open || mode !== "path" || !validPathIdentifier || !draftId) return;
+    if (!open || (mode !== "path" && mode !== "subdomain") || !validPathIdentifier || !draftId) return;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => {
-      fetch(`/api/publish/availability?mode=path&identifier=${encodeURIComponent(identifier)}&excludeDraftId=${encodeURIComponent(draftId)}`, { cache: "no-store", signal: controller.signal })
+      fetch(`/api/publish/availability?mode=${mode}&identifier=${encodeURIComponent(identifier)}&excludeDraftId=${encodeURIComponent(draftId)}`, { cache: "no-store", signal: controller.signal })
         .then(async (response) => { const payload = await response.json(); if (!response.ok) throw new Error(payload.error ?? "Pengecekan gagal."); return payload; })
         .then((payload) => { setAvailability(payload.available ? "available" : "unavailable"); setAvailabilityMessage(payload.reason ?? ""); })
         .catch((reason) => { if (!controller.signal.aborted) { setAvailability("unavailable"); setAvailabilityMessage(reason instanceof Error ? reason.message : "Pengecekan gagal."); } });
@@ -72,11 +74,13 @@ export function PublishModal({ open, draftId, draftReady, initialIdentifier, tem
   }, [domainLabel, mode, open, validDomainLabel]);
 
   if (!open) return null;
+  if (currentStatus === "published") return <PublishStatusModal status="published" identifier={initialIdentifier} publishedUrl={publishedUrl} onClose={onClose} />;
+  if (currentStatus === "custom") return <PublishStatusModal status="custom" identifier={initialIdentifier} publishedUrl="" onClose={onClose} />;
 
   function selectMode(nextMode: PublishMode) {
     setMode(nextMode);
     setError("");
-    if (nextMode === "path") setAvailability(pathPattern.test(identifier) ? "checking" : "invalid");
+    if (nextMode === "path" || nextMode === "subdomain") setAvailability(pathPattern.test(identifier) ? "checking" : "invalid");
     if (nextMode === "custom_domain") {
       setSelectedDomain("");
       setDomainCheck(validDomainLabel ? "checking" : "idle");
@@ -87,7 +91,7 @@ export function PublishModal({ open, draftId, draftReady, initialIdentifier, tem
     const cleaned = cleanPath(value);
     setIdentifier(cleaned);
     setError("");
-    if (mode === "path") setAvailability(pathPattern.test(cleaned) ? "checking" : "invalid");
+    if (mode === "path" || mode === "subdomain") setAvailability(pathPattern.test(cleaned) ? "checking" : "invalid");
   }
 
   function changeDomainLabel(value: string) {
@@ -128,7 +132,7 @@ export function PublishModal({ open, draftId, draftReady, initialIdentifier, tem
     }
   }
 
-  const buttonDisabled = !draftReady || submitting || (mode === "path" && (!validPathIdentifier || availability !== "available")) || (mode === "subdomain" && !validPathIdentifier) || (mode === "custom_domain" && !selectedDomain);
+  const buttonDisabled = !draftReady || submitting || ((mode === "path" || mode === "subdomain") && (!validPathIdentifier || availability !== "available")) || (mode === "custom_domain" && !selectedDomain);
 
   return (
     <div className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-slate-950/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="publish-dialog-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -140,15 +144,16 @@ export function PublishModal({ open, draftId, draftReady, initialIdentifier, tem
 
         <div className="max-h-[min(74vh,720px)] overflow-y-auto p-5 sm:p-6">
           <div className="grid gap-3 sm:grid-cols-3">
-            <ModeCard active={mode === "path"} onClick={() => selectMode("path")} icon={<Link2 size={20} />} tone="emerald" title="Path standar" description={`${rootDomain}/nama-anda`} pricingDetail="Harga template" badge={formatRupiah(templatePrice)} />
+            <ModeCard active={mode === "path"} onClick={() => selectMode("path")} icon={<Link2 size={20} />} tone="emerald" title="Path standar" description={`${displayHost}/i/nama-anda`} pricingDetail="Harga template" badge={formatRupiah(templatePrice)} />
             <ModeCard active={mode === "subdomain"} onClick={() => selectMode("subdomain")} icon={<Crown size={20} />} tone="amber" title="Subdomain" description={`nama.${rootDomain}`} pricingDetail={`${formatRupiah(templatePrice)} + layanan ${formatRupiah(subdomainFee)}`} badge={`TOTAL ${formatRupiah(subdomainTotal)}`} />
             <ModeCard active={mode === "custom_domain"} onClick={() => selectMode("custom_domain")} icon={<Globe2 size={20} />} tone="violet" title="Custom domain" description="Pilih .com, .id, .co, atau .space" pricingDetail={`${formatRupiah(templatePrice)} + domain & layanan`} badge="PENAWARAN ADMIN" />
           </div>
 
           {mode !== "custom_domain" ? (
             <>
-              <label className="mt-5 block text-xs font-bold text-slate-800">{mode === "subdomain" ? "Nama subdomain yang diinginkan" : "Nama path"}<div className="mt-2 flex items-center overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm focus-within:border-emerald-500 focus-within:ring-3 focus-within:ring-emerald-100">{mode === "path" && <span className="border-r border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-500">{rootDomain}/</span>}<input value={identifier} onChange={(event) => changeIdentifier(event.target.value)} placeholder="ayuardi" className="min-w-0 flex-1 border-0 px-3 py-3 text-sm outline-none" />{mode === "subdomain" && <span className="border-l border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-500">.{rootDomain}</span>}</div></label>
-              {mode === "path" ? <AvailabilityNotice state={availability} message={availabilityMessage} /> : <div className="mt-3 rounded-xl bg-amber-50 px-3 py-3 text-xs leading-5 text-amber-800">Total {formatRupiah(subdomainTotal)} terdiri dari harga template {formatRupiah(templatePrice)} dan tambahan layanan subdomain {formatRupiah(subdomainFee)}. Permintaan dikonfirmasi admin sebelum aktif.</div>}
+              <label className="mt-5 block text-xs font-bold text-slate-800">{mode === "subdomain" ? "Nama subdomain yang diinginkan" : "Nama path"}<div className="mt-2 flex items-center overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm focus-within:border-emerald-500 focus-within:ring-3 focus-within:ring-emerald-100">{mode === "path" && <span className="border-r border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-500">{displayHost}/i/</span>}<input value={identifier} onChange={(event) => changeIdentifier(event.target.value)} placeholder="ayuardi" className="min-w-0 flex-1 border-0 px-3 py-3 text-sm outline-none" />{mode === "subdomain" && <span className="border-l border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-500">.{rootDomain}</span>}</div></label>
+              <AvailabilityNotice state={availability} message={availabilityMessage} />
+              {mode === "subdomain" && <div className="mt-3 rounded-xl bg-amber-50 px-3 py-3 text-xs leading-5 text-amber-800">Total {formatRupiah(subdomainTotal)} terdiri dari harga template {formatRupiah(templatePrice)} dan tambahan layanan subdomain {formatRupiah(subdomainFee)}. Permintaan dikonfirmasi admin sebelum aktif.</div>}
             </>
           ) : (
             <div className="mt-5">
@@ -164,6 +169,56 @@ export function PublishModal({ open, draftId, draftReady, initialIdentifier, tem
 
           {error && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2.5 text-xs font-semibold text-rose-700">{error}</p>}
           <button type="button" disabled={buttonDisabled} onClick={submit} className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-extrabold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-45 ${mode === "path" ? "bg-emerald-600 hover:bg-emerald-700" : mode === "subdomain" ? "bg-amber-600 hover:bg-amber-700" : "bg-violet-600 hover:bg-violet-700"}`}>{submitting ? <LoaderCircle size={18} className="animate-spin" /> : mode === "path" ? <CheckCircle2 size={18} /> : mode === "subdomain" ? <Crown size={18} /> : <MessageCircle size={18} />}{submitting ? "Memproses..." : mode === "path" ? `Publish · ${formatRupiah(templatePrice)}` : mode === "subdomain" ? `Request · ${formatRupiah(subdomainTotal)}` : selectedDomain ? <>Request {selectedDomain} <ExternalLink size={14} /></> : "Pilih domain tersedia"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PublishStatusModal({ status, identifier, publishedUrl, onClose }: { status: "published" | "custom"; identifier: string; publishedUrl: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const isPublished = status === "published";
+  const liveUrl = publishedUrl || (typeof window !== "undefined" ? `${window.location.origin}/i/${identifier}` : "");
+  const copyUrl = async () => {
+    if (!liveUrl) return;
+    try {
+      await navigator.clipboard.writeText(liveUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="publish-status-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_30px_100px_rgba(15,23,42,.32)]">
+        <header className={`flex items-start justify-between px-6 py-5 ${isPublished ? "bg-gradient-to-r from-emerald-50 to-white" : "bg-gradient-to-r from-amber-50 to-white"}`}>
+          <div>
+            <span className={`inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[.16em] ${isPublished ? "text-emerald-700" : "text-amber-700"}`}>{isPublished ? <CheckCircle2 size={14} /> : <LoaderCircle size={14} />} {isPublished ? "Undangan telah published" : "Request custom sedang diproses"}</span>
+            <h2 id="publish-status-title" className="mt-1 text-2xl font-extrabold text-slate-900">{isPublished ? "Undangan Anda sudah aktif" : "Menunggu konfirmasi admin"}</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500">{isPublished ? "Alamat undangan sudah siap dibagikan kepada para tamu." : "Alamat khusus Anda telah dicatat dan akan diaktifkan setelah proses admin selesai."}</p>
+          </div>
+          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-slate-500 shadow-sm hover:bg-slate-100" aria-label="Tutup"><X size={18} /></button>
+        </header>
+        <div className="p-6">
+          {isPublished ? (
+            <>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-emerald-700">URL undangan aktif</span>
+                <p className="mt-2 break-all font-mono text-sm font-bold text-slate-900">{liveUrl}</p>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button type="button" onClick={copyUrl} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-xs font-extrabold text-slate-700 hover:bg-slate-50">{copied ? <Check size={15} className="text-emerald-600" /> : <Copy size={15} />} {copied ? "Tersalin" : "Salin URL"}</button>
+                <a href={liveUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-extrabold text-white shadow-sm hover:bg-emerald-700">Buka undangan <ExternalLink size={14} /></a>
+              </div>
+              <p className="mt-4 text-center text-[11px] leading-5 text-slate-500">Gunakan halaman Generator untuk membuat tautan personal dengan nama setiap tamu.</p>
+            </>
+          ) : (
+            <>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-amber-700">Alamat yang diminta</span><p className="mt-2 break-all font-mono text-sm font-bold text-slate-900">{identifier || "Alamat custom"}</p><p className="mt-2 text-xs leading-5 text-amber-800">Kami akan menghubungi Anda setelah domain atau subdomain selesai dikonfigurasi.</p></div>
+              <a href={makeAdminWhatsAppUrl(`Halo Admin, saya ingin menindaklanjuti request custom ${identifier || "undangan saya"}.`)} target="_blank" rel="noreferrer" className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-3 text-xs font-extrabold text-white shadow-sm hover:bg-amber-700">Hubungi admin <ExternalLink size={14} /></a>
+            </>
+          )}
         </div>
       </div>
     </div>

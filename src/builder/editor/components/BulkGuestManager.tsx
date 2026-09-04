@@ -25,7 +25,7 @@ import {
   X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import * as XLSX from "xlsx";
+import { buildInvitationUrl } from "@/lib/app-url";
 
 export type GuestContact = {
   id: string;
@@ -61,6 +61,66 @@ export function normalizePhoneNumber(raw: string): string {
     cleaned = "628" + cleaned.slice(1);
   }
   return cleaned;
+}
+
+function safeSpreadsheetValue(value: unknown) {
+  const text = String(value ?? "");
+  return /^[=+\-@]/.test(text) ? `'${text}` : text;
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function parseDelimitedText(text: string) {
+  const firstLine = text.replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0] ?? "";
+  const delimiters = [",", ";", "\t"];
+  const delimiter = delimiters.reduce((best, candidate) =>
+    firstLine.split(candidate).length > firstLine.split(best).length ? candidate : best,
+  );
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  const input = text.replace(/^\uFEFF/, "");
+
+  for (let index = 0; index < input.length; index += 1) {
+    const character = input[index];
+    if (character === '"') {
+      if (quoted && input[index + 1] === '"') {
+        cell += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === delimiter && !quoted) {
+      row.push(cell);
+      cell = "";
+    } else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && input[index + 1] === "\n") index += 1;
+      row.push(cell);
+      if (row.some((value) => value.trim())) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += character;
+    }
+  }
+  row.push(cell);
+  if (row.some((value) => value.trim())) rows.push(row);
+  return rows;
+}
+
+function rowsToRecords(rows: unknown[][]) {
+  const [headerRow, ...dataRows] = rows;
+  if (!headerRow) return [];
+  const headers = headerRow.map((value) => String(value ?? "").trim());
+  return dataRows.slice(0, 5_000).map((row) => Object.fromEntries(headers.map((header, index) => [header, row[index]])));
 }
 
 export function BulkGuestManager({
@@ -248,7 +308,7 @@ export function BulkGuestManager({
   }, [guests]);
 
   // Download Sample Excel Template
-  function downloadTemplate(type: "xlsx" | "csv") {
+  async function downloadTemplate(type: "xlsx" | "csv") {
     const sampleData = [
       {
         "Nama Tamu": "Bpk. Budi Santoso & Keluarga",
@@ -272,68 +332,71 @@ export function BulkGuestManager({
       },
     ];
 
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    // Set column widths
-    worksheet["!cols"] = [{ wch: 30 }, { wch: 20 }, { wch: 20 }];
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Tamu");
-
-    if (type === "xlsx") {
-      XLSX.writeFile(workbook, "template-daftar-tamu-undangan.xlsx");
-    } else {
-      XLSX.writeFile(workbook, "template-daftar-tamu-undangan.csv", {
-        bookType: "csv",
-      });
+    const headers = ["Nama Tamu", "Nomor WhatsApp", "Kategori"];
+    const rows = [headers, ...sampleData.map((item) => headers.map((header) => safeSpreadsheetValue(item[header as keyof typeof item])))];
+    try {
+      if (type === "xlsx") {
+        const { default: writeXlsxFile } = await import("write-excel-file/browser");
+        const blob = await writeXlsxFile(rows, { columns: [{ width: 30 }, { width: 20 }, { width: 20 }] }).toBlob();
+        downloadBlob(blob, "template-daftar-tamu-undangan.xlsx");
+      } else {
+        const csv = `\uFEFF${rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")).join("\r\n")}`;
+        downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "template-daftar-tamu-undangan.csv");
+      }
+      showToast(`Template ${type.toUpperCase()} berhasil diunduh!`);
+    } catch {
+      showToast(`Gagal membuat template ${type.toUpperCase()}.`);
     }
-    showToast(`Template ${type.toUpperCase()} berhasil diunduh!`);
   }
 
   // Export Data to Excel
-  function exportGuestData() {
+  async function exportGuestData() {
     if (guests.length === 0) {
       showToast("Daftar tamu masih kosong.");
       return;
     }
 
-    const exportRows = guests.map((g, idx) => ({
-      No: idx + 1,
-      "Nama Tamu": g.name,
-      "Nomor WhatsApp": g.phone,
-      Kategori: g.group || "Umum",
-      Status: g.status === "sent" ? "Sudah Dikirim" : "Belum Dikirim",
-      "Waktu Kirim": g.sentAt || "-",
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(exportRows);
-    worksheet["!cols"] = [
-      { wch: 6 },
-      { wch: 30 },
-      { wch: 20 },
-      { wch: 18 },
-      { wch: 16 },
-      { wch: 22 },
+    const rows = [
+      ["No", "Nama Tamu", "Nomor WhatsApp", "Kategori", "Status", "Waktu Kirim"],
+      ...guests.map((guest, index) => [
+        index + 1,
+        safeSpreadsheetValue(guest.name),
+        safeSpreadsheetValue(guest.phone),
+        safeSpreadsheetValue(guest.group || "Umum"),
+        guest.status === "sent" ? "Sudah Dikirim" : "Belum Dikirim",
+        safeSpreadsheetValue(guest.sentAt || "-"),
+      ]),
     ];
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Tamu Undangan");
-    XLSX.writeFile(workbook, `daftar-tamu-undangan-${templateCode}.xlsx`);
-    showToast("Data tamu berhasil diexport ke Excel!");
+    try {
+      const { default: writeXlsxFile } = await import("write-excel-file/browser");
+      const blob = await writeXlsxFile(rows, { columns: [{ width: 6 }, { width: 30 }, { width: 20 }, { width: 18 }, { width: 16 }, { width: 22 }] }).toBlob();
+      downloadBlob(blob, `daftar-tamu-undangan-${templateCode}.xlsx`);
+      showToast("Data tamu berhasil diexport ke Excel!");
+    } catch {
+      showToast("Gagal mengekspor daftar tamu ke Excel.");
+    }
   }
 
   // Handle Excel / CSV File Upload
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const bstr = evt.target?.result;
-        const workbook = XLSX.read(bstr, { type: "binary" });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const rawJson: Record<string, unknown>[] = XLSX.utils.sheet_to_json(worksheet);
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Ukuran file daftar tamu maksimal 5 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      let rawRows: unknown[][];
+      if (file.name.toLowerCase().endsWith(".csv")) {
+        rawRows = parseDelimitedText(await file.text());
+      } else {
+        const { readSheet } = await import("read-excel-file/browser");
+        rawRows = await readSheet(file);
+      }
+      const rawJson = rowsToRecords(rawRows);
 
         if (!rawJson || rawJson.length === 0) {
           showToast("File tidak berisi data atau format kosong.");
@@ -395,13 +458,11 @@ export function BulkGuestManager({
 
         setGuests((prev) => [...prev, ...newGuests]);
         showToast(`Berhasil menambahkan ${newGuests.length} tamu dari file!`);
-      } catch {
-        showToast("Gagal membaca file Excel/CSV. Pastikan format valid.");
-      } finally {
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      }
-    };
-    reader.readAsBinaryString(file);
+    } catch {
+      showToast("Gagal membaca file Excel/CSV. Pastikan format valid.");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   // Handle Multi-line Text Paste
@@ -630,15 +691,8 @@ export function BulkGuestManager({
       onRequirePublish();
       return;
     }
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    let link = `${origin}/i/ayuardi?for=${encodeURIComponent(guest.name)}`;
-    if (isPublished) {
-      if (publishMode === "path") {
-        link = `${origin}/i/${publishIdentifier}?for=${encodeURIComponent(guest.name)}`;
-      } else {
-        link = `https://${publishIdentifier}.undangan.co?for=${encodeURIComponent(guest.name)}`;
-      }
-    }
+    const slug = publishIdentifier || "ayuardi";
+    const link = buildInvitationUrl(slug, guest.name);
     await navigator.clipboard.writeText(link);
     showToast(`Tautan personal "${guest.name}" disalin!`);
   }
@@ -657,7 +711,7 @@ export function BulkGuestManager({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".xlsx, .xls, .csv"
+        accept=".xlsx,.csv"
         onChange={handleFileUpload}
         className="hidden"
       />

@@ -7,6 +7,9 @@ import { domainPublishRequests, invitations } from "@/db/schema";
 import { getDraftAccess } from "@/modules/drafts/access";
 import { checkDomainAvailability, parseSupportedDomain } from "@/modules/domains/availability";
 import { getTemplateById, getTemplateCatalogItem } from "@/templates/registry";
+import { buildInvitationUrl } from "@/lib/app-url";
+import { getPublicationExpiresAt, getPublishRetentionDays } from "@/modules/publishing/retention-policy";
+import { releaseExpiredPublications } from "@/modules/publishing/retention";
 
 export const runtime = "nodejs";
 
@@ -28,6 +31,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ dra
   if (!draft || !access.ownedByUser) return NextResponse.json({ error: "Draft tidak dapat diakses." }, { status: 403 });
 
   const { mode, identifier } = parsed.data;
+  await releaseExpiredPublications();
   const template = getTemplateById(draft.templateId);
   const templatePrice = getTemplateCatalogItem(draft.templateId)?.price ?? (template ? getTemplateCatalogItem(template.code)?.price : undefined) ?? template?.price ?? 0;
   const subdomainFee = 50_000;
@@ -40,6 +44,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ dra
   if (mode === "path") {
     const [conflict] = await db.select({ id: invitations.id }).from(invitations).where(and(eq(invitations.slug, identifier), ne(invitations.id, draftId))).limit(1);
     if (conflict) return NextResponse.json({ error: "Nama URL sudah digunakan. Pilih nama lain." }, { status: 409 });
+    const publishedAt = new Date();
+    const retentionDays = getPublishRetentionDays();
+    const expiresAt = getPublicationExpiresAt(publishedAt, retentionDays)!;
     try {
       await db.update(invitations).set({
         status: "published",
@@ -50,15 +57,35 @@ export async function POST(request: Request, { params }: { params: Promise<{ dra
           ...(draft.styleOverrides as Record<string, unknown>),
           publishRequest: null,
           publishPricing: { templatePrice, additionalFee: 0, total: templatePrice, pricingStatus: "fixed", selectedAt: new Date().toISOString() },
+          publishRetention: { retentionDays, publishedAt: publishedAt.toISOString(), expiresAt: expiresAt.toISOString() },
         },
-        publishedAt: new Date(),
+        publishedAt,
       }).where(eq(invitations.id, draftId));
       await db.update(domainPublishRequests).set({ status: "cancelled" }).where(eq(domainPublishRequests.invitationId, draftId));
     } catch {
       return NextResponse.json({ error: "Nama URL baru saja digunakan. Pilih nama lain." }, { status: 409 });
     }
-    const rootDomain = process.env.ROOT_DOMAIN ?? "undangan.co";
-    return NextResponse.json({ ok: true, status: "published", url: `https://${rootDomain}/${identifier}`, pricing: { templatePrice, additionalFee: 0, total: templatePrice } });
+    const url = buildInvitationUrl(identifier);
+    return NextResponse.json({
+      ok: true,
+      status: "published",
+      url,
+      publishedAt: publishedAt.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      retentionDays,
+      pricing: { templatePrice, additionalFee: 0, total: templatePrice },
+    });
+  }
+
+  if (mode === "subdomain") {
+    const [conflict] = await db
+      .select({ id: invitations.id })
+      .from(invitations)
+      .where(and(eq(invitations.subdomain, identifier), ne(invitations.id, draftId)))
+      .limit(1);
+    if (conflict) {
+      return NextResponse.json({ error: "Subdomain sudah diminta atau digunakan. Pilih nama lain." }, { status: 409 });
+    }
   }
 
   const domainCheck = mode === "custom_domain" ? await checkDomainAvailability(identifier) : null;
@@ -103,14 +130,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ dra
       source: domainCheck.source,
     } : null,
   };
-  await db.update(invitations).set({
-    status: "custom",
-    publishMode: mode,
-    slug: null,
-    subdomain: null,
-    styleOverrides: { ...(draft.styleOverrides as Record<string, unknown>), publishRequest: requestPayload },
-    publishedAt: null,
-  }).where(eq(invitations.id, draftId));
+  try {
+    await db.update(invitations).set({
+      status: "custom",
+      publishMode: mode,
+      slug: null,
+      // Reserve the requested name now. The `custom` status keeps it private,
+      // while the unique index prevents two customers receiving the same name.
+      subdomain: mode === "subdomain" ? identifier : null,
+      styleOverrides: { ...(draft.styleOverrides as Record<string, unknown>), publishRequest: requestPayload },
+      publishedAt: null,
+    }).where(eq(invitations.id, draftId));
+  } catch {
+    if (mode === "subdomain") {
+      return NextResponse.json({ error: "Subdomain baru saja diminta pengguna lain. Pilih nama lain." }, { status: 409 });
+    }
+    throw new Error("Gagal menyimpan permintaan publish.");
+  }
 
   return NextResponse.json({ ok: true, status: "custom", request: requestPayload });
 }
