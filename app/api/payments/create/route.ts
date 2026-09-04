@@ -94,11 +94,34 @@ export async function POST(request: Request) {
       body: JSON.stringify(topupPayload),
     });
 
-    const pgsData = await pgsResponse.json();
+    const pgsRawText = await pgsResponse.text();
+    let pgsData: any = {};
+    try {
+      pgsData = pgsRawText ? JSON.parse(pgsRawText) : {};
+    } catch {
+      console.error("❌ Non-JSON response from payment gateway service:", pgsRawText);
+      return NextResponse.json(
+        {
+          error:
+            pgsResponse.status === 502 || pgsResponse.status === 504
+              ? `Layanan Payment Gateway (${pgsUrl}) sedang offline (${pgsResponse.status} Bad Gateway). Pastikan container/service di server sudah berjalan.`
+              : `Respon payment gateway tidak valid (${pgsResponse.status}).`,
+        },
+        { status: 503 }
+      );
+    }
+
     if (!pgsResponse.ok) {
       return NextResponse.json(
-        { error: pgsData.message || pgsData.error || "Gagal membuat sesi pembayaran di payment gateway." },
-        { status: pgsResponse.status }
+        {
+          error:
+            pgsData.message ||
+            pgsData.error ||
+            (pgsResponse.status === 502
+              ? "Layanan Payment Gateway sedang offline (502 Bad Gateway)."
+              : "Gagal membuat sesi pembayaran di payment gateway."),
+        },
+        { status: pgsResponse.status === 502 ? 503 : pgsResponse.status }
       );
     }
 
@@ -168,8 +191,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("❌ Error contacting payment gateway service:", error);
     return NextResponse.json(
-      { error: "Gagal terhubung ke service payment gateway." },
-      { status: 502 }
+      { error: "Gagal terhubung ke service payment gateway. Pastikan service_payment sedang aktif." },
+      { status: 503 }
     );
   }
 }

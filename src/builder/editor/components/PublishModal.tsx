@@ -423,7 +423,8 @@ export function PublishModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ mode, identifier: effectiveIdentifier }),
         });
-        const payload = await response.json();
+        const text = await response.text();
+        const payload = text ? JSON.parse(text) : {};
         if (!response.ok) throw new Error(payload.error ?? "Proses publish gagal.");
         onResult({ status: "published", url: payload.url, mode: "path", identifier: effectiveIdentifier });
       } catch (reason) {
@@ -458,9 +459,21 @@ export function PublishModal({
         }),
       });
 
-      const payload = await response.json();
+      const text = await response.text();
+      let payload: any = null;
+      try {
+        payload = text ? JSON.parse(text) : null;
+      } catch {
+        payload = null;
+      }
+
       if (!response.ok) {
-        throw new Error(payload.error || "Gagal membuat sesi pembayaran.");
+        throw new Error(
+          payload?.error ||
+          (response.status === 502 || response.status === 503
+            ? "Layanan Payment Gateway sedang tidak tersedia / offline. Pastikan service_payment sedang aktif."
+            : `Gagal membuat sesi pembayaran (${response.status}).`)
+        );
       }
 
       setPaymentData(payload.payment);
