@@ -30,19 +30,66 @@ function firstImage(sections: SeoSection[]) {
   return "/assets/fav.png";
 }
 
-export function buildInvitationSeo(template: TemplateKit, sections: SeoSection[], canonicalUrl: string) {
-  const categoryLabel = template.category === "wedding" ? "Undangan Pernikahan" : template.category === "birthday" ? "Undangan Ulang Tahun" : "Undangan Digital";
-  const couple = firstText(sections.filter((section) => section.type === "mempelai" || section.type === "couple"), ["title", "brideName", "groomName"]);
-  const heroTitle = firstText(sections.filter((section) => section.type === "hero" || section.type === "opening-envelope"), ["title"]);
-  const titleSubject = couple || heroTitle || template.name;
-  const eventDate = firstText(sections, ["date", "subtitle"]);
-  const location = firstText(sections.filter((section) => section.type === "event" || section.type === "location"), ["address", "subtitle"]);
-  const title = `${categoryLabel} ${titleSubject} | Undangan Studio`;
-  const descriptionParts = [`${categoryLabel} ${titleSubject}.`];
-  if (eventDate) descriptionParts.push(eventDate);
-  if (location) descriptionParts.push(location);
-  descriptionParts.push("Buka undangan untuk melihat detail acara.");
-  const description = descriptionParts.join(" ").slice(0, 300);
+export function buildInvitationSeo(
+  template: TemplateKit,
+  sections: SeoSection[],
+  canonicalUrl: string,
+  guestName?: string
+) {
+  const categoryLabels: Record<string, string> = {
+    wedding: "Undangan Pernikahan",
+    birthday: "Undangan Ulang Tahun",
+    aqiqah: "Undangan Tasyakuran Walimatul Aqiqah",
+    khitanan: "Undangan Walimatul Khitan",
+  };
+  const categoryLabel = categoryLabels[template.category] || "Undangan Digital";
+
+  // 1. Resolve host / celebrant / couple / subject
+  let titleSubject = "";
+  if (template.category === "wedding") {
+    const couple = firstText(sections.filter((s) => s.type === "mempelai" || s.type === "couple"), ["title", "couple", "brideName", "groomName"]);
+    titleSubject = couple;
+  } else if (template.category === "birthday") {
+    const heroTitle = firstText(sections.filter((s) => s.type === "hero"), ["title"]);
+    const envelopeTitle = firstText(sections.filter((s) => s.type === "opening-envelope"), ["title"]);
+    titleSubject = envelopeTitle || heroTitle;
+  } else if (template.category === "aqiqah") {
+    const childName = firstText(sections.filter((s) => s.type === "profile" || s.type === "hero"), ["name", "babyName", "title"]);
+    const envelopeTitle = firstText(sections.filter((s) => s.type === "opening-envelope"), ["title"]);
+    titleSubject = childName || envelopeTitle;
+  } else if (template.category === "khitanan") {
+    const childName = firstText(sections.filter((s) => s.type === "profile" || s.type === "hero"), ["childName", "name", "title"]);
+    const envelopeTitle = firstText(sections.filter((s) => s.type === "opening-envelope"), ["title"]);
+    titleSubject = childName || envelopeTitle;
+  }
+
+  if (!titleSubject) {
+    const heroTitle = firstText(sections.filter((s) => s.type === "hero" || s.type === "opening-envelope"), ["title"]);
+    titleSubject = heroTitle || template.name;
+  }
+
+  const cleanGuest = guestName ? guestName.trim().replace(/\s+/g, " ") : "";
+
+  // 2. Build Title with Guest Name if present
+  let title = "";
+  if (cleanGuest) {
+    title = `${categoryLabel} ${titleSubject} - Khusus untuk ${cleanGuest} | Undangan Studio`;
+  } else {
+    title = `${categoryLabel} ${titleSubject} | Undangan Studio`;
+  }
+
+  const eventDate = firstText(sections, ["date", "subtitle", "eventDate"]);
+  const location = firstText(sections.filter((s) => s.type === "event" || s.type === "location"), ["address", "venue", "subtitle"]);
+
+  // 3. Build rich Description
+  let description = "";
+  if (cleanGuest) {
+    description = `Kepada Yth. ${cleanGuest}, Anda diundang menghadiri ${categoryLabel} ${titleSubject}.${eventDate ? ` Acara diselenggarakan pada ${eventDate}.` : ""}${location ? ` Bertempat di ${location}.` : ""} Buka undangan resmi ini untuk melihat detail lengkap acara dan konfirmasi kehadiran.`;
+  } else {
+    description = `${categoryLabel} ${titleSubject}.${eventDate ? ` Acara diselenggarakan pada ${eventDate}.` : ""}${location ? ` Bertempat di ${location}.` : ""} Buka undangan digital resmi untuk melihat susunan acara, lokasi, galeri, dan konfirmasi kehadiran.`;
+  }
+  description = description.slice(0, 320);
+
   const image = firstImage(sections);
   const absoluteImage = image.startsWith("http") ? image : new URL(image, canonicalUrl).toString();
   return {
@@ -52,7 +99,7 @@ export function buildInvitationSeo(template: TemplateKit, sections: SeoSection[]
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "Event",
-      name: `${categoryLabel} ${titleSubject}`,
+      name: cleanGuest ? `${categoryLabel} ${titleSubject} (untuk ${cleanGuest})` : `${categoryLabel} ${titleSubject}`,
       description,
       url: canonicalUrl,
       image: absoluteImage,

@@ -13,6 +13,7 @@ export const birthdayCelestial = defineTemplate({
   defaultMusicUrl: "/assets/audio/happy-birthday-ukulele.mp3",
   navigation: { scrollRootSelector: "[data-template-scroll-root]", sectionAttribute: "data-template-section", openingSectionId: "opening-envelope" },
   defaultView: "mobile",
+  useContainer: true,
   themes: [
     theme("midnight-lilac", "Midnight Lilac", { background: "#f8f5ff", surface: "#ffffff", primary: "#5b3f88", accent: "#efb94f", text: "#30254b", dark: "#201637", rich: "#38245e", mid: "#8060aa", cream: "#fff8e8", border: "#d6c4ef", muted: "#766d91" }),
     theme("sunset-peach", "Sunset Peach", { background: "#fff7f3", surface: "#fffdfb", primary: "#ad5268", accent: "#e89a4d", text: "#4d2832", dark: "#48212e", rich: "#753547", mid: "#cf7181", cream: "#fff2db", border: "#f2c6ad", muted: "#8d6972" }),

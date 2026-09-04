@@ -10,7 +10,7 @@ import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNaviga
 import { BirthdayCelestialNavigationAdapter } from "../navigation-adapter";
 import confetti from "canvas-confetti";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const POLAROID_CAPTIONS = [
   "✦ Sweet 17",
@@ -363,8 +363,23 @@ export default function BirthdayCelestialSource({ invitationId, verifiedGuestNam
   const heroRef = useRef<HTMLElement>(null);
   const openingTimerRef = useRef<number | null>(null);
   const confettiFiredRef = useRef(false);
-  const guest = verifiedGuestName || (params.get("for") || "Sahabat Istimewa").replace(/\+/g, " ");
+  const guest = verifiedGuestName || (params.get("for") || params.get("to") || "Sahabat Istimewa").replace(/\+/g, " ");
   const opened = stage === "opened";
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const toggleAudio = useCallback(() => {
+    const audio = musicRef.current;
+    if (!audio) return;
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      audio
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
+  }, [isPlaying]);
 
   const [wishModalOpen, setWishModalOpen] = useState(false);
   const [wishes, setWishes] = useState<WishItem[]>(INITIAL_WISHES);
@@ -588,7 +603,10 @@ export default function BirthdayCelestialSource({ invitationId, verifiedGuestNam
     const source = audio?.querySelector<HTMLSourceElement>("source");
     const canPlay = Boolean(audio && source && source.getAttribute("src"));
     if (canPlay && audio) {
-      void audio.play().catch(() => undefined);
+      audio
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
     }
 
     // Periodic celebration confetti every 5.5 seconds while viewing the Hero section
@@ -609,6 +627,30 @@ export default function BirthdayCelestialSource({ invitationId, verifiedGuestNam
     <main className={`birthday-shell birthday-stage-${stage}`} data-template-scroll-root data-template-hydrated="true" data-opened={opened ? "true" : "false"}>
       <TemplateNavigationRuntime createAdapter={createBirthdayNavigationAdapter} />
       <audio ref={musicRef} loop preload="metadata"><source src="/assets/audio/happy-birthday-ukulele.mp3" type="audio/mpeg" /></audio>
+
+      {/* Floating Audio Button - Top Right Safe Zone */}
+      {opened && (
+        <button
+          type="button"
+          onClick={toggleAudio}
+          className={`birthday-audio-btn ${isPlaying ? "is-playing" : ""}`}
+          aria-label={isPlaying ? "Jeda Musik" : "Putar Musik"}
+        >
+          {isPlaying ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <line x1="23" y1="9" x2="17" y2="15" />
+              <line x1="17" y1="9" x2="23" y2="15" />
+            </svg>
+          )}
+        </button>
+      )}
 
       {!opened && (
         <section className="birthday-envelope-screen" data-template-section="opening-envelope" aria-label="Amplop undangan ulang tahun">

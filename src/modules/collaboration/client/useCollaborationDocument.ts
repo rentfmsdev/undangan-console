@@ -212,6 +212,15 @@ export function useCollaborationDocument({
     return state;
   }, []);
 
+  // Restoring a version must be represented as a normal CRDT transaction so
+  // every connected collaborator receives the exact same state transition.
+  const replaceState = useCallback((nextState: SharedDraftState) => {
+    updateLocalState((doc) => {
+      initYDocFromState(nextState, doc);
+    });
+    return extractStateFromYDoc(ydocRef.current);
+  }, [updateLocalState]);
+
   return {
     ydoc: ydocRef.current,
     syncStatus,
@@ -219,6 +228,7 @@ export function useCollaborationDocument({
     canRedo,
     undo,
     redo,
+    replaceState,
     applyRemoteUpdate,
     updateLocalState,
     setBroadcastHandler,

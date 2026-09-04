@@ -3,7 +3,7 @@
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, ChevronDown, Copy, ExternalLink, Eye, EyeOff, FolderOpen, Gift, GripVertical, Heart, ImagePlus, Layers, LayoutPanelTop, Library, LoaderCircle, Mail, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Plus, Redo2, RotateCw, Save, Scroll, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, WifiOff, X, ZoomIn, ZoomOut, CalendarDays } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, Eye, EyeOff, FolderOpen, Gift, GripVertical, Heart, History, ImagePlus, Layers, LayoutPanelTop, Library, LoaderCircle, Mail, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Plus, Redo2, RotateCw, Save, Scroll, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, WifiOff, X, ZoomIn, ZoomOut, CalendarDays } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useCallback, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { TemplateKit, TemplateSection } from "@/templates/contracts";
 import { getTemplateRuntime } from "@/templates/runtime-registry";
@@ -25,6 +25,7 @@ import { useAutoSave } from "./hooks/useAutoSave";
 import { AutoSaveStatusBadge } from "./components/AutoSaveStatusBadge";
 import { BulkGuestManager } from "./components/BulkGuestManager";
 import { InviteCollaboratorModal } from "./components/InviteCollaboratorModal";
+import { VersionHistoryModal } from "./components/VersionHistoryModal";
 import { usePresence } from "@/modules/collaboration/client/usePresence";
 import { CollaboratorAvatarStack } from "./collaboration/CollaboratorAvatarStack";
 import { CollaborationStatus } from "./collaboration/CollaborationStatus";
@@ -316,6 +317,7 @@ export function ConsoleWorkspace({
   const [loginReason, setLoginReason] = useState("Masuk dengan Google untuk menyimpan perubahan dan mengelola undangan Anda.");
   const [assetTarget, setAssetTarget] = useState<AssetTarget | null>(null);
   const [isMyInvitationsOpen, setIsMyInvitationsOpen] = useState(false);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [wishRecords, setWishRecords] = useState<WishRecord[]>([]);
   const [wishesLoading, setWishesLoading] = useState(true);
@@ -448,6 +450,12 @@ export function ConsoleWorkspace({
       applySharedState(nextState);
     }
   }
+
+  const handleRestoreVersion = useCallback((state: SharedDraftState) => {
+    if (isViewer) return;
+    const restoredState = collabDoc.replaceState(state);
+    applySharedState(restoredState);
+  }, [applySharedState, collabDoc, isViewer]);
 
   const updateGlobalSetting = useCallback((
     key: "themeId" | "musicUrl" | "musicVolume" | "customColors",
@@ -1506,6 +1514,18 @@ export function ConsoleWorkspace({
             </div>
           )}
 
+          {!isViewer && draftId && (
+            <button
+              type="button"
+              onClick={() => setIsVersionHistoryOpen(true)}
+              className="hidden items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 active:scale-95 lg:inline-flex"
+              title="Lihat dan pulihkan riwayat versi"
+            >
+              <History size={14} />
+              <span>Riwayat</span>
+            </button>
+          )}
+
           {/* Quick Invite Team Button */}
           {isOwner && (
             <button
@@ -2348,6 +2368,7 @@ export function ConsoleWorkspace({
         onSelect={selectLibraryAsset}
       />
       <GoogleLoginModal open={loginModalOpen} onClose={() => setLoginModalOpen(false)} returnTo={draftId ? `/editor/${template.code}/${draftId}` : `/editor/${template.code}`} description={loginReason} />
+      <VersionHistoryModal open={isVersionHistoryOpen} draftId={draftId} disabled={presence.connectionStatus !== "connected"} onClose={() => setIsVersionHistoryOpen(false)} onRestore={handleRestoreVersion} />
       <MyInvitationsModal open={isMyInvitationsOpen} onClose={() => setIsMyInvitationsOpen(false)} />
       <InviteCollaboratorModal
         open={isInviteModalOpen}
