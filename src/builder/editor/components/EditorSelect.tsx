@@ -1,12 +1,13 @@
 "use client";
 
 import { Check, ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 export type SelectOption = {
   value: string;
   label: string;
   subtitle?: string;
+  previewStyle?: CSSProperties;
 };
 
 type Props = {
@@ -79,7 +80,10 @@ export function EditorSelect({
             : "border-slate-300 hover:border-slate-400"
         } ${disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer"}`}
       >
-        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-800">
+        <span
+          className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-800"
+          style={selectedOption?.previewStyle}
+        >
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
@@ -115,7 +119,7 @@ export function EditorSelect({
                 }`}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs leading-tight">
+                  <p className="truncate text-xs leading-tight" style={option.previewStyle}>
                     {option.label}
                   </p>
                   {option.subtitle && (

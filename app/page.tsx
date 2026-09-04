@@ -30,6 +30,7 @@ import {
 import { templatesCatalog } from "@/templates/registry";
 import type { TemplateCatalogItem } from "@/templates/contracts";
 import { UserAuthDropdown } from "@/components/auth/UserAuthDropdown";
+import { GoogleOneTap } from "@/components/auth/GoogleOneTap";
 import { MyInvitationsModal } from "@/components/invitations/MyInvitationsModal";
 
 export type TemplateItem = TemplateCatalogItem;
@@ -103,6 +104,7 @@ export default function MarketplaceHomePage() {
   }, [searchQuery, selectedCategory, sortBy, onlyAvailable, favorites]);
 
   const [currentUser, setCurrentUser] = useState<{ id: string; email: string; name: string; avatarUrl: string | null } | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -112,7 +114,8 @@ export default function MarketplaceHomePage() {
       .then((data) => {
         if (data.user) setCurrentUser(data.user);
       })
-      .catch(() => { });
+      .catch(() => { })
+      .finally(() => setAuthResolved(true));
   }, []);
 
   const handleLogout = async () => {
@@ -122,6 +125,7 @@ export default function MarketplaceHomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <GoogleOneTap enabled={authResolved && !currentUser} onAuthenticated={setCurrentUser} />
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur px-4 py-3.5 sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">

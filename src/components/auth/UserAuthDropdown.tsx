@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronDown, Layers, LogOut, Sparkles, User, UserPlus } from "lucide-react";
 
 export type AuthUser = {
@@ -29,6 +30,7 @@ export function UserAuthDropdown({
   onInviteCollaboratorClick,
   compact = false,
 }: UserAuthDropdownProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [pendingInvitationCount, setPendingInvitationCount] = useState(0);
@@ -78,17 +80,15 @@ export function UserAuthDropdown({
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      if (onLogout) {
-        onLogout();
-      } else {
-        window.location.reload();
-      }
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Logout gagal.");
+      onLogout?.();
     } catch {
-      window.location.reload();
+      // The navigation still clears client state and returns the user to a safe page.
     } finally {
       setIsLoggingOut(false);
       setIsOpen(false);
+      router.replace("/");
     }
   };
 

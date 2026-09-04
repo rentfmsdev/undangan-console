@@ -19,7 +19,7 @@ type TextStyle = {
 };
 
 const fontFamilies: Record<string, string> = {
-  manrope: "'Plus Jakarta Sans', sans-serif",
+  manrope: "var(--font-manrope, 'Manrope', sans-serif)",
   "great-vibes": "'Great Vibes', cursive",
   "dancing-script": "'Dancing Script', cursive",
   cinzel: "'Cinzel', serif",

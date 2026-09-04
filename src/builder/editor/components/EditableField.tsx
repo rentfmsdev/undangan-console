@@ -2,6 +2,7 @@
 
 import { Bold, Italic, RotateCcw } from "lucide-react";
 import type { TemplateEditorField } from "@/templates/contracts";
+import { FigmaColorPicker } from "./FigmaColorPicker";
 
 export type EditableTextStyle = {
   fontFamily?: string;
@@ -126,19 +127,13 @@ export function EditableField({
 
           {/* Row 2: Color, Font Size & Style formatting */}
           <div className="grid grid-cols-[minmax(0,1fr)_76px_auto] items-center gap-2">
-            <label
-              className="flex min-w-0 items-center justify-between gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 cursor-pointer hover:border-slate-300 transition"
-              style={{ fontSize: "11px" }}
-            >
-              <span>Warna</span>
-              <input
-                type="color"
-                value={textStyle.color ?? "#382326"}
-                onChange={(event) => updateStyle("color", event.target.value)}
-                className="h-5 w-5 cursor-pointer rounded border-0 bg-transparent p-0 shrink-0"
-                aria-label={`Warna ${field.label}`}
-              />
-            </label>
+            <FigmaColorPicker
+              compact
+              label="Warna"
+              value={textStyle.color}
+              fallbackValue="#382326"
+              onChange={(color) => updateStyle("color", color)}
+            />
 
             <label
               className="flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600 focus-within:border-emerald-500 focus-within:bg-white transition"
