@@ -60,20 +60,6 @@
     "isDefault": false
   },
   {
-    "id": "stock-perfect-duet",
-    "title": "Perfect",
-    "artist": "Ed Sheeran (Romantic Strings)",
-    "genre": "Pop Instrumental",
-    "category": "wedding",
-    "categoryLabel": "Pernikahan",
-    "categories": [
-      "wedding"
-    ],
-    "url": "/assets/audio/easy-on-me.webm",
-    "duration": "4:23",
-    "isDefault": false
-  },
-  {
     "id": "stock-happy-birthday-acoustic",
     "title": "Happy Birthday to You",
     "artist": "Acoustic Ukulele & Joyful Whistle",
@@ -88,32 +74,19 @@
     "isDefault": true
   },
   {
-    "id": "stock-celebration-party",
-    "title": "Celebration of Joy",
-    "artist": "Upbeat Pop & Fun Brass",
-    "genre": "Party & Ceria",
-    "category": "birthday",
-    "categoryLabel": "Ulang Tahun",
-    "categories": [
-      "birthday"
-    ],
-    "url": "/assets/audio/a-thousand-years.mp3",
-    "duration": "3:15",
-    "isDefault": false
-  },
-  {
     "id": "stock-playful-birthday",
     "title": "Playful Sunshine",
     "artist": "Kids Party & Playful Melody",
-    "genre": "Kids & Family",
-    "category": "birthday",
-    "categoryLabel": "Ulang Tahun",
+    "genre": "Ceria & Hangat",
+    "category": "aqiqah",
+    "categoryLabel": "Aqiqah & Anak",
     "categories": [
+      "aqiqah",
       "birthday"
     ],
     "url": "/assets/audio/Playful-Sunshine.mp3",
     "duration": "2:45",
-    "isDefault": false
+    "isDefault": true
   },
   {
     "id": "stock-sholawat-badar",
@@ -121,7 +94,7 @@
     "artist": "Gambus & Biola Akustik",
     "genre": "Religius & Syahdu",
     "category": "khitanan",
-    "categoryLabel": "Khitanan",
+    "categoryLabel": "Khitanan & Aqiqah",
     "categories": [
       "khitanan",
       "aqiqah"
@@ -138,8 +111,7 @@
     "category": "khitanan",
     "categoryLabel": "Khitanan",
     "categories": [
-      "khitanan",
-      "aqiqah"
+      "khitanan"
     ],
     "url": "/assets/audio/INSTRUMENTAL-JAWA.mp3",
     "duration": "4:05",

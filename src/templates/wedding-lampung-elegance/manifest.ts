@@ -17,6 +17,7 @@ export const weddingLampungElegance = defineTemplate({
   name: "Wedding Elegance",
   description: "Template pernikahan 2 culture dengan opening envelope, aksen emas mewah, dan audio player.",
   price: 50000,
+  defaultMusicUrl: "/assets/audio/easy-on-me.webm",
   navigation: {
     scrollRootSelector: "[data-template-scroll-root]",
     sectionAttribute: "data-template-section",

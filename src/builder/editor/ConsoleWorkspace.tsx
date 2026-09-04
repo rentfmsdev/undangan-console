@@ -46,6 +46,7 @@ type ClientUser = { id: string; email: string; name: string; avatarUrl: string |
 type LocalDraftSnapshot = { version: 1; themeId: string; musicUrl: string; musicVolume?: number; customColors?: { primary?: string; accent?: string; background?: string }; sections: Array<{ id: string; type: string; enabled: boolean; data: Record<string, unknown> }> };
 type PendingNavigation = { sectionType: string; requestId: string; navigationSource: NavigationSource };
 type AssetTarget = { kind: "image" | "audio"; target: "content" | "background" | "music" | "manager"; sectionId: string | null };
+type StoredSectionRecord = { id: string; type: string; enabled: boolean; data: Record<string, unknown> };
 
 function makeSections(template: TemplateKit): EditableSection[] {
   return template.defaultSections.flatMap((type, index) => {
@@ -54,8 +55,55 @@ function makeSections(template: TemplateKit): EditableSection[] {
   });
 }
 
-function hydrateSections(template: TemplateKit, records: Array<{ id: string; type: string; enabled: boolean; data: Record<string, unknown> }>) {
-  return getTemplateRuntime(template.code).normalizeSections(template, records, () => crypto.randomUUID()).flatMap((record) => {
+function canonicalizeSectionRecords(template: TemplateKit, records: StoredSectionRecord[]) {
+  const seenIds = new Set<string>();
+  const typeCounts = new Map<string, number>();
+
+  return records.filter((record) => {
+    if (!record.id || seenIds.has(record.id)) return false;
+    const definition = template.sections.find((section) => section.type === record.type);
+    if (!definition) return false;
+
+    const count = typeCounts.get(record.type) ?? 0;
+    if (count >= definition.maxInstances) return false;
+
+    seenIds.add(record.id);
+    typeCounts.set(record.type, count + 1);
+    return true;
+  });
+}
+
+function getCanonicalSharedSectionOrder(template: TemplateKit, sectionsMap: Y.Map<unknown>, sectionOrder: string[]) {
+  const candidates = [...sectionOrder, ...Array.from(sectionsMap.keys()).filter((id) => !sectionOrder.includes(id))];
+  const seenIds = new Set<string>();
+  const typeCounts = new Map<string, number>();
+  const canonicalIds: string[] = [];
+
+  for (const id of candidates) {
+    if (seenIds.has(id)) continue;
+    const sectionMap = sectionsMap.get(id);
+    if (!(sectionMap instanceof Y.Map)) continue;
+
+    const sectionType = typeof sectionMap.get("type") === "string" ? (sectionMap.get("type") as string) : "";
+    const definition = template.sections.find((section) => section.type === sectionType);
+    // Keep unknown records in the CRDT so an older/newer template release does
+    // not silently discard data. Known records still obey their instance limit.
+    if (definition) {
+      const count = typeCounts.get(sectionType) ?? 0;
+      if (count >= definition.maxInstances) continue;
+      typeCounts.set(sectionType, count + 1);
+    }
+
+    seenIds.add(id);
+    canonicalIds.push(id);
+  }
+
+  return canonicalIds;
+}
+
+function hydrateSections(template: TemplateKit, records: StoredSectionRecord[]) {
+  const normalized = getTemplateRuntime(template.code).normalizeSections(template, records, () => crypto.randomUUID());
+  return canonicalizeSectionRecords(template, normalized).flatMap((record) => {
     const section = template.sections.find((item) => item.type === record.type);
     return section ? [{ ...section, id: record.id, enabled: record.enabled, defaultData: { ...section.defaultData, ...record.data } }] : [];
   });
@@ -234,7 +282,7 @@ export function ConsoleWorkspace({
   const [sections, setSections] = useState<EditableSection[]>(() => makeSections(template));
   const [selectedId, setSelectedId] = useState(sections[0]?.id ?? "");
   const [themeId, setThemeId] = useState(template.themes[0].id);
-  const [musicUrl, setMusicUrl] = useState(() => getDefaultStockMusic(template.category).url);
+  const [musicUrl, setMusicUrl] = useState(() => template.defaultMusicUrl || getDefaultStockMusic(template.category).url);
   const [musicVolume, setMusicVolume] = useState<number>(0.6);
   const [customThemeColors, setCustomThemeColors] = useState<{ primary?: string; accent?: string; background?: string }>({});
   const [isPublished, setIsPublished] = useState(false);
@@ -352,6 +400,33 @@ export function ConsoleWorkspace({
         sectionsMap.set(id, sectionMap);
         orderArray.push([id]);
       });
+    });
+  }, [collabDoc, currentUser, draftReady, isViewer, sections, template]);
+
+  // A reconnect can merge a stale sectionOrder array with the newest CRDT
+  // state. Remove repeated IDs and instances above the template limit, then
+  // broadcast the repaired order so every collaborator sees the same sidebar.
+  useEffect(() => {
+    if (!draftReady || !currentUser || isViewer) return;
+    collabDoc.updateLocalState((doc) => {
+      const sectionsMap = doc.getMap("sections");
+      if (!sectionsMap.size) return;
+
+      const orderArray = doc.getArray<string>("sectionOrder");
+      const currentOrder = orderArray.toArray();
+      const canonicalOrder = getCanonicalSharedSectionOrder(template, sectionsMap, currentOrder);
+      const retainedIds = new Set(canonicalOrder);
+      const duplicateKnownIds = Array.from(sectionsMap.entries()).flatMap(([id, sectionMap]) => {
+        if (retainedIds.has(id) || !(sectionMap instanceof Y.Map)) return [];
+        const type = sectionMap.get("type");
+        return typeof type === "string" && template.sections.some((section) => section.type === type) ? [id] : [];
+      });
+      const orderChanged = currentOrder.length !== canonicalOrder.length || currentOrder.some((id, index) => id !== canonicalOrder[index]);
+
+      if (!orderChanged && duplicateKnownIds.length === 0) return;
+      duplicateKnownIds.forEach((id) => sectionsMap.delete(id));
+      orderArray.delete(0, orderArray.length);
+      orderArray.push(canonicalOrder);
     });
   }, [collabDoc, currentUser, draftReady, isViewer, sections, template]);
 
@@ -625,21 +700,23 @@ export function ConsoleWorkspace({
       } else {
         setPublishNotice(null);
       }
+      const defaultMusic = template.defaultMusicUrl || getDefaultStockMusic(template.category).url;
       const savedMusicUrl = typeof payload.draft.styleOverrides?.musicUrl === "string"
         ? payload.draft.styleOverrides.musicUrl
-        : getDefaultStockMusic(template.category).url;
+        : defaultMusic;
       applyState(payload.draft.themeId, savedMusicUrl, payload.sections, payload.draft.styleOverrides?.customColors, payload.draft.styleOverrides?.musicVolume);
       return true;
     }
 
     async function initializeDraft() {
+      const defaultMusic = template.defaultMusicUrl || getDefaultStockMusic(template.category).url;
       const localSnapshot = readLocalSnapshot();
       if (!currentUser) {
         setDraftId(null);
         if (requestedDraftId) {
           requestLogin("Masuk dengan Google untuk membuka dan mengedit draft kolaborasi ini.");
         }
-        if (localSnapshot) applyState(localSnapshot.themeId, typeof localSnapshot.musicUrl === "string" ? localSnapshot.musicUrl : "", localSnapshot.sections, localSnapshot.customColors, localSnapshot.musicVolume);
+        if (localSnapshot) applyState(localSnapshot.themeId, typeof localSnapshot.musicUrl === "string" ? localSnapshot.musicUrl : defaultMusic, localSnapshot.sections, localSnapshot.customColors, localSnapshot.musicVolume);
         else setDraftReady(true);
         return;
       }
@@ -671,7 +748,7 @@ export function ConsoleWorkspace({
         window.localStorage.removeItem(localDraftKey);
         window.localStorage.setItem(activeDraftKey, createdPayload.draftId);
         setDraftId(createdPayload.draftId);
-        applyState(localSnapshot.themeId, localSnapshot.musicUrl, migratedSections, localSnapshot.customColors, localSnapshot.musicVolume);
+        applyState(localSnapshot.themeId, typeof localSnapshot.musicUrl === "string" ? localSnapshot.musicUrl : defaultMusic, migratedSections, localSnapshot.customColors, localSnapshot.musicVolume);
         return;
       }
 
@@ -1517,8 +1594,8 @@ export function ConsoleWorkspace({
       )}
 
       {showReconnectedBadge && (
-        <div className="fixed top-18 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50/95 px-4 py-1.5 text-xs font-bold text-emerald-900 shadow-lg backdrop-blur-md animate-in slide-in-from-top-2 duration-200">
-          <Check size={14} className="text-emerald-600 font-extrabold" />
+        <div className="fixed bottom-5 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-slate-950/25 animate-in slide-in-from-bottom-2 duration-200">
+          <Check size={14} className="text-white" />
           <span>Terhubung kembali ke server kolaborasi</span>
         </div>
       )}

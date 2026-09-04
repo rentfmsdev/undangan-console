@@ -162,6 +162,39 @@ function applyTextStyle(el: HTMLElement, style?: TextStyle) {
   el.style.fontStyle = style.italic ? "italic" : "";
 }
 
+function applyMusic(settings?: AqiqahGlobalSettings) {
+  const audio = document.querySelector<HTMLAudioElement>(".aqiqah-shell audio");
+  const source = audio?.querySelector<HTMLSourceElement>("source");
+  if (!audio || !source) return;
+
+  const targetMusicUrl = typeof settings?.musicUrl === "string" ? settings.musicUrl.trim() : undefined;
+
+  if (targetMusicUrl !== undefined) {
+    if (!targetMusicUrl) {
+      // User selected "Tanpa musik"
+      audio.pause();
+      audio.currentTime = 0;
+      source.removeAttribute("src");
+      source.src = "";
+      audio.load();
+      return;
+    }
+
+    const resolvedUrl = new URL(targetMusicUrl, window.location.href).href;
+    if (source.src !== resolvedUrl) {
+      source.src = targetMusicUrl;
+      audio.load();
+      if (document.querySelector<HTMLElement>("[data-template-scroll-root]")?.dataset.opened === "true") {
+        void audio.play().catch(() => undefined);
+      }
+    }
+  }
+
+  if (typeof settings?.musicVolume === "number") {
+    audio.volume = Math.max(0, Math.min(1, settings.musicVolume));
+  }
+}
+
 export function applyAqiqahTemplateState(
   sections: AqiqahPreviewSection[],
   themeId?: string,
@@ -188,15 +221,7 @@ export function applyAqiqahTemplateState(
   }
 
   // 2. Terapkan Audio Settings
-  const audio = document.querySelector<HTMLAudioElement>(".aqiqah-shell audio");
-  const source = audio?.querySelector("source");
-  if (audio && source && settings?.musicUrl && source.src !== settings.musicUrl) {
-    source.src = settings.musicUrl;
-    audio.load();
-  }
-  if (audio && typeof settings?.musicVolume === "number") {
-    audio.volume = Math.max(0, Math.min(1, settings.musicVolume));
-  }
+  applyMusic(settings);
 
   // 3. Terapkan Setiap Section
   sections.forEach((section) => {

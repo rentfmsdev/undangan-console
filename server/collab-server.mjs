@@ -256,6 +256,20 @@ async function loadRoomSnapshot(draftId, ydoc) {
   let overrides = {};
   try { overrides = typeof inv.styleOverrides === "string" ? JSON.parse(inv.styleOverrides || "{}") : (inv.styleOverrides || {}); } catch {}
 
+  const defaultMusicMap = {
+    "aqiqah-little-bloom": "/assets/audio/Playful-Sunshine.mp3",
+    "birthday-celestial": "/assets/audio/happy-birthday-ukulele.mp3",
+    "wedding-lampung-elegance": "/assets/audio/easy-on-me.webm",
+    "khitan-ksatria-jawa": "/assets/audio/INSTRUMENTAL-JAWA.mp3",
+    "aqiqh": "/assets/audio/Playful-Sunshine.mp3",
+    "bdcel": "/assets/audio/happy-birthday-ukulele.mp3",
+    "hjydg": "/assets/audio/easy-on-me.webm",
+    "kjawa": "/assets/audio/INSTRUMENTAL-JAWA.mp3",
+    "khtnn": "/assets/audio/INSTRUMENTAL-JAWA.mp3",
+  };
+  const resolvedDefaultMusic = defaultMusicMap[inv.templateId] || "/assets/audio/easy-on-me.webm";
+  const initialMusicUrl = typeof overrides.musicUrl === "string" ? overrides.musicUrl : resolvedDefaultMusic;
+
   ydoc.transact(() => {
     const metadata = ydoc.getMap("metadata");
     metadata.set("templateId", inv.templateId || "hjydg");
@@ -264,7 +278,7 @@ async function loadRoomSnapshot(draftId, ydoc) {
 
     const globals = ydoc.getMap("globalSettings");
     globals.set("themeId", inv.themeId || "royal-blue-gold");
-    globals.set("musicUrl", typeof overrides.musicUrl === "string" ? overrides.musicUrl : "");
+    globals.set("musicUrl", initialMusicUrl);
     globals.set("musicVolume", typeof overrides.musicVolume === "number" ? overrides.musicVolume : 0.6);
     const colors = new Y.Map();
     if (overrides.customColors && typeof overrides.customColors === "object") {
@@ -388,7 +402,9 @@ async function flushRoomSnapshot(room, draftId, createdBy = null) {
   const connection = await dbPool.getConnection();
   try {
     const sectionsMap = room.ydoc.getMap("sections");
-    const orderedIds = room.ydoc.getArray("sectionOrder").toArray();
+    // A reconnect can deliver a merged array containing the same section ID
+    // more than once. Never persist duplicate primary keys back to MySQL.
+    const orderedIds = Array.from(new Set(room.ydoc.getArray("sectionOrder").toArray()));
     const rows = orderedIds.flatMap((id, order) => {
       const section = sectionsMap.get(id);
       if (!(section instanceof Y.Map)) return [];
