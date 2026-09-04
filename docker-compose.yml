@@ -79,8 +79,6 @@ services:
     command: ["npm", "run", "start:collab"]
     init: true
     stop_grace_period: 15s
-    ports:
-      - "127.0.0.1:${COLLAB_PORT:-3011}:3001"
     depends_on:
       migrate:
         condition: service_completed_successfully
