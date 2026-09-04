@@ -4,6 +4,7 @@ import type { TemplateCatalogItem, TemplateKit } from "./contracts";
 import { weddingLampungElegance } from "./wedding-lampung-elegance/manifest";
 import { birthdayCelestial } from "./birthday-celestial/manifest";
 import { khitanKsatriaJawa } from "./khitan-ksatria-jawa/manifest";
+import { aqiqahLittleBloom } from "./aqiqah-little-bloom/manifest";
 
 /**
  * Daftar template catalog marketplace yang dibaca dari file standar templates.json.
@@ -14,7 +15,12 @@ export const templatesCatalog: TemplateCatalogItem[] = validateTemplateCatalog(r
 /**
  * Registry manifest lengkap (TemplateKit) untuk engine visual editor & builder.
  */
-export const templateRegistry: TemplateKit[] = [weddingLampungElegance, birthdayCelestial, khitanKsatriaJawa];
+export const templateRegistry: TemplateKit[] = [
+  weddingLampungElegance,
+  birthdayCelestial,
+  khitanKsatriaJawa,
+  aqiqahLittleBloom,
+];
 
 export function getTemplateCatalogItem(codeOrId: string): TemplateCatalogItem | undefined {
   const normalized = codeOrId.toLowerCase();

@@ -1,0 +1,2132 @@
+/* ══════════════════════════════════════════════════════════════════════
+   AQIQAH LITTLE BLOOM — MODERN LUXURY PASTEL THEME
+   ══════════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400;1,600&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Great+Vibes&display=swap');
+
+:root {
+  --aqiqah-bg: #fdf4f5;
+  --aqiqah-surface: #ffffff;
+  --aqiqah-primary: #8f4453;
+  --aqiqah-accent: #d4af37;
+  --aqiqah-text: #3d1f25;
+  --aqiqah-dark: #2c1218;
+  --aqiqah-rich: #b05d6e;
+  --aqiqah-mid: #cf8694;
+  --aqiqah-cream: #fff9fa;
+  --aqiqah-border: #f3d1d7;
+  --aqiqah-muted: #96656f;
+
+  --aqiqah-font-serif: 'Playfair Display', Georgia, serif;
+  --aqiqah-font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --aqiqah-font-arabic: 'Amiri', serif;
+  --aqiqah-font-script: 'Great Vibes', cursive;
+
+  --aqiqah-radius-sm: 14px;
+  --aqiqah-radius-md: 22px;
+  --aqiqah-radius-lg: 32px;
+  --aqiqah-radius-full: 9999px;
+
+  --aqiqah-shadow-subtle: 0 4px 16px rgba(180, 80, 100, 0.06);
+  --aqiqah-shadow-card: 0 10px 30px rgba(180, 80, 100, 0.08), 0 1px 3px rgba(180, 80, 100, 0.04);
+  --aqiqah-shadow-elevated: 0 20px 45px rgba(180, 80, 100, 0.15);
+}
+
+/* Fallback untuk section yang di-hide oleh Bridge */
+[data-template-section][hidden] {
+  display: none !important;
+}
+
+/* Base template scope container & Primary Scroll Root */
+.aqiqah-shell {
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  margin: 0 auto;
+  position: relative;
+  background-color: var(--aqiqah-bg);
+  box-shadow: 0 0 60px rgba(140, 50, 70, 0.18), 0 0 0 1px var(--aqiqah-border);
+  color: var(--aqiqah-text);
+  font-family: var(--aqiqah-font-body);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  user-select: text;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px));
+}
+
+.aqiqah-shell[data-opened="false"] {
+  overflow: hidden !important;
+}
+
+.aqiqah-shell::-webkit-scrollbar {
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ENVELOPE SCREEN (ISOLATED OVERLAY - LUXURY 3D LETTER & ENVELOPE)
+   ══════════════════════════════════════════════════════════════════════ */
+.aqiqah-envelope-screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  z-index: 45;
+  background: radial-gradient(circle at 50% 20%, #ffffff 0%, #fdf5f7 50%, var(--aqiqah-bg) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: clamp(28px, 5vh, 40px) clamp(16px, 4vw, 22px) clamp(18px, 3.5vh, 28px);
+  box-sizing: border-box;
+  text-align: center;
+  transition: transform 0.85s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.65s ease, visibility 0.85s ease;
+  overflow: hidden;
+}
+
+.aqiqah-envelope-screen.opened {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Envelope Header Typography */
+.aqiqah-env-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  max-width: 320px;
+}
+
+.aqiqah-env-title {
+  font-family: var(--aqiqah-font-serif);
+  font-size: clamp(22px, 5.8vw, 28px);
+  font-weight: 800;
+  color: var(--aqiqah-dark);
+  margin: 2px 0 0;
+  letter-spacing: -0.01em;
+}
+
+.aqiqah-env-subtitle {
+  font-family: var(--aqiqah-font-serif);
+  font-style: italic;
+  font-size: clamp(15px, 3.8vw, 18px);
+  color: var(--aqiqah-primary);
+  font-weight: 600;
+  margin: 0;
+}
+
+.aqiqah-env-date {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--aqiqah-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* 3D Envelope Mailbox Container */
+.aqiqah-env-box {
+  position: relative;
+  width: 100%;
+  max-width: 350px;
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  z-index: 10;
+}
+
+/* Outer Envelope 3D Wrapper */
+.aqiqah-envelope-outer {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: drop-shadow(0 16px 36px rgba(180, 80, 100, 0.18));
+}
+
+/* SVG Triangular Flap Wrapper */
+.aqiqah-envelope-flap-wrap {
+  position: relative;
+  width: 100%;
+  z-index: 4;
+  margin-bottom: -22px;
+}
+
+.aqiqah-envelope-flap-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Anchor for 3D Wax Seal right over flap tip */
+.aqiqah-wax-seal-anchor {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+}
+
+/* 3D Wax Seal Button with organic pulsing */
+.aqiqah-wax-seal-btn {
+  width: 68px;
+  height: 68px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: aqiqahPulseSeal 3.5s infinite ease-in-out;
+}
+
+.aqiqah-wax-seal-btn:hover {
+  transform: scale(1.08);
+}
+
+.aqiqah-wax-seal-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes aqiqahPulseSeal {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 6px 14px rgba(160, 100, 20, 0.35)); }
+  50% { transform: scale(1.05); filter: drop-shadow(0 10px 22px rgba(180, 120, 30, 0.5)); }
+}
+
+/* Envelope Pocket Body */
+.aqiqah-envelope-pocket {
+  position: relative;
+  width: 100%;
+  background: linear-gradient(170deg, #ffffff 0%, #fff9fa 50%, #faedf0 100%);
+  border-radius: 0 0 24px 24px;
+  border: 1px solid rgba(220, 175, 185, 0.5);
+  border-top: none;
+  padding: 34px 18px 22px;
+  box-sizing: border-box;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+/* Guest Invitation Letter Card peeking inside pocket */
+.aqiqah-guest-letter {
+  position: relative;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  box-shadow: 0 4px 18px rgba(180, 90, 110, 0.09);
+  padding: 16px 14px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.aqiqah-guest-corner-deco {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  border: 1px dashed rgba(212, 175, 55, 0.25);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.aqiqah-guest-lbl {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--aqiqah-muted);
+  margin-bottom: 4px;
+}
+
+.aqiqah-guest-name {
+  font-family: var(--aqiqah-font-serif);
+  font-size: clamp(16px, 4.2vw, 19px);
+  font-weight: 800;
+  color: var(--aqiqah-dark);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.aqiqah-guest-sub {
+  display: inline-block;
+  font-size: 10.5px;
+  font-style: italic;
+  color: var(--aqiqah-primary);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* "Buka Undangan" Premium Shimmer Button */
+.aqiqah-btn-open {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 290px;
+  padding: 14px 24px;
+  border-radius: var(--aqiqah-radius-full);
+  background: linear-gradient(135deg, var(--aqiqah-primary) 0%, var(--aqiqah-rich) 60%, var(--aqiqah-accent) 100%);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(180, 80, 100, 0.35);
+  transition: all 0.25s ease;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.aqiqah-btn-open::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: rotate(25deg);
+  animation: btnShimmer 3.5s infinite ease-in-out;
+}
+
+@keyframes btnShimmer {
+  0% { left: -60%; }
+  35%, 100% { left: 140%; }
+}
+
+.aqiqah-btn-open:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(180, 80, 100, 0.45);
+}
+
+.aqiqah-btn-open:active {
+  transform: translateY(0);
+}
+
+.aqiqah-env-note {
+  font-size: 10.5px;
+  color: var(--aqiqah-muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STATIONARY AUDIO CONTROLLER
+   ══════════════════════════════════════════════════════════════════════ */
+.aqiqah-audio-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 50;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--aqiqah-border);
+  color: var(--aqiqah-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.aqiqah-audio-btn.playing {
+  animation: aqiqahVinylSpin 5s linear infinite;
+  color: var(--aqiqah-accent);
+}
+
+@keyframes aqiqahVinylSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SECTIONS GENERAL STYLING
+   ══════════════════════════════════════════════════════════════════════ */
+.aqiqah-section {
+  padding: clamp(36px, 6vh, 52px) 18px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.aqiqah-section-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.aqiqah-eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--aqiqah-primary);
+  margin-bottom: 6px;
+}
+
+.aqiqah-title {
+  font-family: var(--aqiqah-font-serif);
+  font-size: clamp(22px, 5.2vw, 28px);
+  font-weight: 700;
+  color: var(--aqiqah-dark);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.aqiqah-card {
+  background: var(--aqiqah-surface);
+  border-radius: var(--aqiqah-radius-lg);
+  padding: 26px 20px;
+  border: 1px solid var(--aqiqah-border);
+  box-shadow: var(--aqiqah-shadow-card);
+  position: relative;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SECTION: HERO (Mobile-First 1 Viewport)
+   ══════════════════════════════════════════════════════════════════════ */
+.aqiqah-hero {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  padding: clamp(36px, 5vh, 48px) 20px clamp(28px, 4vh, 40px);
+  background: radial-gradient(circle at 50% 15%, #ffffff 0%, var(--aqiqah-bg) 75%);
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Star badge banner */
+.aqiqah-star-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: var(--aqiqah-radius-full);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(253, 240, 243, 0.95));
+  border: 1px solid var(--aqiqah-border);
+  box-shadow: var(--aqiqah-shadow-subtle);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--aqiqah-primary);
+}
+
+/* Hero baby oval frame with luxury double gold border */
+.aqiqah-baby-frame {
+  width: clamp(120px, 32vw, 150px);
+  height: clamp(120px, 32vw, 150px);
+  border-radius: 50%;
+  border: 4px solid #ffffff;
+  box-shadow: 0 0 0 3px var(--aqiqah-border), 0 12px 30px rgba(180, 80, 100, 0.15);
+  overflow: hidden;
+  position: relative;
+  background: var(--aqiqah-cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px auto;
+}
+
+.aqiqah-baby-frame img,
+.aqiqah-hero-circle-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.aqiqah-countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 330px;
+  margin-top: 10px;
+}
+
+.aqiqah-countdown-box {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--aqiqah-border);
+  border-radius: var(--aqiqah-radius-md);
+  padding: 10px 4px;
+  text-align: center;
+  box-shadow: var(--aqiqah-shadow-subtle);
+}
+
+.aqiqah-countdown-val {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--aqiqah-primary);
+  line-height: 1;
+}
+
+.aqiqah-countdown-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--aqiqah-muted);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SECTION: PRAYER (Arched Card with Gold Accents)
+   ══════════════════════════════════════════════════════════════════════ */
+.aqiqah-prayer-card {
+  background: linear-gradient(170deg, #ffffff 0%, #fffcfd 100%);
+  border-radius: 40px 40px 24px 24px;
+  padding: 34px 22px 26px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 12px 36px rgba(180, 80, 100, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+  text-align: center;
+  position: relative;
+}
+
+.aqiqah-prayer-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff7d6 0%, #ffe694 100%);
+  color: #a17316;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 14px rgba(180, 130, 20, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -52px auto 14px;
+  position: relative;
+  z-index: 2;
+}
+
+.aqiqah-prayer-header {
+  margin-bottom: 8px;
+}
+
+.aqiqah-arabic {
+  font-family: var(--aqiqah-font-arabic);
+  font-size: clamp(20px, 5.5vw, 24px);
+  line-height: 2;
+  color: #2c1218;
+  font-weight: 700;
+  direction: rtl;
+  margin: 10px 0 12px;
+}
+
+.aqiqah-prayer-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0;
+  opacity: 0.7;
+}
+
+.aqiqah-prayer-divider span {
+  height: 1px;
+  width: 40px;
+  background: linear-gradient(90deg, transparent, #d4af37, transparent);
+}
+
+.aqiqah-translation {
+  font-family: var(--aqiqah-font-serif);
+  font-size: 13px;
+  font-style: italic;
+  color: #4a3337;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.aqiqah-source-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #8a6a18;
+  background: #fdf6e2;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 9999px;
+  padding: 4px 12px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SECTION: BIODATA & PROFIL BUAH HATI
+   ══════════════════════════════════════════════════════════════════════ */
+.aqiqah-profile-photo-wrap {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 8px 8px 10px;
+  margin-bottom: 16px;
+  border: 1.5px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 8px 24px rgba(180, 80, 100, 0.08);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.aqiqah-profile-photo {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+
+.aqiqah-profile-photo-caption {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #8a6a18;
+  padding: 8px 4px 2px;
+}
+
+.aqiqah-bio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.aqiqah-bio-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 14px 10px;
+  border: 1px solid var(--aqiqah-border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.aqiqah-bio-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.bio-date .aqiqah-bio-icon {
+  background: #fde8ec;
+  color: #c44d67;
+}
+
+.bio-time .aqiqah-bio-icon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.bio-weight .aqiqah-bio-icon {
+  background: #e6f4ea;
+  color: #137333;
+}
+
+.bio-height .aqiqah-bio-icon {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.aqiqah-bio-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--aqiqah-muted);
+  text-transform: uppercase;
+}
+
+.aqiqah-bio-val {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--aqiqah-dark);
+}
+
+.aqiqah-parents-card {
+  background: #fffafa;
+  border-radius: 18px;
+  padding: 18px 16px;
+  border: 1px solid rgba(240, 185, 195, 0.45);
+  text-align: center;
+}
+
+.aqiqah-parents-quote {
+  border-top: 1px solid rgba(240, 185, 195, 0.35);
+  padding-top: 10px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SECTION: EVENT DETAILS & ACTIONS
+   ══════════════════════════════════════════════════════════════════════ */
+.aqiqah-event-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.aqiqah-btn-map {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: var(--aqiqah-radius-full);
+  background: linear-gradient(135deg, var(--aqiqah-primary) 0%, var(--aqiqah-rich) 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(180, 80, 100, 0.3);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.aqiqah-btn-map:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(180, 80, 100, 0.4);
+}
+
+.aqiqah-btn-cal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: var(--aqiqah-radius-full);
+  background: #ffffff;
+  color: var(--aqiqah-primary);
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1px solid var(--aqiqah-border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.aqiqah-btn-cal:hover {
+  background: var(--aqiqah-cream);
+  border-color: var(--aqiqah-primary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SECTION: GALLERY — PREMIUM CAROUSEL + GRID
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Wrapper ── */
+.ag-gallery {
+  width: 100%;
+  position: relative;
+}
+
+/* ── Toggle pill row ── */
+.ag-toggle-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.ag-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1.5px solid var(--aqiqah-border);
+  background: transparent;
+  color: var(--aqiqah-muted);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 0.02em;
+}
+
+.ag-toggle-pill--active {
+  background: var(--aqiqah-primary);
+  border-color: var(--aqiqah-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(143, 68, 83, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ── Carousel outer ── */
+.ag-carousel {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+}
+
+/* ── 3-card stage ── */
+.ag-carousel-stage {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 0 18px;
+}
+
+/* Peek cards (prev / next) */
+.ag-carousel-peek {
+  width: 56px;
+  flex-shrink: 0;
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  overflow: hidden;
+  opacity: 0.48;
+  cursor: pointer;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.ag-carousel-peek:hover {
+  opacity: 0.7;
+  transform: scale(1.04);
+}
+
+.ag-carousel-peek-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+/* Active card */
+.ag-carousel-card {
+  flex: 1;
+  max-width: 280px;
+  aspect-ratio: 3 / 4;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--aqiqah-cream);
+  border: 3px solid #ffffff;
+  box-shadow:
+    0 24px 50px rgba(143, 68, 83, 0.16),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+  position: relative;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ag-carousel-card:hover {
+  transform: scale(1.015);
+}
+
+.ag-carousel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: opacity 0.35s ease;
+}
+
+/* Skeleton loading placeholder */
+.ag-carousel-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #fceef0 0%, #fdf4f5 50%, #fceef0 100%);
+  background-size: 200% 200%;
+  animation: agSkeletonShimmer 1.6s ease infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes agSkeletonShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+/* Badges inside active card */
+.ag-badge {
+  position: absolute;
+  z-index: 3;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.ag-badge--counter {
+  top: 12px;
+  left: 12px;
+  background: rgba(20, 10, 15, 0.55);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.06em;
+}
+
+.ag-badge--zoom {
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--aqiqah-primary);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 9999px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.ag-badge--zoom:hover {
+  transform: scale(1.06);
+  background: #ffffff;
+}
+
+/* Floating arrow buttons */
+.ag-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-55%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--aqiqah-border);
+  color: var(--aqiqah-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 5;
+  transition: all 0.2s ease;
+}
+
+.ag-arrow:hover {
+  background: #ffffff;
+  color: var(--aqiqah-primary);
+  box-shadow: 0 6px 16px rgba(143, 68, 83, 0.22);
+  transform: translateY(-55%) scale(1.1);
+}
+
+.ag-arrow--prev { left: 2px; }
+.ag-arrow--next { right: 2px; }
+
+/* Dots */
+.ag-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 2px;
+}
+
+.ag-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  border: none;
+  background: var(--aqiqah-border);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s ease;
+}
+
+.ag-dot--active {
+  width: 20px;
+  background: var(--aqiqah-primary);
+  box-shadow: 0 2px 6px rgba(143, 68, 83, 0.35);
+}
+
+/* ── Grid view ── */
+.ag-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.ag-grid-item {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--aqiqah-cream);
+  border: 2px solid #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ag-grid-item:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 28px rgba(143, 68, 83, 0.14);
+}
+
+.ag-grid-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.ag-grid-item:hover .ag-grid-img {
+  transform: scale(1.06);
+}
+
+.ag-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(20, 10, 15, 0.5) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10px;
+}
+
+.ag-grid-item:hover .ag-grid-overlay {
+  opacity: 1;
+}
+
+.ag-grid-zoom-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--aqiqah-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ag-grid-num {
+  position: absolute;
+  top: 8px;
+  left: 9px;
+  background: rgba(20, 10, 15, 0.5);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Lightbox ── */
+.ag-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(10, 6, 8, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  animation: agLightboxIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes agLightboxIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.ag-lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s ease, transform 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.ag-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.26);
+  transform: scale(1.08);
+}
+
+.ag-lightbox-body {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 48px;
+  box-sizing: border-box;
+}
+
+.ag-lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 16px;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+  display: block;
+}
+
+.ag-lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s ease, transform 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.ag-lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.26);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.ag-lightbox-nav--prev { left: 16px; }
+.ag-lightbox-nav--next { right: 16px; }
+
+.ag-lightbox-footer {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  padding: 5px 18px;
+  backdrop-filter: blur(10px);
+}
+
+.ag-lightbox-counter {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+}
+
+/* ── Legacy alias (keep backward compat) ── */
+.aqiqah-gallery-wrap {
+  width: 100%;
+  position: relative;
+}
+
+.aqiqah-gallery-toggle-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.aqiqah-gallery-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(230, 215, 215, 0.45);
+  border: 1px solid var(--aqiqah-border);
+  border-radius: 9999px;
+  padding: 4px;
+  gap: 4px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.aqiqah-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--aqiqah-muted);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.aqiqah-toggle-btn.active {
+  background: #ffffff;
+  color: var(--aqiqah-primary);
+  box-shadow: 0 3px 10px rgba(180, 80, 100, 0.12);
+}
+
+/* Slider View */
+.aqiqah-slider-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.aqiqah-slider-stage {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.aqiqah-slider-card {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 3px solid #ffffff;
+  box-shadow: 0 16px 36px rgba(180, 80, 100, 0.12), 0 2px 10px rgba(0, 0, 0, 0.04);
+  position: relative;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.aqiqah-slider-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.aqiqah-slider-card:hover .aqiqah-slider-img {
+  transform: scale(1.02);
+}
+
+.aqiqah-slider-badge-counter {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(20, 30, 45, 0.6);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+}
+
+.aqiqah-slider-badge-zoom {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  color: var(--aqiqah-primary);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  z-index: 2;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.aqiqah-slider-badge-zoom:hover {
+  transform: scale(1.05);
+  background: #ffffff;
+}
+
+/* Floating Navigation Arrows */
+.aqiqah-slider-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--aqiqah-border);
+  color: var(--aqiqah-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  z-index: 5;
+  transition: all 0.2s ease;
+}
+
+.aqiqah-slider-arrow:hover {
+  background: #ffffff;
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 6px 18px rgba(180, 80, 100, 0.25);
+  color: var(--aqiqah-primary);
+}
+
+.aqiqah-slider-arrow.prev {
+  left: -12px;
+}
+
+.aqiqah-slider-arrow.next {
+  right: -12px;
+}
+
+/* Dots */
+.aqiqah-slider-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.aqiqah-slider-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--aqiqah-border);
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  padding: 0;
+}
+
+.aqiqah-slider-dot.active {
+  width: 22px;
+  background: var(--aqiqah-primary);
+  box-shadow: 0 2px 6px rgba(180, 80, 100, 0.3);
+}
+
+/* Grid View */
+.aqiqah-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.aqiqah-grid-item {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+}
+
+.aqiqah-grid-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.aqiqah-grid-item:hover .aqiqah-grid-img {
+  transform: scale(1.05);
+}
+
+.aqiqah-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 30, 45, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.aqiqah-grid-item:hover .aqiqah-grid-overlay {
+  opacity: 1;
+}
+
+/* Fullscreen Lightbox */
+.aqiqah-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(12, 20, 32, 0.95);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  animation: fadeIn 0.2s ease;
+}
+
+.aqiqah-lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.aqiqah-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.08);
+}
+
+.aqiqah-lightbox-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 90vw;
+  max-height: 85vh;
+  gap: 14px;
+}
+
+.aqiqah-lightbox-img-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 72vh;
+}
+
+.aqiqah-lightbox-img {
+  max-width: 90vw;
+  max-height: 72vh;
+  object-fit: contain;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.aqiqah-lightbox-footer {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  padding: 6px 16px;
+}
+
+.aqiqah-lightbox-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.aqiqah-lightbox-btn:hover {
+  transform: scale(1.15);
+  opacity: 0.85;
+}
+
+.aqiqah-lightbox-counter {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SECTION: GIFT & DIGITAL ENVELOPE (PREMIUM BANK CARD)
+   ══════════════════════════════════════════════════════════════════════ */
+
+.aqiqah-section--gift {
+  background: linear-gradient(180deg, var(--aqiqah-bg) 0%, #fff5f7 100%);
+}
+
+.aqiqah-gift-desc {
+  font-size: 12px;
+  color: var(--aqiqah-muted);
+  margin-top: 6px;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
+/* Bank cards container */
+.aqiqah-bank-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+/* Individual bank card */
+.aqiqah-bank-card {
+  position: relative;
+  border-radius: 22px;
+  padding: 20px;
+  overflow: hidden;
+  color: #ffffff;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.aqiqah-bank-card--bca {
+  background: linear-gradient(135deg, #0c2340 0%, #1a3f6f 45%, #24558a 100%);
+}
+
+.aqiqah-bank-card--bsi {
+  background: linear-gradient(135deg, #0a2e22 0%, #145240 45%, #1c6b55 100%);
+}
+
+/* Sheen overlay */
+.aqiqah-bank-card__shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.0) 30%,
+    rgba(255, 255, 255, 0.07) 50%,
+    rgba(255, 255, 255, 0.0) 70%
+  );
+  pointer-events: none;
+}
+
+/* Top row: chip + bank name */
+.aqiqah-bank-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.aqiqah-bank-card__name {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Gold chip */
+.aqiqah-chip {
+  width: 34px;
+  height: 26px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #d4af37 0%, #f5d060 60%, #aa7c11 100%);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6), 0 2px 4px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+/* Mid row: label + number */
+.aqiqah-bank-card__mid {
+  margin-bottom: 14px;
+}
+
+.aqiqah-bank-card__label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 4px;
+}
+
+.aqiqah-bank-card__number {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  color: #ffffff;
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Bottom row: holder name + copy button */
+.aqiqah-bank-card__bot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.aqiqah-bank-card__holder {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Copy button inside card */
+.aqiqah-btn-copy-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 13px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.aqiqah-btn-copy-card:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Physical gift row */
+.aqiqah-gift-physical {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #ffffff;
+  border: 1px solid var(--aqiqah-border);
+  border-radius: 20px;
+  padding: 16px 16px;
+  box-shadow: 0 4px 14px rgba(180, 80, 100, 0.06);
+  position: relative;
+}
+
+.aqiqah-gift-physical__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fde8ec, #fceef0);
+  color: var(--aqiqah-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(143, 68, 83, 0.12);
+}
+
+.aqiqah-gift-physical__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.aqiqah-gift-physical__title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--aqiqah-dark);
+  margin-bottom: 3px;
+}
+
+.aqiqah-gift-physical__address {
+  font-size: 11px;
+  color: var(--aqiqah-text);
+  line-height: 1.45;
+}
+
+.aqiqah-gift-physical__recipient {
+  font-size: 10px;
+  color: var(--aqiqah-muted);
+  margin-top: 2px;
+}
+
+.aqiqah-gift-physical__copy {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--aqiqah-border);
+  background: var(--aqiqah-bg);
+  color: var(--aqiqah-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.aqiqah-gift-physical__copy:hover {
+  background: var(--aqiqah-primary);
+  color: #ffffff;
+  border-color: var(--aqiqah-primary);
+  transform: scale(1.08);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SECTION: WISHES / GUESTBOOK & RSVP
+   ══════════════════════════════════════════════════════════════════════ */
+
+.aqiqah-wishes-card {
+  padding: 20px 18px;
+}
+
+.aqiqah-wishes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.aqiqah-wishes-form__row {
+  position: relative;
+}
+
+/* Submit button */
+.aqiqah-btn-submit-wish {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: var(--aqiqah-radius-full);
+  background: linear-gradient(135deg, var(--aqiqah-primary) 0%, var(--aqiqah-rich) 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(143, 68, 83, 0.3);
+  transition: all 0.25s ease;
+  letter-spacing: 0.02em;
+}
+
+.aqiqah-btn-submit-wish:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(143, 68, 83, 0.4);
+}
+
+/* Divider between form and list */
+.aqiqah-wishes-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.aqiqah-wishes-divider span:first-child,
+.aqiqah-wishes-divider span:last-child {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--aqiqah-border), transparent);
+  display: block;
+}
+
+.aqiqah-wishes-divider__label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--aqiqah-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex: 0 !important;
+  height: auto !important;
+  background: none !important;
+}
+
+/* Attendance pill color variants */
+.aqiqah-pill-opt--hadir.active { background: #059669; border-color: #059669; color: #fff; }
+.aqiqah-pill-opt--tidak.active { background: #e11d48; border-color: #e11d48; color: #fff; }
+.aqiqah-pill-opt--ragu.active  { background: #d97706; border-color: #d97706; color: #fff; }
+
+
+.aqiqah-attendance-pills {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.aqiqah-pill-opt {
+  padding: 9px 4px;
+  border-radius: var(--aqiqah-radius-sm);
+  border: 1px solid var(--aqiqah-border);
+  background: var(--aqiqah-bg);
+  color: var(--aqiqah-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aqiqah-pill-opt.active {
+  background: var(--aqiqah-primary);
+  color: #ffffff;
+  border-color: var(--aqiqah-primary);
+  box-shadow: 0 3px 10px rgba(180, 80, 100, 0.3);
+}
+
+.aqiqah-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--aqiqah-radius-sm);
+  border: 1px solid var(--aqiqah-border);
+  background: var(--aqiqah-surface);
+  font-size: 13px;
+  color: var(--aqiqah-text);
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.aqiqah-input:focus {
+  border-color: var(--aqiqah-primary);
+  box-shadow: 0 0 0 3px rgba(180, 80, 100, 0.15);
+}
+
+.aqiqah-wishes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--aqiqah-border) transparent;
+}
+
+.aqiqah-wishes-list::-webkit-scrollbar {
+  width: 4px;
+}
+.aqiqah-wishes-list::-webkit-scrollbar-thumb {
+  background: var(--aqiqah-border);
+  border-radius: 9999px;
+}
+
+.aqiqah-wish-bubble {
+  background: #ffffff;
+  border: 1px solid var(--aqiqah-border);
+  border-radius: 18px;
+  padding: 14px 15px 12px;
+  box-shadow: 0 3px 12px rgba(180, 80, 100, 0.05);
+  position: relative;
+  transition: box-shadow 0.2s ease;
+}
+
+.aqiqah-wish-bubble:hover {
+  box-shadow: 0 6px 20px rgba(180, 80, 100, 0.1);
+}
+
+/* Avatar circle for wish initials */
+.aqiqah-wish-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--aqiqah-primary), var(--aqiqah-rich));
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(143, 68, 83, 0.25);
+}
+
+/* Attendance badge variants */
+.aqiqah-wish-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+}
+
+.aqiqah-wish-badge--hadir {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.aqiqah-wish-badge--tidak {
+  background: #fff1f2;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+}
+
+.aqiqah-wish-badge--ragu {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BOTTOM NAVIGATION BAR (iOS Frosted Glass Dock)
+   ══════════════════════════════════════════════════════════════════════ */
+.aqiqah-bottom-nav {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 28px);
+  max-width: 440px;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(240, 195, 205, 0.7);
+  border-radius: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  box-shadow: 0 12px 36px rgba(180, 80, 100, 0.18), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.aqiqah-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--aqiqah-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 4px;
+  border-radius: 18px;
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.aqiqah-nav-item.active {
+  color: #b0465c;
+  background: linear-gradient(135deg, rgba(223, 120, 136, 0.16), rgba(212, 175, 55, 0.12));
+  font-weight: 800;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(180, 80, 100, 0.14);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   WATERCOLOR FLORAL DECORATIONS & BABY BLOCKS (USER REFERENCE)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Soft Watercolor Edge Wash */
+.aqiqah-watercolor-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background-image:
+    radial-gradient(ellipse at 0% 0%, rgba(248, 180, 192, 0.28) 0%, transparent 45%),
+    radial-gradient(ellipse at 100% 100%, rgba(248, 180, 192, 0.28) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 0%, rgba(255, 230, 215, 0.22) 0%, transparent 40%),
+    radial-gradient(ellipse at 0% 100%, rgba(255, 230, 215, 0.22) 0%, transparent 40%);
+}
+
+/* Frame Container with Wreath */
+.aqiqah-frame-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px auto;
+}
+
+.aqiqah-wreath-wrap {
+  position: absolute;
+  inset: -22px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.aqiqah-wreath-svg-tl {
+  position: absolute;
+  top: -12px;
+  left: -14px;
+  width: clamp(90px, 24vw, 115px);
+  height: clamp(90px, 24vw, 115px);
+  filter: drop-shadow(0 4px 10px rgba(184, 115, 130, 0.25));
+  animation: wreathSwayTL 6s ease-in-out infinite alternate;
+}
+
+.aqiqah-wreath-svg-br {
+  position: absolute;
+  bottom: -10px;
+  right: -12px;
+  width: clamp(80px, 22vw, 105px);
+  height: clamp(80px, 22vw, 105px);
+  filter: drop-shadow(0 4px 10px rgba(184, 115, 130, 0.25));
+  animation: wreathSwayBR 6.5s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes wreathSwayTL {
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(2.5deg) scale(1.03); }
+}
+
+@keyframes wreathSwayBR {
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(-2.5deg) scale(1.03); }
+}
+
+/* Corner Floral Bouquets (Top-Left and Bottom-Right) */
+.aqiqah-corner-floral-tl {
+  position: absolute;
+  top: -15px;
+  left: -15px;
+  width: clamp(140px, 36vw, 180px);
+  height: clamp(140px, 36vw, 180px);
+  pointer-events: none;
+  z-index: 10;
+  filter: drop-shadow(0 6px 14px rgba(190, 120, 135, 0.2));
+  animation: cornerFloralFloat 8s ease-in-out infinite alternate;
+}
+
+.aqiqah-corner-floral-br {
+  position: absolute;
+  bottom: 0px;
+  right: -10px;
+  width: clamp(140px, 36vw, 180px);
+  height: clamp(140px, 36vw, 180px);
+  pointer-events: none;
+  z-index: 10;
+  filter: drop-shadow(0 6px 14px rgba(190, 120, 135, 0.2));
+  animation: cornerFloralFloat 8.5s ease-in-out infinite alternate-reverse;
+}
+
+.aqiqah-corner-svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes cornerFloralFloat {
+  0% { transform: rotate(0deg) translateY(0); }
+  100% { transform: rotate(2deg) translateY(-4px); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   PASTEL BABY BUILDING BLOCKS (A, B, C)
+   ══════════════════════════════════════════════════════════════════════ */
+.aqiqah-blocks-tr {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 12;
+  animation: blocksFloat 6s ease-in-out infinite alternate;
+}
+
+.aqiqah-blocks-bl {
+  position: absolute;
+  bottom: 24px;
+  left: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 12;
+  animation: blocksFloat 6.5s ease-in-out infinite alternate-reverse;
+}
+
+.aqiqah-blocks-row {
+  display: flex;
+  gap: 4px;
+}
+
+.aqiqah-block {
+  width: clamp(32px, 8.5vw, 42px);
+  height: clamp(32px, 8.5vw, 42px);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--aqiqah-font-body);
+  font-size: clamp(16px, 4.5vw, 22px);
+  font-weight: 900;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(224, 132, 148, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+  position: relative;
+  text-shadow: 0 1px 2px rgba(180, 80, 100, 0.3);
+}
+
+.aqiqah-block-a {
+  background: linear-gradient(135deg, #f7b4c0 0%, #ee8a9c 100%);
+}
+
+.aqiqah-block-b {
+  background: linear-gradient(135deg, #f8c2cd 0%, #f497aa 100%);
+}
+
+.aqiqah-block-c {
+  background: linear-gradient(135deg, #fad1da 0%, #f39cb0 100%);
+}
+
+@keyframes blocksFloat {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-5px) rotate(2deg); }
+}
