@@ -204,18 +204,70 @@ export default function MarketplaceHomePage() {
       {/* Main Content Area */}
       <main id="templates" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-8 sm:px-8 sm:py-12">
         {/* Filter and Sorting Toolbar */}
-        <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 lg:flex-row lg:items-center lg:justify-between">
-          {/* Category Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
+        <div className="flex flex-col gap-3.5 border-b border-slate-200 pb-5">
+          {/* Top Row: Search Input + Sort / Ready toggle */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari template (misal: Aqiqah, Wedding, Khitanan)..."
+                className="w-full rounded-2xl border border-slate-200 bg-white py-2 pl-9 pr-9 text-xs font-semibold text-slate-800 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Quick Controls */}
+            <div className="flex items-center gap-2 justify-between sm:justify-end">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50">
+                <input
+                  type="checkbox"
+                  checked={onlyAvailable}
+                  onChange={(e) => setOnlyAvailable(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded accent-emerald-600 text-emerald-600 focus:ring-emerald-500"
+                />
+                <span className="text-[11px] sm:text-xs">Siap Pakai</span>
+              </label>
+
+              <div className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-bold text-slate-700 shadow-2xs">
+                <SlidersHorizontal size={13} className="text-slate-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-transparent text-[11px] sm:text-xs font-bold text-emerald-700 outline-none cursor-pointer"
+                >
+                  <option value="release-desc">Terbaru</option>
+                  <option value="release-asc">Terlama</option>
+                  <option value="favorite-desc">Favorit</option>
+                  <option value="name-asc">Nama (A - Z)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row: Horizontal Scrollable Category Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1">
             {CATEGORIES.map((category) => {
               const active = selectedCategory === category.id;
               return (
                 <button
                   key={category.id}
+                  type="button"
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${active
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900"
+                  className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-bold transition active:scale-95 ${active
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                 >
                   {category.label}
@@ -223,38 +275,10 @@ export default function MarketplaceHomePage() {
               );
             })}
           </div>
-
-          {/* Right Filters: Sort By & Toggle Ready */}
-          <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50">
-              <input
-                type="checkbox"
-                checked={onlyAvailable}
-                onChange={(e) => setOnlyAvailable(e.target.checked)}
-                className="h-4 w-4 rounded accent-emerald-600 text-emerald-600 focus:ring-emerald-500"
-              />
-              <span>Hanya Siap Pakai</span>
-            </label>
-
-            <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm">
-              <SlidersHorizontal size={14} className="text-slate-400" />
-              <span>Urutkan:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-transparent font-bold text-emerald-700 outline-none cursor-pointer"
-              >
-                <option value="release-desc">Terbaru (Date Release)</option>
-                <option value="release-asc">Terlama</option>
-                <option value="favorite-desc">Paling Favorit</option>
-                <option value="name-asc">Nama (A - Z)</option>
-              </select>
-            </div>
-          </div>
         </div>
 
         {/* Count Summary */}
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-4 flex items-center justify-between">
           <p className="text-xs font-semibold text-slate-500">
             Menampilkan <strong className="text-slate-900">{filteredTemplates.length}</strong> template
             {selectedCategory !== "all" && ` dalam kategori "${CATEGORIES.find((c) => c.id === selectedCategory)?.label}"`}
@@ -281,7 +305,7 @@ export default function MarketplaceHomePage() {
             </button>
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
             {filteredTemplates.map((template) => {
               const isFav = Boolean(favorites[template.code]);
               const effectiveFavCount = isFav ? template.favoriteCount + 1 : template.favoriteCount;
@@ -290,13 +314,13 @@ export default function MarketplaceHomePage() {
               return (
                 <div
                   key={template.code}
-                  className="group flex flex-col md:flex-row overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-slate-300"
+                  className="group flex flex-col md:flex-row overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xs transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-slate-300"
                 >
                   {/* Left Column: Phone Mockup Showcase */}
-                  <div className="relative w-full md:w-[260px] lg:w-[280px] shrink-0 bg-gradient-to-b from-slate-100 via-[#f8f5ee] to-slate-200/90 p-5 flex flex-col justify-between items-center min-h-[360px] md:min-h-[400px]">
+                  <div className="relative w-full md:w-[250px] lg:w-[270px] shrink-0 bg-gradient-to-b from-slate-50 via-slate-100/70 to-slate-200/70 p-3.5 sm:p-4 flex flex-col justify-between items-center h-64 sm:h-72 md:h-auto md:min-h-[360px]">
                     {/* Top Badges */}
                     <div className="w-full flex items-center justify-between gap-2 z-10">
-                      <span className="rounded-full bg-white/95 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-800 backdrop-blur-md shadow-sm">
+                      <span className="rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-800 backdrop-blur-md shadow-2xs">
                         {template.categoryLabel}
                       </span>
 
@@ -306,16 +330,16 @@ export default function MarketplaceHomePage() {
                           e.preventDefault();
                           toggleFavorite(template.code);
                         }}
-                        className={`grid h-8 w-8 place-items-center rounded-full backdrop-blur-md shadow-sm transition active:scale-90 ${isFav ? "bg-rose-500 text-white shadow-rose-500/30" : "bg-white/90 text-slate-700 hover:bg-white"
+                        className={`grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-full backdrop-blur-md shadow-2xs transition active:scale-90 ${isFav ? "bg-rose-500 text-white shadow-rose-500/30" : "bg-white/90 text-slate-700 hover:bg-white"
                           }`}
                         aria-label="Simpan ke favorit"
                       >
-                        <Heart size={15} className={isFav ? "fill-white" : ""} />
+                        <Heart size={14} className={isFav ? "fill-white" : ""} />
                       </button>
                     </div>
 
                     {/* Centered Phone Mockup with Slider support */}
-                    <div className="relative w-full h-[270px] md:h-[290px] my-auto flex items-center justify-center">
+                    <div className="relative w-full h-[180px] sm:h-[210px] md:h-[260px] my-auto flex items-center justify-center">
                       {(() => {
                         const covers = template.covers && template.covers.length > 0 ? template.covers : ["/thumb/wedding-elegance.png"];
                         const activeCoverIdx = (coverIndices[template.code] ?? 0) % covers.length;
@@ -329,7 +353,7 @@ export default function MarketplaceHomePage() {
                               src={currentCover}
                               alt={`${template.name} cover ${activeCoverIdx + 1}`}
                               fill
-                              className="object-contain drop-shadow-[0_18px_35px_rgba(15,23,42,0.22)] transition duration-500 group-hover:scale-[1.04]"
+                              className="object-contain drop-shadow-[0_14px_28px_rgba(15,23,42,0.18)] transition duration-500 group-hover:scale-[1.03]"
                               sizes="(max-width: 768px) 100vw, 300px"
                               priority
                             />
@@ -339,24 +363,24 @@ export default function MarketplaceHomePage() {
                                 <button
                                   type="button"
                                   onClick={(e) => handlePrevCover(template.code, covers.length, e)}
-                                  className="absolute -left-2 top-1/2 -translate-y-1/2 z-20 grid h-7 w-7 place-items-center rounded-full bg-white/90 text-slate-800 shadow-md backdrop-blur-md opacity-0 group-hover:opacity-100 transition hover:bg-white hover:scale-110 active:scale-95"
+                                  className="absolute -left-1.5 top-1/2 -translate-y-1/2 z-20 grid h-6 w-6 place-items-center rounded-full bg-white/90 text-slate-800 shadow-md backdrop-blur-md opacity-0 group-hover:opacity-100 transition hover:bg-white hover:scale-110 active:scale-95"
                                   aria-label="Cover sebelumnya"
                                 >
-                                  <ChevronLeft size={16} />
+                                  <ChevronLeft size={14} />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={(e) => handleNextCover(template.code, covers.length, e)}
-                                  className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 grid h-7 w-7 place-items-center rounded-full bg-white/90 text-slate-800 shadow-md backdrop-blur-md opacity-0 group-hover:opacity-100 transition hover:bg-white hover:scale-110 active:scale-95"
+                                  className="absolute -right-1.5 top-1/2 -translate-y-1/2 z-20 grid h-6 w-6 place-items-center rounded-full bg-white/90 text-slate-800 shadow-md backdrop-blur-md opacity-0 group-hover:opacity-100 transition hover:bg-white hover:scale-110 active:scale-95"
                                   aria-label="Cover selanjutnya"
                                 >
-                                  <ChevronRight size={16} />
+                                  <ChevronRight size={14} />
                                 </button>
                                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 bg-black/30 px-2 py-0.5 rounded-full backdrop-blur-sm">
                                   {covers.map((_, idx) => (
                                     <span
                                       key={idx}
-                                      className={`h-1.5 rounded-full transition-all ${idx === activeCoverIdx ? "w-3 bg-white" : "w-1.5 bg-white/50"
+                                      className={`h-1.5 rounded-full transition-all ${idx === activeCoverIdx ? "w-2.5 bg-white" : "w-1 bg-white/50"
                                         }`}
                                     />
                                   ))}
@@ -369,103 +393,103 @@ export default function MarketplaceHomePage() {
                     </div>
 
                     {/* Bottom Info Bar */}
-                    <div className="w-full z-10 flex items-center justify-between rounded-xl bg-slate-900/80 px-3 py-1.5 text-xs text-white backdrop-blur-md shadow-md">
-                      <div className="flex items-center gap-1.5 font-bold">
-                        <Star size={13} className="text-amber-400 fill-amber-400" />
+                    <div className="w-full z-10 flex items-center justify-between rounded-xl bg-slate-900/80 px-2.5 py-1 text-xs text-white backdrop-blur-md shadow-xs">
+                      <div className="flex items-center gap-1.5 font-bold text-[11px]">
+                        <Star size={12} className="text-amber-400 fill-amber-400" />
                         <span>{template.rating}</span>
                         <span className="text-white/70 font-normal">({effectiveFavCount} suka)</span>
                       </div>
 
-                      <span className="rounded-md bg-white/20 px-2 py-0.5 font-mono text-[10px] font-bold text-white backdrop-blur">
+                      <span className="rounded-md bg-white/20 px-1.5 py-0.5 font-mono text-[9px] font-bold text-white backdrop-blur">
                         code: {template.code}
                       </span>
                     </div>
                   </div>
 
                   {/* Right Column: Description & Details */}
-                  <div className="flex flex-1 flex-col justify-between p-6 sm:p-7">
+                  <div className="flex flex-1 flex-col justify-between p-4 sm:p-5 lg:p-6">
                     <div>
                       {/* Title, Price & Status */}
-                      <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
                         <div>
-                          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 group-hover:text-emerald-700 transition">
+                          <h2 className="text-base sm:text-lg lg:text-xl font-extrabold text-slate-900 group-hover:text-emerald-700 transition leading-snug">
                             {template.name}
                           </h2>
                           <div className="mt-1 flex items-center gap-2">
                             <span className="text-base sm:text-lg font-black text-emerald-700">
                               {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(template.price ?? 50000)}
                             </span>
-                            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
                               Sekali bayar
                             </span>
                           </div>
                         </div>
 
                         {isReady ? (
-                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-extrabold text-emerald-700 border border-emerald-200/60">
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-700 border border-emerald-200/60">
                             <Check size={12} /> Ready
                           </span>
                         ) : (
-                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500">
                             Segera
                           </span>
                         )}
                       </div>
 
-                      <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600">
+                      <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-600 line-clamp-2 sm:line-clamp-3">
                         {template.description}
                       </p>
 
-                      {/* Section Features */}
-                      <div className="mt-5">
-                        <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                          Fitur & Komponen Section ({template.features.length})
+                      {/* Section Features - Compact on mobile */}
+                      <div className="mt-3 sm:mt-4">
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                          Fitur & Komponen ({template.features.length})
                         </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {template.features.slice(0, 6).map((feat) => (
+                        <div className="flex flex-wrap gap-1 sm:gap-1.5">
+                          {template.features.slice(0, 4).map((feat) => (
                             <span
                               key={feat}
-                              className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 border border-slate-200/60"
+                              className="rounded-lg bg-slate-100/90 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-semibold text-slate-700 border border-slate-200/60"
                             >
                               {feat}
                             </span>
                           ))}
-                          {template.features.length > 6 && (
-                            <span className="rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">
-                              +{template.features.length - 6} lainnya
+                          {template.features.length > 4 && (
+                            <span className="rounded-lg bg-emerald-50 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-bold text-emerald-700">
+                              +{template.features.length - 4} lainnya
                             </span>
                           )}
                         </div>
                       </div>
 
                       {/* Themes Palette & Release Info */}
-                      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3.5 border border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <Palette size={14} className="text-slate-400" />
-                          <span className="text-xs font-bold text-slate-700">Pilihan Tema:</span>
-                          <div className="flex -space-x-1 ml-1">
+                      <div className="mt-3 sm:mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-2.5 sm:p-3 border border-slate-100 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <Palette size={13} className="text-slate-400" />
+                          <span className="text-[11px] font-bold text-slate-700">Tema:</span>
+                          <div className="flex -space-x-1 ml-0.5">
                             {template.themeColors.map((color) => (
                               <span
                                 key={color}
-                                className="h-4 w-4 rounded-full border-2 border-white shadow-sm"
+                                className="h-3.5 w-3.5 rounded-full border border-white shadow-2xs"
                                 style={{ backgroundColor: color }}
                               />
                             ))}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-                          <Calendar size={13} className="text-slate-400" />
+                        <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-slate-500">
+                          <Calendar size={12} className="text-slate-400" />
                           <span>Rilis {new Date(template.releaseDate).toLocaleDateString("id-ID", { month: "short", day: "numeric", year: "numeric" })}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-6 grid grid-cols-2 gap-2.5 pt-4 border-t border-slate-100">
+                    <div className="mt-4 sm:mt-5 grid grid-cols-2 gap-2 pt-3 sm:pt-4 border-t border-slate-100">
                       <Link
                         href={`/demo/${template.id}`}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 whitespace-nowrap transition hover:bg-slate-50 hover:border-slate-300 active:scale-95"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 whitespace-nowrap shadow-2xs transition hover:bg-slate-50 hover:border-slate-300 active:scale-95"
                       >
                         <Eye size={14} />
                         <span>Demo</span>
@@ -474,7 +498,7 @@ export default function MarketplaceHomePage() {
                       {isReady ? (
                         <Link
                           href={`/editor/${template.code}`}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white whitespace-nowrap shadow-sm transition hover:bg-emerald-700 active:scale-95"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white whitespace-nowrap shadow-xs transition hover:bg-emerald-700 active:scale-95"
                         >
                           <span>Customize</span>
                           <ArrowRight size={13} />
