@@ -65,7 +65,7 @@ export function EditorSelect({
   }, [open]);
 
   return (
-    <div ref={containerRef} className={`relative w-full ${className}`}>
+    <div ref={containerRef} className={`relative min-w-0 max-w-full w-full ${className}`}>
       {/* Trigger Button */}
       <button
         id={id}
@@ -74,7 +74,7 @@ export function EditorSelect({
         onClick={() => setOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex h-9 w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 text-left transition focus:outline-none ${
+        className={`flex h-9 min-w-0 w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 text-left transition focus:outline-none ${
           open
             ? "border-emerald-600 ring-2 ring-emerald-100"
             : "border-slate-300 hover:border-slate-400"

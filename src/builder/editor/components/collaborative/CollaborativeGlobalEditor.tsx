@@ -1,5 +1,6 @@
 "use client";
 
+import { Monitor, Smartphone } from "lucide-react";
 import type { TemplateKit } from "@/templates/contracts";
 import { MusicSelectorField } from "../MusicSelectorField";
 import { CollaborativeColorInput } from "./CollaborativeColorInput";
@@ -11,6 +12,7 @@ type Props = {
   musicUrl: string;
   musicVolume: number;
   customColors: { primary?: string; accent?: string; background?: string };
+  useContainer?: boolean;
   authResolved: boolean;
   isLoggedIn: boolean;
   draftReady: boolean;
@@ -25,6 +27,7 @@ export function CollaborativeGlobalEditor({
   musicUrl,
   musicVolume,
   customColors,
+  useContainer = true,
   authResolved,
   isLoggedIn,
   draftReady,
@@ -40,7 +43,7 @@ export function CollaborativeGlobalEditor({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       {/* 1. Music Selector & Volume Slider */}
       <MusicSelectorField
         musicUrl={musicUrl}
@@ -67,7 +70,71 @@ export function CollaborativeGlobalEditor({
         </p>
       )}
 
-      {/* 2. Preset Themes Grid */}
+      {/* 2. Fokuskan untuk Layar (Mobile vs Desktop) */}
+      <div className="border-t border-slate-100 pt-4">
+        <div className="mb-2.5 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-slate-700">Fokuskan untuk Layar</p>
+            <p className="text-[10px] text-slate-400">Pilih tata letak saat dibuka di layar komputer/desktop</p>
+          </div>
+          <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Layout</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            disabled={isViewer}
+            onClick={() => updateGlobalSetting("useContainer", true)}
+            className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
+              useContainer !== false
+                ? "border-emerald-600 bg-emerald-50 text-emerald-950 shadow-xs"
+                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            } disabled:cursor-not-allowed disabled:opacity-60`}
+            title="Tampilan Terpusat Card Mobile 480px di Layar Desktop"
+          >
+            <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition ${
+              useContainer !== false ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-600"
+            }`}>
+              <Smartphone size={16} />
+            </div>
+            <div className="min-w-0">
+              <b className="block text-xs font-semibold">Mobile</b>
+              <small className={`block text-[9px] truncate ${
+                useContainer !== false ? "text-emerald-700 font-medium" : "text-slate-500"
+              }`}>
+                Card 480px
+              </small>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            disabled={isViewer}
+            onClick={() => updateGlobalSetting("useContainer", false)}
+            className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
+              useContainer === false
+                ? "border-emerald-600 bg-emerald-50 text-emerald-950 shadow-xs"
+                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            } disabled:cursor-not-allowed disabled:opacity-60`}
+            title="Tampilan Lebar Penuh Responsif di Layar Desktop"
+          >
+            <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition ${
+              useContainer === false ? "bg-emerald-600 text-white shadow-xs" : "bg-slate-100 text-slate-600"
+            }`}>
+              <Monitor size={16} />
+            </div>
+            <div className="min-w-0">
+              <b className="block text-xs font-semibold">Desktop</b>
+              <small className={`block text-[9px] truncate ${
+                useContainer === false ? "text-emerald-700 font-medium" : "text-slate-500"
+              }`}>
+                Lebar Penuh
+              </small>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Preset Themes Grid */}
       <div className="border-t border-slate-100 pt-4">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-bold text-slate-700">Preset Theme</p>
@@ -104,7 +171,7 @@ export function CollaborativeGlobalEditor({
         </div>
       </div>
 
-      {/* 3. Custom Color Palette */}
+      {/* 4. Custom Color Palette */}
       <div className="border-t border-slate-100 pt-4">
         <div className="mb-2.5 flex items-center justify-between">
           <div>

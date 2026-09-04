@@ -5,6 +5,7 @@ export type SharedGlobalSettings = {
   musicUrl: string;
   musicVolume: number;
   customColors: { primary?: string; accent?: string; background?: string };
+  useContainer?: boolean;
 };
 
 export type SharedSectionRecord = {
@@ -59,6 +60,7 @@ export function initYDocFromState(state: SharedDraftState, doc: Y.Doc = new Y.Do
     globalSettingsMap.set("themeId", state.globalSettings?.themeId ?? "royal-blue-gold");
     globalSettingsMap.set("musicUrl", typeof state.globalSettings?.musicUrl === "string" ? state.globalSettings.musicUrl : defaultMusic);
     globalSettingsMap.set("musicVolume", state.globalSettings?.musicVolume ?? 0.6);
+    globalSettingsMap.set("useContainer", state.globalSettings?.useContainer !== undefined ? Boolean(state.globalSettings.useContainer) : true);
 
     const customColorsMap = new Y.Map();
     if (state.globalSettings?.customColors) {
@@ -187,6 +189,7 @@ export function extractStateFromYDoc(doc: Y.Doc): SharedDraftState {
       musicUrl: typeof globalSettingsMap.get("musicUrl") === "string" ? (globalSettingsMap.get("musicUrl") as string) : "",
       musicVolume: Number(globalSettingsMap.get("musicVolume") ?? 0.6),
       customColors,
+      useContainer: globalSettingsMap.get("useContainer") !== undefined ? Boolean(globalSettingsMap.get("useContainer")) : true,
     },
     sectionOrder: sectionOrderArray.toArray(),
     sections,

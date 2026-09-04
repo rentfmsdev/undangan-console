@@ -126,7 +126,8 @@ img {
 }
 
 .invitation-page {
-  width: min(100%, 620px);
+  width: min(100%, 480px);
+  max-width: 480px;
   margin: 0 auto;
   overflow: hidden;
   background: var(--ivory);
@@ -134,6 +135,12 @@ img {
   opacity: 0;
   transform: scale(.98);
   transition: opacity .7s ease, transform .7s ease;
+}
+
+.invitation-page[data-use-container="false"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-shadow: none !important;
 }
 
 .invitation-shell.is-open .invitation-page {

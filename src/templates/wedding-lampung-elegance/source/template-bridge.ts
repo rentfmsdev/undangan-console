@@ -21,6 +21,7 @@ export type WeddingGlobalSettings = {
     accent?: string;
     background?: string;
   };
+  useContainer?: boolean;
 };
 
 export const WEDDING_GALLERY_UPDATE_EVENT = "wedding:gallery-update";
@@ -546,6 +547,11 @@ export function applyWeddingTemplateState(sections: WeddingPreviewSection[], the
   }
   applyTopLevelOrder(sections);
   applyEventSubsectionOrder(sections);
+
+  const page = document.querySelector<HTMLElement>(".invitation-page");
+  if (page) {
+    page.setAttribute("data-use-container", settings.useContainer === false ? "false" : "true");
+  }
 
   const audio = document.querySelector<HTMLAudioElement>(".invitation-shell audio");
   const audioSource = audio?.querySelector<HTMLSourceElement>("source");

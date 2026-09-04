@@ -60,6 +60,15 @@
   padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px));
 }
 
+.aqiqah-shell[data-use-container="false"] {
+  max-width: 100% !important;
+  box-shadow: none !important;
+}
+
+.aqiqah-shell[data-use-container="false"] .aqiqah-audio-btn {
+  right: 24px;
+}
+
 .aqiqah-shell[data-opened="false"] {
   overflow: hidden !important;
 }

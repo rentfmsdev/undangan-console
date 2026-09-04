@@ -24,6 +24,7 @@ export const weddingLampungElegance = defineTemplate({
     openingSectionId: "opening-envelope",
   },
   defaultView: "mobile",
+  useContainer: true,
   themes: [
     {
       id: "blue-gold",

@@ -4,6 +4,7 @@ type BirthdaySettings = {
   customColors?: { primary?: string; accent?: string; background?: string };
   musicUrl?: string;
   musicVolume?: number;
+  useContainer?: boolean;
 };
 
 type TextStyle = {
@@ -118,6 +119,11 @@ export function applyBirthdayTemplateState(sections: BirthdayPreviewSection[], t
   if (settings.customColors?.accent) root.style.setProperty("--a", settings.customColors.accent);
   if (settings.customColors?.background) root.style.setProperty("--bg", settings.customColors.background);
   applyMusic(settings);
+
+  const shell = document.querySelector<HTMLElement>(".birthday-shell");
+  if (shell) {
+    shell.setAttribute("data-use-container", settings.useContainer === false ? "false" : "true");
+  }
 
   sections.forEach((section) => {
     const node = document.querySelector<HTMLElement>(`[data-template-section="${section.type}"]`);

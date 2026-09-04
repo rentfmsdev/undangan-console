@@ -29,6 +29,15 @@ body:has(.birthday-shell) {
     box-shadow: 0 0 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
+.birthday-shell[data-use-container="false"] {
+    max-width: 100% !important;
+    box-shadow: none !important;
+}
+
+.birthday-shell[data-use-container="false"] .birthday-audio-btn {
+    right: 24px;
+}
+
 .birthday-shell section,
 .birthday-shell footer {
     padding: 72px 28px;

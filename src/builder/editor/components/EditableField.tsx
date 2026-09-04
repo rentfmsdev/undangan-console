@@ -3,6 +3,7 @@
 import { Bold, Italic, RotateCcw } from "lucide-react";
 import type { TemplateEditorField } from "@/templates/contracts";
 import { FigmaColorPicker } from "./FigmaColorPicker";
+import { EditorSelect, type SelectOption } from "./EditorSelect";
 
 export type EditableTextStyle = {
   fontFamily?: string;
@@ -23,13 +24,13 @@ type EditableFieldProps = {
   onTextStyleChange: (style: Partial<EditableTextStyle>, replace?: boolean) => void;
 };
 
-const fonts = [
-  ["template", "Bawaan template"],
-  ["great-vibes", "Great Vibes"],
-  ["dancing-script", "Dancing Script"],
-  ["cormorant", "Cormorant Garamond"],
-  ["manrope", "Manrope"],
-] as const;
+const fonts: SelectOption[] = [
+  { value: "template", label: "Bawaan template", subtitle: "Mengikuti gaya template" },
+  { value: "great-vibes", label: "Great Vibes", previewStyle: { fontFamily: "var(--font-great-vibes), cursive", fontSize: "17px" } },
+  { value: "dancing-script", label: "Dancing Script", previewStyle: { fontFamily: "var(--font-dancing-script), cursive", fontSize: "16px" } },
+  { value: "cormorant", label: "Cormorant Garamond", previewStyle: { fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "16px" } },
+  { value: "manrope", label: "Manrope", previewStyle: { fontFamily: "var(--font-manrope), sans-serif" } },
+];
 
 export function EditableField({
   field,
@@ -109,20 +110,14 @@ export function EditableField({
       {supportsTypography && (
         <div className="mt-3 space-y-2 border-t border-slate-100 pt-2.5">
           {/* Row 1: Font Family Selector */}
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold text-slate-500" style={{ fontSize: "11px" }}>Font teks</span>
-            <select
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-slate-500">Font teks</span>
+            <EditorSelect
               value={textStyle.fontFamily ?? "template"}
-              onChange={(event) => updateStyle("fontFamily", event.target.value)}
-              className="min-w-0 max-w-[170px] rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 outline-none transition focus:border-emerald-500 focus:bg-white cursor-pointer"
-              style={{ fontSize: "11px" }}
-            >
-              {fonts.map(([id, label]) => (
-                <option key={id} value={id} style={{ fontSize: "11px" }}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              options={fonts}
+              onChange={(fontFamily) => updateStyle("fontFamily", fontFamily)}
+              className="w-[min(220px,62%)] min-w-0 shrink-0"
+            />
           </div>
 
           {/* Row 2: Color, Font Size & Style formatting */}

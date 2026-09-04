@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Users } from "lucide-react";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 type CollaborationStatusProps = {
   status: "connecting" | "connected" | "disconnected" | "error";
@@ -12,14 +12,9 @@ export function CollaborationStatus({ status, onlineCount }: CollaborationStatus
   if (status === "disconnected") return null;
 
   return (
-    <div
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition ${
-        status === "connected"
-          ? "border-emerald-200 bg-emerald-50/80 text-emerald-800"
-          : status === "connecting"
-          ? "border-amber-200 bg-amber-50/80 text-amber-800"
-          : "border-slate-200 bg-slate-100 text-slate-600"
-      }`}
+    <StatusBadge
+      tone={status === "connected" ? "success" : status === "connecting" ? "warning" : "neutral"}
+      icon={<span className={`h-1.5 w-1.5 rounded-full ${status === "connected" ? "bg-emerald-500 animate-pulse" : status === "connecting" ? "bg-amber-500 animate-pulse" : "bg-slate-400"}`} />}
       title={
         status === "connected"
           ? `Kolaborasi realtime aktif (${onlineCount} online)`
@@ -28,18 +23,9 @@ export function CollaborationStatus({ status, onlineCount }: CollaborationStatus
           : "Koneksi kolaborasi terputus"
       }
     >
-      <span
-        className={`h-2 w-2 rounded-full ${
-          status === "connected"
-            ? "bg-emerald-500 animate-pulse"
-            : status === "connecting"
-            ? "bg-amber-400 animate-ping"
-            : "bg-slate-400"
-        }`}
-      />
       <span className="hidden sm:inline">
-        {status === "connected" ? `${onlineCount} Online` : status === "connecting" ? "Menyambung..." : "Offline"}
+        {status === "connected" ? `${onlineCount} online` : status === "connecting" ? "Menyambung" : "Offline"}
       </span>
-    </div>
+    </StatusBadge>
   );
 }
