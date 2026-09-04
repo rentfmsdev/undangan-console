@@ -9,6 +9,7 @@ type Props = {
   fallbackValue: string;
   disabled?: boolean;
   compact?: boolean;
+  placement?: "auto" | "top" | "bottom";
   onChange: (color: string) => void;
   onReset?: () => void;
 };
@@ -36,24 +37,33 @@ export function FigmaColorPicker({
   fallbackValue,
   disabled = false,
   compact = false,
+  placement = "auto",
   onChange,
   onReset,
 }: Props) {
   const currentColor = value || fallbackValue;
   const [isOpen, setIsOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
+  const [openUpward, setOpenUpward] = useState(placement === "top");
   const [hexInput, setHexInput] = useState(currentColor.toUpperCase());
   const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto detect if popover should open upwards when close to bottom of screen
-  useEffect(() => {
-    if (isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      setOpenUpward(spaceBelow < 290);
+  const handleToggle = () => {
+    if (!isOpen && containerRef.current) {
+      if (placement === "top") {
+        setOpenUpward(true);
+      } else if (placement === "bottom") {
+        setOpenUpward(false);
+      } else {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setOpenUpward(spaceBelow < 320 || rect.top > window.innerHeight * 0.45);
+      }
+    } else if (placement === "top") {
+      setOpenUpward(true);
     }
-  }, [isOpen]);
+    setIsOpen((prev) => !prev);
+  };
 
   // Sync internal hex text when external value changes
   useEffect(() => {
@@ -116,12 +126,12 @@ export function FigmaColorPicker({
   const hasEyeDropper = typeof window !== "undefined" && "EyeDropper" in window;
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className={`relative ${isOpen ? "z-50" : "z-auto"}`}>
       {compact ? (
         <button
           type="button"
           disabled={disabled}
-          onClick={() => setIsOpen((prev) => !prev)}
+          onClick={handleToggle}
           className="flex min-w-0 w-full items-center justify-between gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-slate-300 transition"
           style={{ fontSize: "11px" }}
           title={`Pilih ${label}`}
@@ -157,7 +167,7 @@ export function FigmaColorPicker({
           <button
             type="button"
             disabled={disabled}
-            onClick={() => setIsOpen((prev) => !prev)}
+            onClick={handleToggle}
             className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition active:scale-95 disabled:opacity-50"
           >
             {/* Swatch circle with checkered border */}
@@ -173,7 +183,7 @@ export function FigmaColorPicker({
       {/* Figma-Style Popover Dialog */}
       {isOpen && (
         <div
-          className={`absolute right-0 z-50 w-64 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.2)] backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 ${
+          className={`absolute right-0 z-[9999] w-64 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.22)] backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 ${
             openUpward ? "bottom-full mb-2" : "top-full mt-2"
           }`}
         >
