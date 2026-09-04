@@ -7,6 +7,7 @@ type Props = {
   value?: string;
   fallbackValue: string;
   disabled?: boolean;
+  placement?: "auto" | "top" | "bottom";
   onChange: (value: string) => void;
   onReset?: () => void;
 };

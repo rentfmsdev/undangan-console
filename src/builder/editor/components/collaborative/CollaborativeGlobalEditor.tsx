@@ -136,6 +136,7 @@ export function CollaborativeGlobalEditor({
 
           <CollaborativeColorInput
             label="Warna Aksen (Accent / Gold)"
+            placement="top"
             value={customColors.accent}
             fallbackValue={activeTheme.colors.accent}
             disabled={isViewer}
@@ -146,6 +147,7 @@ export function CollaborativeGlobalEditor({
 
           <CollaborativeColorInput
             label="Warna Latar (Background)"
+            placement="top"
             value={customColors.background}
             fallbackValue={activeTheme.colors.background}
             disabled={isViewer}

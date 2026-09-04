@@ -171,9 +171,25 @@ function SortableSectionRow({
   );
 }
 
-function SidebarAccordion({ title, subtitle, icon, open, onToggle, children }: { title: string; subtitle: string; icon: ReactNode; open: boolean; onToggle: () => void; children: ReactNode }) {
+function SidebarAccordion({
+  title,
+  subtitle,
+  icon,
+  open,
+  onToggle,
+  children,
+  className = "",
+}: {
+  title: string;
+  subtitle: string;
+  icon: ReactNode;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <section className={`rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,.05)] ${open ? "overflow-visible" : "overflow-hidden"}`}>
+    <section className={`rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,.05)] ${open ? "overflow-visible" : "overflow-hidden"} ${className}`}>
       <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50" aria-expanded={open}>
         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl transition ${open ? "bg-emerald-600 text-white shadow-sm" : "bg-emerald-50 text-emerald-600"}`}>{icon}</span>
         <span className="min-w-0 flex-1">
@@ -1999,6 +2015,7 @@ export function ConsoleWorkspace({
                 subtitle={`${theme.label} · ${musicUrl ? "Musik aktif" : "Tanpa musik"}`}
                 icon={<Palette size={17} />}
                 open={globalEditorOpen}
+                className={globalEditorOpen ? "relative z-20" : "relative z-0"}
                 onToggle={() => setGlobalEditorOpen((value) => !value)}
               >
                 <CollaborativeGlobalEditor
@@ -2021,6 +2038,7 @@ export function ConsoleWorkspace({
                 subtitle={selected ? `${selected.label} · ${selected.fields?.length ?? 0} field` : "Pilih section pada struktur"}
                 icon={<Settings2 size={17} />}
                 open={sectionEditorOpen}
+                className={sectionEditorOpen ? "relative z-10" : "relative z-0"}
                 onToggle={() => setSectionEditorOpen((value) => !value)}
               >
                 <CollaborativeSectionInspector
