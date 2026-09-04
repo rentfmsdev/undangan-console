@@ -502,7 +502,7 @@ export default function MarketplaceHomePage() {
           <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px)] [background-size:34px_34px]" />
 
           <div className="relative z-10 max-w-2xl">
-            <h2 id="upcoming-templates-title" className="text-2xl font-black tracking-[-.035em] sm:text-3xl">
+            <h2 id="upcoming-templates-title" className="text-xl font-black tracking-[-.035em] sm:text-2xl">
               Nantikan template-template baru yang lebih modern.
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
