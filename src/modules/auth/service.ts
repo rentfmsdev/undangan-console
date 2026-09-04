@@ -11,6 +11,7 @@ export type AuthUser = {
   id: string;
   email: string;
   name: string;
+  phone?: string | null;
   avatarUrl: string | null;
   role: "user" | "admin";
 };
@@ -43,6 +44,7 @@ export async function getSessionUser(): Promise<AuthUser | null> {
       id: users.id,
       email: users.email,
       name: users.name,
+      phone: users.phone,
       avatarUrl: users.avatarUrl,
       role: users.role,
       expiresAt: sessions.expiresAt,
@@ -64,6 +66,7 @@ export async function getSessionUser(): Promise<AuthUser | null> {
     id: session.id,
     email: session.email,
     name: session.name,
+    phone: session.phone,
     avatarUrl: session.avatarUrl,
     role: session.role,
   };
@@ -106,6 +109,7 @@ export async function findOrCreateGoogleUser(payload: {
       id: existing.id,
       email: existing.email,
       name: cleanName,
+      phone: existing.phone,
       avatarUrl: payload.avatarUrl ?? existing.avatarUrl,
       role: existing.role,
     };

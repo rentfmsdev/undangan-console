@@ -4,6 +4,7 @@ export const users = mysqlTable("users", {
   id: char("id", { length: 36 }).primaryKey(),
   email: varchar("email", { length: 255 }).notNull(),
   name: varchar("name", { length: 120 }).notNull(),
+  phone: varchar("phone", { length: 30 }),
   avatarUrl: varchar("avatar_url", { length: 1024 }),
   googleId: varchar("google_id", { length: 128 }),
   role: mysqlEnum("role", ["user", "admin"]).notNull().default("user"),

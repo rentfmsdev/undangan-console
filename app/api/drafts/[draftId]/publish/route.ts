@@ -35,6 +35,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ dra
   const template = getTemplateById(draft.templateId);
   const templatePrice = getTemplateCatalogItem(draft.templateId)?.price ?? (template ? getTemplateCatalogItem(template.code)?.price : undefined) ?? template?.price ?? 0;
   const subdomainFee = 50_000;
+  const totalAmount = mode === "subdomain" ? templatePrice + subdomainFee : templatePrice;
+
+  const existingOverrides = (draft.styleOverrides as Record<string, unknown>) || {};
+  const isPaid =
+    (existingOverrides.payment as Record<string, unknown> | undefined)?.status === "paid" ||
+    (existingOverrides.publishPricing as Record<string, unknown> | undefined)?.pricingStatus === "paid";
+
+  if (totalAmount > 0 && !isPaid && mode !== "custom_domain") {
+    return NextResponse.json(
+      { error: "Template ini berbayar. Silakan selesaikan pembayaran QRIS terlebih dahulu." },
+      { status: 402 }
+    );
+  }
+
   if (mode === "custom_domain") {
     if (!parseSupportedDomain(identifier)) return NextResponse.json({ error: "Pilih domain dengan ekstensi .com, .id, .co, atau .space." }, { status: 400 });
   } else if (!identifierPattern.test(identifier) || reservedNames.has(identifier)) {
