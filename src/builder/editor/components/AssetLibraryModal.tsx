@@ -283,7 +283,7 @@ export function AssetLibraryModal({
   return (
     <>
       <div
-        className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+        className="fixed inset-0 z-[70] flex items-end bg-slate-950/60 p-0 backdrop-blur-sm animate-in fade-in duration-200 sm:grid sm:place-items-center sm:p-4"
         role="dialog"
         aria-modal="true"
         aria-label="Asset Manager"
@@ -293,9 +293,9 @@ export function AssetLibraryModal({
       >
         <audio ref={audioPreviewRef} onEnded={() => setPlayingAudioUrl(null)} className="hidden" />
 
-        <div className="flex max-h-[88dvh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/70 bg-white shadow-2xl">
+        <div className="flex h-[100dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-3xl border border-white/70 bg-white shadow-2xl sm:h-auto sm:max-h-[88dvh] sm:rounded-3xl">
           {/* Modal Header */}
-          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 bg-slate-50/70">
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
             <div className="flex items-center gap-3">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-emerald-700">
                 {currentTab === "image" ? <ImageIcon size={20} /> : <Music2 size={20} />}
@@ -333,10 +333,21 @@ export function AssetLibraryModal({
             </div>
           </header>
 
+          <div className="relative border-b border-slate-100 bg-white px-4 py-3 sm:hidden">
+            <Search className="pointer-events-none absolute left-7 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={`Cari nama ${currentTab === "image" ? "foto" : "lagu / genre"}...`}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-xs outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+            />
+          </div>
+
           {/* Mode Switcher Tabs for "manage" mode */}
           {mode === "manage" && (
-            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-2.5">
-              <div className="flex rounded-xl bg-slate-200/70 p-1">
+            <div className="flex items-center justify-between gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50/50 px-4 py-2.5 sm:px-6">
+              <div className="flex shrink-0 rounded-xl bg-slate-200/70 p-1">
                 <button
                   type="button"
                   onClick={() => handleSwitchTab("image")}
@@ -371,8 +382,8 @@ export function AssetLibraryModal({
 
           {/* Sub-Header for Audio: Stock vs User Uploads */}
           {currentTab === "audio" && (
-            <div className="flex items-center justify-between border-b border-slate-100 bg-white px-6 py-2.5">
-              <div className="flex rounded-xl bg-slate-100 p-1">
+            <div className="flex items-center justify-between gap-2 overflow-x-auto border-b border-slate-100 bg-white px-4 py-2.5 sm:px-6">
+              <div className="flex shrink-0 rounded-xl bg-slate-100 p-1">
                 <button
                   type="button"
                   onClick={() => setAudioSourceTab("stock")}
@@ -409,7 +420,7 @@ export function AssetLibraryModal({
 
           {/* Upload Dropzone (For Image, or for Audio when on uploads tab) */}
           {(currentTab === "image" || (currentTab === "audio" && audioSourceTab === "uploads")) && (
-            <div className="border-b border-slate-100 bg-white px-6 py-4">
+            <div className="border-b border-slate-100 bg-white px-4 py-3 sm:px-6 sm:py-4">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-4 transition hover:bg-emerald-50 hover:border-emerald-400">
                 <div className="flex items-center gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
@@ -476,7 +487,7 @@ export function AssetLibraryModal({
           )}
 
           {/* Modal Body */}
-          <div className="console-scrollbar min-h-[320px] flex-1 overflow-y-auto p-6 bg-slate-50/40">
+          <div className="console-scrollbar min-h-0 flex-1 overflow-y-auto bg-slate-50/40 p-4 sm:min-h-[320px] sm:p-6">
             {currentTab === "audio" && audioSourceTab === "stock" ? (
               /* Built-in Stock Music Library */
               <div className="space-y-3">
@@ -613,7 +624,7 @@ export function AssetLibraryModal({
                       />
 
                       {/* Overlay action buttons */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-slate-950/45 opacity-0 transition group-hover:opacity-100 p-2.5">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-slate-950/45 p-2.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
                         {mode === "select" && (
                           <button
                             type="button"
@@ -644,7 +655,7 @@ export function AssetLibraryModal({
                         disabled={deletingId === asset.id}
                         onClick={(e) => handleDeleteAsset(e, asset.id)}
                         title="Hapus foto"
-                        className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-slate-950/70 text-white shadow-md opacity-0 group-hover:opacity-100 transition hover:bg-rose-600 active:scale-95 disabled:opacity-50"
+                        className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-slate-950/70 text-white shadow-md opacity-100 transition hover:bg-rose-600 active:scale-95 disabled:opacity-50 sm:h-7 sm:w-7 sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         {deletingId === asset.id ? (
                           <LoaderCircle className="animate-spin" size={12} />
@@ -721,7 +732,7 @@ export function AssetLibraryModal({
                           disabled={deletingId === asset.id}
                           onClick={(e) => handleDeleteAsset(e, asset.id)}
                           title="Hapus musik"
-                          className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-600 transition disabled:opacity-50"
+                          className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 opacity-100 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 sm:h-8 sm:w-8 sm:opacity-0 sm:group-hover:opacity-100"
                         >
                           {deletingId === asset.id ? (
                             <LoaderCircle className="animate-spin" size={13} />

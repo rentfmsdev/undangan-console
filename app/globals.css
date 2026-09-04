@@ -432,14 +432,17 @@ button, input, textarea, select { font: inherit; }
 
 @media (min-width: 1024px) {
   .editor-workspace-grid {
-    grid-template-columns: var(--structure-width) minmax(0, 1fr) var(--inspector-width);
+    grid-template-columns: var(--structure-width) minmax(0, 1fr) minmax(0, var(--inspector-width));
     transition: grid-template-columns 220ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* A grid item otherwise keeps its content's intrinsic width and can spill out of the inspector column. */
   .editor-inspector-panel {
     min-width: 0;
+    width: 100%;
     max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
 
   .editor-workspace-grid.is-structure-collapsed {
@@ -456,7 +459,13 @@ button, input, textarea, select { font: inherit; }
 .editor-inspector-content,
 .editor-inspector-content > * {
   min-width: 0;
+  width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
+}
+
+.editor-inspector-content section {
+  overflow-x: clip;
 }
 
 .figma-canvas-dots {
