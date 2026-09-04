@@ -34,6 +34,7 @@ export function initYDocFromState(state: SharedDraftState, doc: Y.Doc = new Y.Do
   doc.transact(() => {
     // 1. Metadata
     const metadataMap = doc.getMap("metadata");
+    Array.from(metadataMap.keys()).forEach((key) => metadataMap.delete(key));
     metadataMap.set("templateId", state.metadata?.templateId ?? "hjydg");
     metadataMap.set("schemaVersion", state.metadata?.schemaVersion ?? 1);
     metadataMap.set("updatedAt", state.metadata?.updatedAt ?? Date.now());
@@ -54,6 +55,7 @@ export function initYDocFromState(state: SharedDraftState, doc: Y.Doc = new Y.Do
     const defaultMusic = defaultMusicMap[tId] || "/assets/audio/easy-on-me.webm";
 
     const globalSettingsMap = doc.getMap("globalSettings");
+    Array.from(globalSettingsMap.keys()).forEach((key) => globalSettingsMap.delete(key));
     globalSettingsMap.set("themeId", state.globalSettings?.themeId ?? "royal-blue-gold");
     globalSettingsMap.set("musicUrl", typeof state.globalSettings?.musicUrl === "string" ? state.globalSettings.musicUrl : defaultMusic);
     globalSettingsMap.set("musicVolume", state.globalSettings?.musicVolume ?? 0.6);
@@ -75,6 +77,7 @@ export function initYDocFromState(state: SharedDraftState, doc: Y.Doc = new Y.Do
 
     // 4. Sections Map
     const sectionsMap = doc.getMap("sections");
+    Array.from(sectionsMap.keys()).forEach((key) => sectionsMap.delete(key));
     if (state.sections) {
       Object.entries(state.sections).forEach(([id, sec]) => {
         const secMap = new Y.Map();

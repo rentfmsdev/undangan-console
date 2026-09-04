@@ -39,13 +39,30 @@ async function getPublicOrigin() {
   return `${protocol}://${host}`;
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ for?: string; to?: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const rawGuest = resolvedSearchParams.for || resolvedSearchParams.to;
+  let cleanGuest: string | undefined;
+  if (rawGuest && rawGuest.trim()) {
+    try {
+      cleanGuest = decodeURIComponent(rawGuest.trim().replace(/\+/g, " "));
+    } catch {
+      cleanGuest = rawGuest.trim();
+    }
+  }
+
   const published = await loadPublishedInvitation(slug);
   if (!published) return { title: "Undangan tidak ditemukan | Undangan Studio", robots: { index: false, follow: false } };
   const origin = await getPublicOrigin();
   const canonical = `${origin}/i/${published.invitation.slug ?? slug}`;
-  const seo = buildInvitationSeo(published.template, published.sections, canonical);
+  const seo = buildInvitationSeo(published.template, published.sections, canonical, cleanGuest);
   return {
     title: seo.title,
     description: seo.description,
@@ -61,10 +78,11 @@ export default async function PublishedInvitationPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ for?: string }>;
+  searchParams: Promise<{ for?: string; to?: string }>;
 }) {
   const { slug } = await params;
-  const { for: requestedFor } = await searchParams;
+  const resolvedSearchParams = await searchParams;
+  const requestedFor = resolvedSearchParams.for || resolvedSearchParams.to;
 
   const published = await loadPublishedInvitation(slug);
   if (!published) notFound();
@@ -111,11 +129,13 @@ export default async function PublishedInvitationPage({
           .where(eq(invitationGuests.id, matchedGuest.id))
           .catch(() => {});
       }
+    } else {
+      verifiedGuestName = cleanFor;
     }
   }
 
   const origin = await getPublicOrigin();
-  const seo = buildInvitationSeo(template, sections, `${origin}/i/${invitation.slug ?? slug}`);
+  const seo = buildInvitationSeo(template, sections, `${origin}/i/${invitation.slug ?? slug}`, verifiedGuestName);
 
   return (
     <>
