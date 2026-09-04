@@ -13,7 +13,7 @@
     "prod:logs": "pm2 logs",
     "lint": "eslint .",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "node scripts/ensure-db.js && drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
