@@ -148,7 +148,6 @@ export function ConsoleWorkspace({
   const [musicUrl, setMusicUrl] = useState(() => getDefaultStockMusic(template.category).url);
   const [musicVolume, setMusicVolume] = useState<number>(0.6);
   const [customThemeColors, setCustomThemeColors] = useState<{ primary?: string; accent?: string; background?: string }>({});
-  const [isAddOpen, setIsAddOpen] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [draftStatus, setDraftStatus] = useState<"draft" | "published" | "custom">("draft");
   const [publishNotice, setPublishNotice] = useState<{ tone: "success" | "custom"; message: string } | null>(null);
@@ -383,7 +382,6 @@ export function ConsoleWorkspace({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 7 } }));
   const selected = sections.find((section) => section.id === selectedId) ?? sections[0];
   const theme = template.themes.find((item) => item.id === themeId) ?? template.themes[0];
-  const sectionCounts = useMemo(() => new Map(sections.map((section) => [section.type, (sections.filter((item) => item.type === section.type).length)])), [sections]);
   const previewSections = useMemo(() => sections.map((section) => ({ id: section.id, type: section.type, enabled: section.enabled, data: section.defaultData })), [sections]);
   const previewSettings = useMemo(() => ({ musicUrl, musicVolume, customColors: customThemeColors }), [musicUrl, musicVolume, customThemeColors]);
   const localDraftKey = `undangan-console:local-draft:${template.code}`;
@@ -750,6 +748,7 @@ export function ConsoleWorkspace({
           const previewPanelScrollTop = previewPanelRef.current?.scrollTop ?? 0;
           setSelectedId(section.id);
           setSectionEditorOpen(true);
+          setGlobalEditorOpen(false);
           window.requestAnimationFrame(() => {
             // Focus/clicks inside a tall iframe can trigger browser scroll
             // anchoring on its parent. Preserve the editor canvas position and
@@ -962,6 +961,7 @@ export function ConsoleWorkspace({
   function selectEditorSection(section: EditableSection) {
     setSelectedId(section.id);
     setSectionEditorOpen(true);
+    setGlobalEditorOpen(false);
     if (isInspectorCollapsed) {
       setIsInspectorCollapsed(false);
       window.localStorage.setItem(`undangan-console:inspector-collapsed:${template.code}`, "false");
@@ -971,33 +971,6 @@ export function ConsoleWorkspace({
     pendingNavigationRef.current = navigation;
     setIsPreviewLoading(true);
     previewFrameRef.current?.contentWindow?.postMessage({ source: EDITOR_MESSAGE_SOURCE, type: "navigate-section", ...navigation }, "*");
-  }
-
-  function addSection(definition: TemplateSection) {
-    if (isViewer) return;
-    const currentCount = sectionCounts.get(definition.type) ?? 0;
-    if (currentCount >= definition.maxInstances) return;
-    const next = { ...definition, id: crypto.randomUUID(), enabled: true, defaultData: { ...definition.defaultData } };
-    setSections((items) => {
-      const nextItems = [...items, next];
-      collabDoc.updateLocalState((doc) => {
-        const sectionsMap = doc.getMap("sections");
-        const secMap = new Y.Map();
-        secMap.set("id", next.id);
-        secMap.set("type", next.type);
-        secMap.set("enabled", true);
-        const dataMap = new Y.Map();
-        Object.entries(next.defaultData || {}).forEach(([k, v]) => dataMap.set(k, v));
-        secMap.set("data", dataMap);
-        sectionsMap.set(next.id, secMap);
-
-        const orderArray = doc.getArray<string>("sectionOrder");
-        orderArray.push([next.id]);
-      });
-      return nextItems;
-    });
-    selectEditorSection(next);
-    setIsAddOpen(false);
   }
 
   async function uploadAsset(file: File, sectionId: string, currentDraftId: string) {
@@ -1640,7 +1613,7 @@ export function ConsoleWorkspace({
                   <ZoomOut size={13} />
                 </button>
 
-                <span className="min-w-9 text-center text-[10px] font-semibold text-slate-600">
+                <span className="min-w-10 text-center text-sm font-semibold text-slate-600">
                   {Math.round(zoomScale * 100)}%
                 </span>
 
@@ -1657,7 +1630,7 @@ export function ConsoleWorkspace({
                   type="button"
                   onClick={() => setZoomScale(1)}
                   title="Reset Zoom (100%)"
-                  className="inline-flex h-7 px-1.5 items-center justify-center rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-100 transition"
+                  className="inline-flex h-7 items-center justify-center rounded-lg px-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
                 >
                   100%
                 </button>
@@ -1668,7 +1641,7 @@ export function ConsoleWorkspace({
                 <button
                   type="button"
                   onClick={() => setFrameMode("desktop")}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                  className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition ${
                     frameMode === "desktop" ? "bg-slate-900 text-white shadow-xs" : "text-slate-600 hover:bg-slate-100"
                   }`}
                   title="Tampilan Desktop Viewport"
@@ -1680,7 +1653,7 @@ export function ConsoleWorkspace({
                 <button
                   type="button"
                   onClick={() => setFrameMode("ios")}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                  className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition ${
                     frameMode === "ios" ? "bg-slate-900 text-white shadow-xs" : "text-slate-600 hover:bg-slate-100"
                   }`}
                   title="Tampilan Frame iPhone"
@@ -1692,7 +1665,7 @@ export function ConsoleWorkspace({
                 <button
                   type="button"
                   onClick={() => setFrameMode("android")}
-                  className={`inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition ${
+                  className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition ${
                     frameMode === "android"
                       ? "bg-emerald-600 text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
@@ -1705,7 +1678,7 @@ export function ConsoleWorkspace({
                 <button
                   type="button"
                   onClick={() => setFrameMode("clean")}
-                  className={`inline-flex h-7 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition ${
+                  className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition ${
                     frameMode === "clean"
                       ? "bg-emerald-600 text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
@@ -1977,8 +1950,6 @@ export function ConsoleWorkspace({
               </span>
             </button>
           )}
-
-          <button type="button" onClick={() => setIsAddOpen(true)} className="editor-add-section-button fixed bottom-6 right-5 z-30 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-3 text-xs font-extrabold text-white shadow-[0_12px_30px_rgba(5,150,105,.35)] transition hover:-translate-y-0.5 hover:bg-emerald-700"><Plus size={17} /> Tambah section</button>
         </div>
       )}
 
@@ -2170,7 +2141,6 @@ export function ConsoleWorkspace({
 
       {publishNotice && <div className={`fixed left-1/2 top-20 z-[75] w-[min(92vw,620px)] -translate-x-1/2 rounded-2xl border p-4 shadow-[0_20px_60px_rgba(15,23,42,.24)] backdrop-blur ${publishNotice.tone === "success" ? "border-emerald-200 bg-emerald-50/95 text-emerald-950" : "border-amber-200 bg-amber-50/95 text-amber-950"}`} role="alert"><div className="flex items-start gap-3"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${publishNotice.tone === "success" ? "bg-emerald-600 text-white" : "bg-amber-500 text-white"}`}>{publishNotice.tone === "success" ? <Check size={18} /> : <LoaderCircle size={18} />}</span><div className="min-w-0 flex-1"><strong className="block text-sm">{publishNotice.tone === "success" ? "Publish berhasil!" : "Request custom diterima"}</strong><p className="mt-1 text-xs leading-5 opacity-80">{publishNotice.message}</p>{publishNotice.tone === "success" ? <button type="button" onClick={() => { setPublishNotice(null); setView("generator"); }} className="mt-3 rounded-xl bg-emerald-700 px-3 py-2 text-[10px] font-extrabold text-white hover:bg-emerald-800">Buka Generator</button> : <a href={makeAdminWhatsAppUrl(`Halo Admin, saya ingin menindaklanjuti request custom ${publishIdentifier} untuk draft ${draftId ?? "saya"}.`)} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2 text-[10px] font-extrabold text-white hover:bg-amber-700">Hubungi admin, klik di sini! <ExternalLink size={12} /></a>}</div><button type="button" onClick={() => setPublishNotice(null)} className="rounded-full p-1 opacity-55 hover:bg-black/5 hover:opacity-100" aria-label="Tutup pemberitahuan"><X size={16} /></button></div></div>}
 
-      {isAddOpen && <div className="fixed inset-0 z-50 bg-[#2c1719]/35 p-4 backdrop-blur-sm" role="dialog" aria-modal="true"><div className="absolute bottom-0 right-0 top-0 w-full max-w-sm overflow-y-auto bg-[#fffcf8] p-5 shadow-2xl"><div className="mb-5 flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a2836d]">Section library</p><h2 className="mt-1 text-xl font-extrabold">Tambah section</h2></div><button type="button" onClick={() => setIsAddOpen(false)} className="rounded-full p-2 text-[#765b5b] hover:bg-[#f4ece5]"><X size={19} /></button></div><div className="space-y-2">{template.sections.map((section) => { const count = sectionCounts.get(section.type) ?? 0; const unavailable = count >= section.maxInstances; return <button key={section.type} type="button" disabled={unavailable || section.required} onClick={() => addSection(section)} className="flex w-full items-start gap-3 rounded-2xl border border-[#eadfd5] p-4 text-left transition enabled:hover:border-emerald-600 enabled:hover:bg-emerald-50/50 disabled:cursor-not-allowed disabled:opacity-50"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700">{section.type === "gallery" ? <ImagePlus size={17} /> : <Type size={17} />}</span><span><b className="block text-sm">{section.label}</b><small className="mt-1 block text-[11px] leading-4 text-[#8d7b72]">{section.required ? "Section wajib" : unavailable ? "Batas section tercapai" : section.description}</small></span><Plus className="ml-auto mt-1 text-emerald-600" size={17} /></button>; })}</div></div></div>}
       <AssetLibraryModal
         open={Boolean(assetTarget)}
         kind={assetTarget?.kind ?? "image"}
