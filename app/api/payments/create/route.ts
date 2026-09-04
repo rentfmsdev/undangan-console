@@ -50,10 +50,6 @@ export async function POST(request: Request) {
   }
 
   const pgsUrl = process.env.PAYMENT_GATEWAY_SERVICE_URL || "http://localhost:3003";
-  const subMerchantId =
-    process.env.SUB_MERCHANT_ID ||
-    process.env.PIVOT_SUB_MERCHANT_ID ||
-    "dfeee5f7-0e89-4d3d-8ad9-b1fceaaf8ead";
 
   const topupPayload = {
     user_id: access.user.id,
@@ -66,15 +62,12 @@ export async function POST(request: Request) {
     phone: phone || access.user.phone || "081234567890",
     description: `Publish Undangan: ${identifier}`,
     client_app: "undangan",
-    sub_merchant_id: subMerchantId,
-    submerchant_id: subMerchantId,
     metadata: {
       draftId,
       invitationId: draftId,
       mode,
       identifier,
       userId: access.user.id,
-      sub_merchant_id: subMerchantId,
     },
   };
 
@@ -83,10 +76,6 @@ export async function POST(request: Request) {
       "Content-Type": "application/json",
       "X-Forwarded-Host": "http://127.0.0.1",
     };
-    if (subMerchantId) {
-      headers["x-submerchant-id"] = subMerchantId;
-      headers["X-Submerchant-Id"] = subMerchantId;
-    }
 
     const pgsResponse = await fetch(`${pgsUrl}/api/proxy/v1/service_payment/payments/topup`, {
       method: "POST",
