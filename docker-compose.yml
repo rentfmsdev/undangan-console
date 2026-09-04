@@ -31,6 +31,8 @@ x-app: &app
     - "host.docker.internal:host-gateway"
   networks:
     - undangan
+    - nginx_default
+    - sso_users_internal_network
 
 services:
   gateway:
@@ -47,6 +49,7 @@ services:
         condition: service_healthy
     networks:
       - undangan
+      - nginx_default
 
   web:
     <<: *app
@@ -122,3 +125,7 @@ volumes:
 networks:
   undangan:
     driver: bridge
+  nginx_default:
+    external: true
+  sso_users_internal_network:
+    external: true
