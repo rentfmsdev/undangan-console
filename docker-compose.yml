@@ -14,9 +14,9 @@ x-app: &app
     - .env
   environment:
     NODE_ENV: production
-    MYSQL_HOST: mysql
-    MYSQL_PORT: 3306
-    DATABASE_URL: mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-undangan_console}
+    MYSQL_HOST: ${MYSQL_HOST:-host.docker.internal}
+    MYSQL_PORT: ${MYSQL_PORT:-3306}
+    DATABASE_URL: mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD}@${MYSQL_HOST:-host.docker.internal}:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-undangan_console}
     NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
     NEXT_PUBLIC_COLLAB_WS_URL: ${NEXT_PUBLIC_COLLAB_WS_URL}
     COLLAB_PORT: ${COLLAB_PORT}
@@ -27,6 +27,8 @@ x-app: &app
     COLLAB_REDIS_PASSWORD: ${COLLAB_REDIS_PASSWORD}
     COLLAB_REDIS_DATABASE: ${COLLAB_REDIS_DATABASE}
     COLLAB_REDIS_TLS: ${COLLAB_REDIS_TLS}
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
   networks:
     - undangan
 
@@ -97,35 +99,6 @@ services:
     <<: *app
     command: ["npm", "run", "db:migrate"]
     restart: "no"
-    depends_on:
-      mysql:
-        condition: service_healthy
-
-  mysql:
-    image: mysql:8.4
-    restart: unless-stopped
-    entrypoint:
-      - "bash"
-      - "-c"
-      - |
-        if [ "$$MYSQL_USER" = "root" ]; then unset MYSQL_USER; fi
-        exec /entrypoint.sh mysqld "$$@"
-    environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-undangan_console}
-      MYSQL_USER: ${MYSQL_USER:-}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-${MYSQL_PASSWORD}}
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - undangan
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot $${MYSQL_ROOT_PASSWORD:+-p$$MYSQL_ROOT_PASSWORD} --silent || mysqladmin ping -h 127.0.0.1 -uroot --silent"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 30s
 
   redis:
     image: redis:7.4-alpine
@@ -142,7 +115,6 @@ services:
       retries: 10
 
 volumes:
-  mysql_data:
   redis_data:
   uploads:
   wishes:
