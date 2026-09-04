@@ -71,20 +71,20 @@ export function CollaborativeGlobalEditor({
       )}
 
       {/* 2. Fokuskan untuk Layar (Mobile vs Desktop) */}
-      <div className="border-t border-slate-100 pt-4">
-        <div className="mb-2.5 flex items-center justify-between">
-          <div>
+      <div className="min-w-0 border-t border-slate-100 pt-4">
+        <div className="mb-2.5 flex min-w-0 items-center justify-between gap-2">
+          <div className="min-w-0">
             <p className="text-xs font-bold text-slate-700">Fokuskan untuk Layar</p>
             <p className="text-[10px] text-slate-400">Pilih tata letak saat dibuka di layar komputer/desktop</p>
           </div>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Layout</span>
+          <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-emerald-600">Layout</span>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid min-w-0 grid-cols-2 gap-2">
           <button
             type="button"
             disabled={isViewer}
             onClick={() => updateGlobalSetting("useContainer", true)}
-            className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
+            className={`flex min-w-0 items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
               useContainer !== false
                 ? "border-emerald-600 bg-emerald-50 text-emerald-950 shadow-xs"
                 : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
@@ -110,7 +110,7 @@ export function CollaborativeGlobalEditor({
             type="button"
             disabled={isViewer}
             onClick={() => updateGlobalSetting("useContainer", false)}
-            className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
+            className={`flex min-w-0 items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
               useContainer === false
                 ? "border-emerald-600 bg-emerald-50 text-emerald-950 shadow-xs"
                 : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
@@ -135,12 +135,12 @@ export function CollaborativeGlobalEditor({
       </div>
 
       {/* 3. Preset Themes Grid */}
-      <div className="border-t border-slate-100 pt-4">
-        <div className="mb-2 flex items-center justify-between">
+      <div className="min-w-0 border-t border-slate-100 pt-4">
+        <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
           <p className="text-xs font-bold text-slate-700">Preset Theme</p>
           <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">Global</span>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid min-w-0 grid-cols-2 gap-2">
           {template.themes.map((item) => {
             const isSelected = themeId === item.id && !hasCustomColors;
             return (
@@ -172,9 +172,9 @@ export function CollaborativeGlobalEditor({
       </div>
 
       {/* 4. Custom Color Palette */}
-      <div className="border-t border-slate-100 pt-4">
-        <div className="mb-2.5 flex items-center justify-between">
-          <div>
+      <div className="min-w-0 border-t border-slate-100 pt-4">
+        <div className="mb-2.5 flex min-w-0 items-center justify-between gap-2">
+          <div className="min-w-0">
             <p className="text-xs font-bold text-slate-700">Kustom Warna Tema</p>
             <p className="text-[10px] text-slate-400">Sesuaikan dengan tema busana/dekorasi</p>
           </div>

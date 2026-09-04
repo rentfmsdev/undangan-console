@@ -148,12 +148,12 @@ export function MusicSelectorField({
       />
 
       {/* Label and Status */}
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <label className="flex min-w-0 items-center gap-2 text-xs font-bold text-slate-700">
           <Music2 size={14} className="text-emerald-600" />
-          <span>Musik undangan</span>
+          <span className="truncate">Musik undangan</span>
         </label>
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">
             <Sparkles size={10} className="text-amber-500" />
             <span>{currentCategoryLabel}</span>
@@ -208,8 +208,8 @@ export function MusicSelectorField({
 
       {/* Track Info Badge when playing or selected */}
       {selectedTrack && (
-        <div className="flex items-center justify-between rounded-xl bg-slate-100/80 border border-slate-200/80 px-2.5 py-1.5 text-[10px] text-slate-600">
-          <span className="truncate">
+        <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-slate-100/80 border border-slate-200/80 px-2.5 py-1.5 text-[10px] text-slate-600">
+          <span className="min-w-0 truncate">
             Genre: <strong className="text-slate-800">{selectedTrack.genre || selectedTrack.categoryLabel}</strong>
           </span>
           <span className="shrink-0 text-slate-400 font-mono">{selectedTrack.duration}</span>
@@ -219,8 +219,8 @@ export function MusicSelectorField({
       {/* Volume Adjustment Slider */}
       {hasMusic && (
         <div className="rounded-2xl border border-slate-200/90 bg-slate-50/90 p-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+          <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2">
+            <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-bold text-slate-700">
               {volume === 0 ? (
                 <VolumeX size={13} className="text-slate-400" />
               ) : volume < 0.4 ? (
@@ -228,7 +228,7 @@ export function MusicSelectorField({
               ) : (
                 <Volume2 size={13} className="text-emerald-600" />
               )}
-              <span>Volume Musik</span>
+              <span className="truncate">Volume Musik</span>
             </span>
             <span className="rounded-md bg-white border border-slate-200/80 px-1.5 py-0.5 text-[10px] font-mono font-bold text-emerald-800">
               {Math.round((volume ?? 0.6) * 100)}%
