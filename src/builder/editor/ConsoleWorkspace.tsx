@@ -3,7 +3,7 @@
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, ChevronDown, Copy, ExternalLink, Eye, FolderOpen, GripVertical, ImagePlus, LayoutPanelTop, Library, LoaderCircle, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Plus, Redo2, RotateCw, Save, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, WifiOff, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, Eye, EyeOff, FolderOpen, Gift, GripVertical, Heart, ImagePlus, Layers, LayoutPanelTop, Library, LoaderCircle, Mail, Maximize2, MessageCircleHeart, MessageSquare, Monitor, Music2, Palette, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Plus, Redo2, RotateCw, Save, Scroll, Search, Send, Settings2, Share2, Shield, Smartphone, Sparkles, Type, Undo2, Upload, UserPlus, Users, WifiOff, X, ZoomIn, ZoomOut, CalendarDays } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useCallback, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { TemplateKit, TemplateSection } from "@/templates/contracts";
 import { getTemplateRuntime } from "@/templates/runtime-registry";
@@ -61,6 +61,16 @@ function hydrateSections(template: TemplateKit, records: Array<{ id: string; typ
   });
 }
 
+function getSectionIcon(type: string) {
+  const t = type.toLowerCase();
+  if (t.includes("envelope") || t.includes("amplop")) return <Mail size={13} className="shrink-0 text-slate-400 group-hover:text-emerald-600 transition-colors" />;
+  if (t.includes("hero") || t.includes("couple") || t.includes("mempelai") || t.includes("opening")) return <Heart size={13} className="shrink-0 text-slate-400 group-hover:text-rose-500 transition-colors" />;
+  if (t.includes("event") || t.includes("acara") || t.includes("date") || t.includes("tanggal")) return <CalendarDays size={13} className="shrink-0 text-slate-400 group-hover:text-blue-500 transition-colors" />;
+  if (t.includes("gift") || t.includes("hadiah") || t.includes("kado")) return <Gift size={13} className="shrink-0 text-slate-400 group-hover:text-amber-500 transition-colors" />;
+  if (t.includes("story") || t.includes("cerita") || t.includes("quote")) return <Scroll size={13} className="shrink-0 text-slate-400 group-hover:text-purple-500 transition-colors" />;
+  return <Layers size={13} className="shrink-0 text-slate-400 group-hover:text-emerald-600 transition-colors" />;
+}
+
 function SortableSectionRow({
   section,
   active,
@@ -76,23 +86,86 @@ function SortableSectionRow({
   onlineUsers?: CollaborationPresence[];
   currentUserId?: string;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id, disabled: !section.reorderable });
-  const style = { transform: CSS.Transform.toString(transform), transition };
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: section.id,
+    disabled: !section.reorderable,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   return (
-    <div ref={setNodeRef} data-section-id={section.id} style={style} className={`group flex items-center gap-2 rounded-xl border px-2.5 py-2 transition ${active ? "border-emerald-600 bg-emerald-50/70 shadow-sm" : "border-transparent hover:bg-[#f6f0e8]"} ${isDragging ? "z-30 opacity-55 shadow-lg" : ""}`}>
-      <button type="button" className={`grid h-7 w-5 place-items-center ${section.reorderable ? "cursor-grab text-[#a49488] active:cursor-grabbing" : "cursor-not-allowed text-[#d5c8bd]"}`} aria-label={`Geser ${section.label}`} disabled={!section.reorderable} {...attributes} {...listeners}>
-        <GripVertical size={16} />
+    <div
+      ref={setNodeRef}
+      data-section-id={section.id}
+      style={style}
+      className={`group figma-section-row relative flex items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition select-none ${
+        active
+          ? "border-emerald-600 bg-emerald-50/70 shadow-xs font-semibold"
+          : section.enabled
+          ? "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50/80"
+          : "border-dashed border-slate-200 bg-slate-50/60 opacity-55 hover:opacity-85"
+      } ${isDragging ? "is-dragging" : ""}`}
+    >
+      <button
+        type="button"
+        className={`grid h-7 w-5 shrink-0 place-items-center rounded-md transition ${
+          section.reorderable
+            ? "cursor-grab text-slate-400 hover:text-slate-600 active:cursor-grabbing"
+            : "cursor-not-allowed text-slate-200"
+        }`}
+        aria-label={`Geser ${section.label}`}
+        disabled={!section.reorderable}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={15} />
       </button>
-      <button type="button" onClick={onSelect} className="min-w-0 flex-1 text-left flex items-center justify-between gap-1.5">
-        <div className="min-w-0">
-          <span className="block truncate text-xs font-bold text-[#473234]">{section.label}</span>
-          <span className="block truncate text-[10px] text-[#95827a]">{section.required ? "Wajib" : "Opsional"}</span>
+
+      <button
+        type="button"
+        onClick={onSelect}
+        className="min-w-0 flex-1 text-left flex items-center justify-between gap-1.5"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {getSectionIcon(section.type)}
+          <div className="min-w-0">
+            <span
+              className={`block truncate text-xs font-bold transition-colors ${
+                active
+                  ? "text-emerald-950"
+                  : section.enabled
+                  ? "text-slate-700 group-hover:text-slate-900"
+                  : "text-slate-400 line-through decoration-slate-300"
+              }`}
+            >
+              {section.label}
+            </span>
+            <span className="block truncate text-[10px] text-slate-400">
+              {section.required ? "Wajib" : "Opsional"}
+            </span>
+          </div>
         </div>
         <CollaboratorSectionBadge sectionId={section.id} onlineUsers={onlineUsers} currentUserId={currentUserId} />
       </button>
-      <button type="button" onClick={onToggle} className={`h-5 w-9 rounded-full p-0.5 transition ${section.enabled ? "bg-emerald-600" : "bg-[#ded5cc]"}`} aria-label={`${section.enabled ? "Sembunyikan" : "Tampilkan"} ${section.label}`}>
-        <span className={`block h-4 w-4 rounded-full bg-white shadow transition ${section.enabled ? "translate-x-4" : ""}`} />
+
+      {/* Figma-Style Hover-Only Visibility Eye Toggle */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+        className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-all ${
+          section.enabled
+            ? "opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+            : "opacity-100 bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200/60"
+        }`}
+        title={section.enabled ? `Sembunyikan ${section.label}` : `Tampilkan ${section.label}`}
+        aria-label={section.enabled ? `Sembunyikan ${section.label}` : `Tampilkan ${section.label}`}
+      >
+        {section.enabled ? <Eye size={14} /> : <EyeOff size={14} />}
       </button>
     </div>
   );
@@ -100,7 +173,7 @@ function SortableSectionRow({
 
 function SidebarAccordion({ title, subtitle, icon, open, onToggle, children }: { title: string; subtitle: string; icon: ReactNode; open: boolean; onToggle: () => void; children: ReactNode }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,.05)]">
+    <section className={`rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,.05)] ${open ? "overflow-visible" : "overflow-hidden"}`}>
       <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50" aria-expanded={open}>
         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl transition ${open ? "bg-emerald-600 text-white shadow-sm" : "bg-emerald-50 text-emerald-600"}`}>{icon}</span>
         <span className="min-w-0 flex-1">
@@ -110,7 +183,7 @@ function SidebarAccordion({ title, subtitle, icon, open, onToggle, children }: {
         <ChevronDown size={17} className={`shrink-0 text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
       <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
-        <div className="min-h-0 overflow-hidden">
+        <div className={`min-h-0 ${open ? "overflow-visible" : "overflow-hidden"}`}>
           <div className="border-t border-slate-100 p-4">{children}</div>
         </div>
       </div>
@@ -1365,7 +1438,6 @@ export function ConsoleWorkspace({
             onLoginClick={() => requestLogin("Masuk dengan Google untuk menyimpan dan mengelola undangan Anda.")}
             onLogout={() => {
               setCurrentUser(null);
-              window.location.reload();
             }}
             onMyInvitationsClick={() => {
               setIsMyInvitationsOpen(true);
@@ -1529,10 +1601,12 @@ export function ConsoleWorkspace({
                   filteredSections.map((section) => (
                     <div
                       key={section.id}
-                      className={`flex items-center justify-between rounded-xl border px-3 py-2 text-left transition ${
+                      className={`group figma-section-row flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition select-none ${
                         section.id === selectedId
-                          ? "border-emerald-600 bg-emerald-50/70 shadow-xs"
-                          : "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50"
+                          ? "border-emerald-600 bg-emerald-50/70 shadow-xs font-semibold"
+                          : section.enabled
+                          ? "border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50/80"
+                          : "border-dashed border-slate-200 bg-slate-50/60 opacity-55 hover:opacity-85"
                       }`}
                     >
                       <button
@@ -1540,18 +1614,40 @@ export function ConsoleWorkspace({
                         onClick={() => selectEditorSection(section)}
                         className="min-w-0 flex-1 text-left flex items-center justify-between gap-1.5"
                       >
-                        <div className="min-w-0">
-                          <span className="block truncate text-xs font-bold text-slate-800">{section.label}</span>
-                          <span className="block truncate text-[10px] text-slate-500">{section.required ? "Wajib" : "Opsional"}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          {getSectionIcon(section.type)}
+                          <div className="min-w-0">
+                            <span
+                              className={`block truncate text-xs font-bold transition-colors ${
+                                section.id === selectedId
+                                  ? "text-emerald-950"
+                                  : section.enabled
+                                  ? "text-slate-700 group-hover:text-slate-900"
+                                  : "text-slate-400 line-through decoration-slate-300"
+                              }`}
+                            >
+                              {section.label}
+                            </span>
+                            <span className="block truncate text-[10px] text-slate-400">{section.required ? "Wajib" : "Opsional"}</span>
+                          </div>
                         </div>
                         <CollaboratorSectionBadge sectionId={section.id} onlineUsers={presence.onlineUsers} currentUserId={currentUser?.id} />
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleSectionToggle(section.id)}
-                        className={`h-5 w-9 rounded-full p-0.5 transition ${section.enabled ? "bg-emerald-600" : "bg-slate-200"}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSectionToggle(section.id);
+                        }}
+                        className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-all ${
+                          section.enabled
+                            ? "opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+                            : "opacity-100 bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200/60"
+                        }`}
+                        title={section.enabled ? `Sembunyikan ${section.label}` : `Tampilkan ${section.label}`}
+                        aria-label={section.enabled ? `Sembunyikan ${section.label}` : `Tampilkan ${section.label}`}
                       >
-                        <span className={`block h-4 w-4 rounded-full bg-white shadow transition ${section.enabled ? "translate-x-4" : ""}`} />
+                        {section.enabled ? <Eye size={14} /> : <EyeOff size={14} />}
                       </button>
                     </div>
                   ))
@@ -1590,7 +1686,7 @@ export function ConsoleWorkspace({
                 sectionId: selectedId,
               });
             }}
-            className="console-scrollbar relative flex-1 min-h-0 overflow-y-auto overscroll-contain overflow-x-hidden bg-slate-100 p-3 sm:p-5 md:p-8 lg:h-full lg:min-h-0 lg:[overflow-anchor:none]"
+            className="console-scrollbar relative flex-1 min-h-0 overflow-y-auto overscroll-contain overflow-x-hidden figma-canvas-dots p-3 sm:p-5 md:p-8 lg:h-full lg:min-h-0 lg:[overflow-anchor:none]"
           >
             <RemoteCursorLayer cursors={presence.remoteCursors} surface="canvas" />
 

@@ -8,6 +8,27 @@ import { PREVIEW_MESSAGE_SOURCE, isEditorMessage, type PreviewToEditorMessage } 
 type NavigationDebug = { active: string; status: string; requestId: string; scrollTop: number };
 type PreviewMessagePayload = PreviewToEditorMessage extends infer Message ? Message extends { source: string } ? Omit<Message, "source"> : never : never;
 
+const SECTION_NAME_MAP: Record<string, string> = {
+  "opening-envelope": "Amplop Pembuka",
+  envelope: "Amplop Pembuka",
+  hero: "Hero / Sampul Utama",
+  profile: "Profil Mempelai",
+  couple: "Mempelai Pria & Wanita",
+  event: "Rangkaian Acara",
+  gallery: "Galeri Foto",
+  story: "Kisah Cinta",
+  gift: "Tanda Kasih / Amplop Digital",
+  wishes: "Ucapan & Doa Restu",
+  prayer: "Doa & Ayat Suci",
+  closing: "Salam Penutup",
+  protocol: "Protokol Kesehatan",
+};
+
+function formatSectionLabel(type: string): string {
+  if (SECTION_NAME_MAP[type]) return SECTION_NAME_MAP[type];
+  return type.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function TemplatePreviewClient({ templateCode }: { templateCode: string }) {
   const runtime = useMemo(() => getTemplateRuntime(templateCode), [templateCode]);
   const [debugEnabled, setDebugEnabled] = useState(false);
@@ -22,6 +43,15 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
 
     const postToEditor = (message: PreviewMessagePayload) => window.parent.postMessage({ source: PREVIEW_MESSAGE_SOURCE, ...message }, "*");
 
+    const tagAllSections = () => {
+      document.querySelectorAll<HTMLElement>("[data-template-section]").forEach((el) => {
+        const type = el.dataset.templateSection;
+        if (type && !el.getAttribute("data-section-label")) {
+          el.setAttribute("data-section-label", formatSectionLabel(type));
+        }
+      });
+    };
+
     const handleMessage = (event: MessageEvent) => {
       if (event.source !== window.parent || !isEditorMessage(event.data)) return;
       if (event.data.type === "preview-state") {
@@ -29,6 +59,7 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
         runtime.applyState(currentState);
         stopWatching();
         stopWatching = runtime.watchState(currentState);
+        tagAllSections();
         postToEditor({ type: "state-applied" });
       }
       if (event.data.type === "navigate-section") {
@@ -57,6 +88,16 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
       if (sectionType) postToEditor({ type: "section-selected", sectionType });
     };
 
+    const handleMouseOver = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const section = target.closest<HTMLElement>("[data-template-section]");
+      if (section && !section.getAttribute("data-section-label")) {
+        const type = section.dataset.templateSection;
+        if (type) section.setAttribute("data-section-label", formatSectionLabel(type));
+      }
+    };
+
     let lastPointerTime = 0;
     const handlePointerMove = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
@@ -75,6 +116,7 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
     window.addEventListener(TEMPLATE_ACTIVE_EVENT, handleActiveSection);
     window.addEventListener(TEMPLATE_NAVIGATION_EVENT, handleNavigationEvent);
     document.addEventListener("click", handleTemplateClick, true);
+    document.addEventListener("mouseover", handleMouseOver, { passive: true });
 
     let readyFrame = 0;
     const announceReady = () => {
@@ -83,6 +125,7 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
         readyFrame = window.requestAnimationFrame(announceReady);
         return;
       }
+      tagAllSections();
       readyFrame = window.requestAnimationFrame(() => postToEditor({ type: "ready" }));
     };
     readyFrame = window.requestAnimationFrame(announceReady);
@@ -93,14 +136,69 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
       window.removeEventListener(TEMPLATE_ACTIVE_EVENT, handleActiveSection);
       window.removeEventListener(TEMPLATE_NAVIGATION_EVENT, handleNavigationEvent);
       document.removeEventListener("click", handleTemplateClick, true);
+      document.removeEventListener("mouseover", handleMouseOver);
       window.cancelAnimationFrame(debugFrame);
       window.cancelAnimationFrame(readyFrame);
       stopWatching();
     };
   }, [runtime]);
 
-  return <>
-    <Renderer />
-    {debugEnabled && <output className="navigation-debug" aria-live="polite"><b>Navigation debug</b><span>Active: {debug.active}</span><span>Status: {debug.status}</span><span>Scroll: {Math.round(debug.scrollTop)}</span><span>Request: {debug.requestId.slice(0, 12)}</span></output>}
-  </>;
+  return (
+    <>
+      <style>{`
+        /* Figma Section Interactive Hover Bounding Box */
+        [data-template-section] {
+          position: relative !important;
+          transition: outline 0.15s ease, outline-offset 0.15s ease !important;
+          cursor: pointer;
+        }
+        [data-template-section]:hover {
+          outline: 2px solid #10b981 !important;
+          outline-offset: -2px !important;
+        }
+        [data-template-section]:hover::after {
+          content: attr(data-section-label);
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          z-index: 999999;
+          display: inline-flex;
+          align-items: center;
+          background: #10b981;
+          color: #ffffff;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          font-size: 10.5px;
+          font-weight: 700;
+          line-height: 1;
+          padding: 4px 10px;
+          border-radius: 6px;
+          box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 2px 4px rgba(0, 0, 0, 0.12);
+          pointer-events: none;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          animation: figmaSectionBadgePop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes figmaSectionBadgePop {
+          0% {
+            opacity: 0;
+            transform: translateY(-3px) scale(0.96);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      `}</style>
+      <Renderer />
+      {debugEnabled && (
+        <output className="navigation-debug" aria-live="polite">
+          <b>Navigation debug</b>
+          <span>Active: {debug.active}</span>
+          <span>Status: {debug.status}</span>
+          <span>Scroll: {Math.round(debug.scrollTop)}</span>
+          <span>Request: {debug.requestId.slice(0, 12)}</span>
+        </output>
+      )}
+    </>
+  );
 }
