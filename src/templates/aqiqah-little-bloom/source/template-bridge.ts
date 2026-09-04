@@ -8,6 +8,7 @@ export type AqiqahGlobalSettings = {
   customColors?: { primary?: string; accent?: string; background?: string };
   musicUrl?: string;
   musicVolume?: number;
+  useContainer?: boolean;
 };
 
 type TextStyle = {
@@ -222,6 +223,9 @@ export function applyAqiqahTemplateState(
 
   // 2. Terapkan Audio Settings
   applyMusic(settings);
+
+  // 2.5 Terapkan Container Mode (Mobile 480px vs Desktop Full Width)
+  shell.setAttribute("data-use-container", settings?.useContainer === false ? "false" : "true");
 
   // 3. Terapkan Setiap Section
   sections.forEach((section) => {

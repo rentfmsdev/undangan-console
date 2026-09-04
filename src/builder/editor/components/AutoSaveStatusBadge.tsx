@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, CloudUpload, LoaderCircle, RefreshCw, TriangleAlert } from "lucide-react";
+import { Check, CloudUpload, LoaderCircle, TriangleAlert } from "lucide-react";
 import type { AutoSaveStatus } from "../hooks/useAutoSave";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 type Props = {
   status: AutoSaveStatus;
@@ -18,19 +19,13 @@ export function AutoSaveStatusBadge({
 }: Props) {
   if (status === "saving") {
     return (
-      <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold text-emerald-600 ${className}`}>
-        <LoaderCircle size={11} className="animate-spin" />
-        <span>Menyimpan...</span>
-      </span>
+      <StatusBadge tone="info" icon={<LoaderCircle size={12} className="animate-spin" />} className={className}>Menyimpan</StatusBadge>
     );
   }
 
   if (status === "unsaved") {
     return (
-      <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-600 ${className}`}>
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-        <span>Menunggu jeda...</span>
-      </span>
+      <StatusBadge tone="warning" icon={<span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />} className={className}>Menunggu simpan</StatusBadge>
     );
   }
 
@@ -40,19 +35,16 @@ export function AutoSaveStatusBadge({
         type="button"
         onClick={onRetry}
         title="Gagal menyimpan perubahan. Klik untuk mencoba kembali."
-        className={`inline-flex items-center gap-1.5 rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 hover:bg-rose-100 transition active:scale-95 ${className}`}
+        className={`ui-interactive inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 ${className}`}
       >
-        <TriangleAlert size={11} />
-        <span>Gagal simpan (Klik retry)</span>
+        <TriangleAlert size={12} />
+        <span>Gagal menyimpan · coba lagi</span>
       </button>
     );
   }
 
   // Saved / Idle
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${isCloud ? "text-emerald-600" : "text-slate-500"} ${className}`}>
-      {isCloud ? <Check size={11} /> : <CloudUpload size={11} />}
-      <span>{isCloud ? "Tersimpan di cloud" : "Tersimpan lokal"}</span>
-    </span>
+    <StatusBadge tone={isCloud ? "success" : "neutral"} icon={isCloud ? <Check size={12} /> : <CloudUpload size={12} />} className={className}>{isCloud ? "Tersimpan" : "Tersimpan lokal"}</StatusBadge>
   );
 }

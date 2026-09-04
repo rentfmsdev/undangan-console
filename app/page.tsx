@@ -31,7 +31,6 @@ import { templatesCatalog } from "@/templates/registry";
 import type { TemplateCatalogItem } from "@/templates/contracts";
 import { UserAuthDropdown } from "@/components/auth/UserAuthDropdown";
 import { GoogleOneTap } from "@/components/auth/GoogleOneTap";
-import { MyInvitationsModal } from "@/components/invitations/MyInvitationsModal";
 
 export type TemplateItem = TemplateCatalogItem;
 
@@ -55,7 +54,6 @@ export default function MarketplaceHomePage() {
   const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({ hjydg: true });
   const [previewTemplate, setPreviewTemplate] = useState<TemplateItem | null>(null);
-  const [isMyInvitationsOpen, setIsMyInvitationsOpen] = useState(false);
   const [coverIndices, setCoverIndices] = useState<Record<string, number>>({});
 
   const toggleFavorite = (code: string) => {
@@ -144,7 +142,7 @@ export default function MarketplaceHomePage() {
               user={currentUser}
               onLoginClick={() => setIsAuthModalOpen(true)}
               onLogout={() => setCurrentUser(null)}
-              onMyInvitationsClick={() => setIsMyInvitationsOpen(true)}
+              onMyInvitationsClick={() => router.push("/undangan-saya")}
             />
           </div>
         </div>
@@ -669,8 +667,6 @@ export default function MarketplaceHomePage() {
           </div>
         </div>
       </footer>
-      {/* My Invitations Modal */}
-      <MyInvitationsModal open={isMyInvitationsOpen} onClose={() => setIsMyInvitationsOpen(false)} />
     </div>
   );
 }

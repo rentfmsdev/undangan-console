@@ -8,6 +8,7 @@ type KhitanSettings = {
   customColors?: { primary?: string; accent?: string; background?: string };
   musicUrl?: string;
   musicVolume?: number;
+  useContainer?: boolean;
 };
 
 type TextStyle = {
@@ -219,6 +220,11 @@ export function updateKhitanPreview(
   }
 
   applyMusic(settings);
+
+  const shell = document.querySelector<HTMLElement>(".khitan-shell");
+  if (shell) {
+    shell.setAttribute("data-use-container", settings.useContainer === false ? "false" : "true");
+  }
 
   sections.forEach((section) => {
     const node = root.querySelector<HTMLElement>(`[data-template-section="${section.type}"]`);

@@ -217,34 +217,60 @@ Aturan ketat untuk AI Agent:
 > **DILARANG KERAS membuat container atau `max-width` pada layout Next.js (`app/**/layout.tsx`)!**
 > Semua file layout route Next.js (`app/layout.tsx`, `app/demo/layout.tsx`, `app/i/layout.tsx`, `app/template-preview/layout.tsx`) WAJIB dibiarkan **100% full-width window**. Hal ini krusial agar header banner demo, tombol beranda, floating ad frame, floating WhatsApp share, dan switcher viewport desktop/mobile bekerja sempurna tanpa terhimpit atau terpotong.
 
-### Konsep `useContainer`
-Template baru memiliki fleksibilitas penuh untuk menentukan perilakunya pada layar desktop:
+### Konsep dan Aturan Pembuatan `useContainer`
 
-1. **`useContainer: true` (Mobile-First Centered Container)**:
-   - Cocok untuk template tradisi, formal, atau syukuran (seperti `khitan-ksatria-jawa`) yang fokus pada pengalaman mobile card elegan di tengah monitor desktop.
-   - Daftarkan properti ini di:
+Setiap template di Undangan Studio (baik kategori **Pernikahan**, **Khitanan**, **Ulang Tahun**, maupun **Aqiqah**) memiliki nilai bawaan `useContainer: true`. Nilai ini didaftarkan di manifest dan katalog, serta dapat diubah secara dinamis oleh pengguna melalui menu **Custom Global** ("Fokuskan untuk Layar" = [Mobile, Desktop]).
+
+Aturan wajib untuk AI Agent saat membuat atau memelihara template:
+
+1. **Default Template Wajib `useContainer: true`**:
+   - Daftarkan `useContainer: true` di:
      - `src/templates/templates.json`: `"useContainer": true`
      - `src/templates/<template-id>/manifest.ts`: `useContainer: true`
-   - **Implementasi CSS di level Template**:
-     - Shell terluar template (misal `.template-shell`) membatasi lebarnya sendiri:
-       ```css
-       .template-shell {
-         width: 100%;
-         max-width: 480px;
-         height: 100dvh;
-         margin: 0 auto;
-         position: relative;
-         box-shadow: 0 0 50px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--template-border);
-       }
-       ```
-     - **Envelope & Fixed Overlays**:
-       Elemen seperti opening envelope (`.envelope-screen`), ornamen sudut, atau modal preview WAJIB terikat pada container template (`position: absolute; inset: 0; width: 100%; height: 100dvh;`), **BUKAN** `position: fixed` ke viewport window browser. Bila memakai `fixed` window, ornamen dan amplop akan terlempar ke tepi monitor 1920px di luar container 480px!
-     - **Tombol Kontrol Audio**:
-       Tombol audio harus diam (*stationary*) di sudut atas container template (misal `position: absolute; top: 16px; right: 16px; z-index: 50;`), tidak boleh diberi animasi transform/floating yang berjalan sendiri.
+   - Semua template (Pernikahan, Khitanan, Ulang Tahun, Aqiqah, dll.) secara default fokus pada pengalaman mobile card elegan (`max-width: 480px`) di tengah layar monitor desktop.
 
-2. **`useContainer: false` / omitted (Full-Width Responsive)**:
-   - Cocok untuk template modern yang memiliki desain khusus saat dibuka di monitor lebar (seperti `wedding-lampung-elegance` atau `birthday-celestial`).
-   - Template membentang penuh selebar layar desktop dan mengelola responsive grid/layout-nya secara mandiri.
+2. **Wajib Mendukung Toggle Dinamis (`useContainer: true` vs `false`)**:
+   Pengguna di Editor memiliki opsi kustom global **Fokuskan untuk layar**:
+   - **Mobile** (`useContainer: true`): Tampilan ter-container di kartu 480px di tengah desktop dengan background/backdrop dekoratif di sekelilingnya.
+   - **Desktop** (`useContainer: false`): Tampilan membentang lebar penuh (`100%`) responsif di monitor desktop.
+
+3. **Implementasi Wajib di Template Bridge**:
+   Bridge template (`template-bridge.ts`) WAJIB membaca `settings.useContainer` dan menerapkannya sebagai atribut `data-use-container` pada shell container template:
+   ```ts
+   const shell = document.querySelector<HTMLElement>(".template-shell");
+   if (shell) {
+     shell.setAttribute("data-use-container", settings.useContainer === false ? "false" : "true");
+   }
+   ```
+
+4. **Implementasi Wajib di CSS Template**:
+   Setiap template harus memiliki struktur CSS berikut:
+   ```css
+   /* Default: Ter-container 480px di tengah layar desktop */
+   .template-shell {
+     width: 100%;
+     max-width: 480px;
+     height: 100dvh;
+     margin: 0 auto;
+     position: relative;
+     box-shadow: 0 0 50px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--template-border);
+   }
+
+   /* Ketika pengguna memilih fokus Desktop (useContainer: false) */
+   .template-shell[data-use-container="false"] {
+     max-width: 100% !important;
+     box-shadow: none !important;
+   }
+
+   .template-shell[data-use-container="false"] .audio-btn {
+     right: 24px;
+   }
+   ```
+
+5. **Envelope & Stationary Audio Control**:
+   - Opening envelope (`.envelope-screen`), ornamen sudut, atau modal preview WAJIB terikat pada container template (`position: absolute; inset: 0; width: 100%; height: 100dvh;`), **BUKAN** `position: fixed` ke viewport window browser.
+   - Tombol audio harus diam (*stationary*) di sudut atas container template (misal `position: absolute; top: 16px; right: 16px; z-index: 50;` atau `top: 72px; right: calc(50% - 224px);`), tidak boleh diberi animasi transform/floating yang berjalan sendiri.
+
 
 ## 9. Normalizer dan draft lama
 

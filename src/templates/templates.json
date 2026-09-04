@@ -12,6 +12,7 @@
     "releaseDate": "2026-08-30",
     "status": "available",
     "defaultView": "mobile",
+    "useContainer": true,
     "covers": [
       "/thumb/wedding-elegance.png"
     ],

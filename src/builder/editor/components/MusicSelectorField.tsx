@@ -139,7 +139,7 @@ export function MusicSelectorField({
   const hasMusic = Boolean(musicUrl);
 
   return (
-    <div className="space-y-2.5">
+    <div className="min-w-0 space-y-2.5">
       <audio
         ref={audioRef}
         onEnded={() => setIsPlaying(false)}

@@ -427,7 +427,7 @@ button, input, textarea, select { font: inherit; }
 
 .editor-workspace-grid {
   --structure-width: 260px;
-  --inspector-width: 340px;
+  --inspector-width: 380px;
 }
 
 @media (min-width: 1024px) {
@@ -606,5 +606,19 @@ button, input, textarea, select { font: inherit; }
 
 .figma-section-row.is-dragging * {
   cursor: grabbing !important;
+}
+
+/* Small, consistent feedback for buttons and cards without animating layout globally. */
+@media (prefers-reduced-motion: no-preference) {
+  .ui-interactive {
+    transition: transform 160ms cubic-bezier(0.2, 0, 0, 1), background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+  }
+
+  .ui-interactive:hover { transform: translateY(-1px); }
+  .ui-interactive:active { transform: scale(0.985); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-interactive { transition: none !important; }
 }
 

@@ -44,7 +44,7 @@ type View = "editor" | "generator" | "wishes";
 export type EditableSection = TemplateSection & { id: string; enabled: boolean };
 type WishRecord = { id: string; name: string; attendance: string; message: string; createdAt: string };
 type ClientUser = { id: string; email: string; name: string; avatarUrl: string | null; role: "user" | "admin" };
-type LocalDraftSnapshot = { version: 1; themeId: string; musicUrl: string; musicVolume?: number; customColors?: { primary?: string; accent?: string; background?: string }; sections: Array<{ id: string; type: string; enabled: boolean; data: Record<string, unknown> }> };
+type LocalDraftSnapshot = { version: 1; themeId: string; musicUrl: string; musicVolume?: number; customColors?: { primary?: string; accent?: string; background?: string }; useContainer?: boolean; sections: Array<{ id: string; type: string; enabled: boolean; data: Record<string, unknown> }> };
 type PendingNavigation = { sectionType: string; requestId: string; navigationSource: NavigationSource };
 type AssetTarget = { kind: "image" | "audio"; target: "content" | "background" | "music" | "manager"; sectionId: string | null };
 type StoredSectionRecord = { id: string; type: string; enabled: boolean; data: Record<string, unknown> };
@@ -238,7 +238,7 @@ function SidebarAccordion({
   className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,.05)] ${open ? "overflow-visible" : "overflow-hidden"} ${className}`}>
+    <section className={`min-w-0 max-w-full rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,.05)] ${open ? "overflow-visible" : "overflow-hidden"} ${className}`}>
       <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50" aria-expanded={open}>
         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl transition ${open ? "bg-emerald-600 text-white shadow-sm" : "bg-emerald-50 text-emerald-600"}`}>{icon}</span>
         <span className="min-w-0 flex-1">
@@ -247,9 +247,9 @@ function SidebarAccordion({
         </span>
         <ChevronDown size={17} className={`shrink-0 text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
-      <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+      <div className={`grid min-w-0 transition-[grid-template-rows] duration-300 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
         <div className={`min-h-0 ${open ? "overflow-visible" : "overflow-hidden"}`}>
-          <div className="border-t border-slate-100 p-4">{children}</div>
+          <div className="min-w-0 border-t border-slate-100 p-4">{children}</div>
         </div>
       </div>
     </section>
@@ -286,6 +286,7 @@ export function ConsoleWorkspace({
   const [musicUrl, setMusicUrl] = useState(() => template.defaultMusicUrl || getDefaultStockMusic(template.category).url);
   const [musicVolume, setMusicVolume] = useState<number>(0.6);
   const [customThemeColors, setCustomThemeColors] = useState<{ primary?: string; accent?: string; background?: string }>({});
+  const [useContainer, setUseContainer] = useState<boolean>(() => template.useContainer !== false);
   const [isPublished, setIsPublished] = useState(false);
   const [draftStatus, setDraftStatus] = useState<"draft" | "published" | "custom">("draft");
   const [publishNotice, setPublishNotice] = useState<{ tone: "success" | "custom"; message: string } | null>(null);
@@ -337,6 +338,9 @@ export function ConsoleWorkspace({
     }
     if (remoteState.globalSettings?.customColors) {
       setCustomThemeColors(remoteState.globalSettings.customColors);
+    }
+    if (typeof remoteState.globalSettings?.useContainer === "boolean") {
+      setUseContainer(remoteState.globalSettings.useContainer);
     }
 
     if (remoteState.sections && Object.keys(remoteState.sections).length > 0) {
@@ -458,7 +462,7 @@ export function ConsoleWorkspace({
   }, [applySharedState, collabDoc, isViewer]);
 
   const updateGlobalSetting = useCallback((
-    key: "themeId" | "musicUrl" | "musicVolume" | "customColors",
+    key: "themeId" | "musicUrl" | "musicVolume" | "customColors" | "useContainer",
     value: unknown
   ) => {
     if (isViewer) return;
@@ -471,6 +475,8 @@ export function ConsoleWorkspace({
       setMusicVolume(value as number);
     } else if (key === "customColors") {
       setCustomThemeColors(value as Record<string, string>);
+    } else if (key === "useContainer") {
+      setUseContainer(Boolean(value));
     }
 
     collabDoc.updateLocalState((doc) => {
@@ -555,7 +561,7 @@ export function ConsoleWorkspace({
   const selected = sections.find((section) => section.id === selectedId) ?? sections[0];
   const theme = template.themes.find((item) => item.id === themeId) ?? template.themes[0];
   const previewSections = useMemo(() => sections.map((section) => ({ id: section.id, type: section.type, enabled: section.enabled, data: section.defaultData })), [sections]);
-  const previewSettings = useMemo(() => ({ musicUrl, musicVolume, customColors: customThemeColors }), [musicUrl, musicVolume, customThemeColors]);
+  const previewSettings = useMemo(() => ({ musicUrl, musicVolume, customColors: customThemeColors, useContainer }), [musicUrl, musicVolume, customThemeColors, useContainer]);
   const localDraftKey = `undangan-console:local-draft:${template.code}`;
 
   const filteredSections = useMemo(() => {
@@ -678,13 +684,16 @@ export function ConsoleWorkspace({
       }
     };
 
-    const applyState = (nextThemeId: string, nextMusicUrl: string, records: LocalDraftSnapshot["sections"], nextCustomColors?: { primary?: string; accent?: string; background?: string }, nextMusicVolume?: number) => {
+    const applyState = (nextThemeId: string, nextMusicUrl: string, records: LocalDraftSnapshot["sections"], nextCustomColors?: { primary?: string; accent?: string; background?: string }, nextMusicVolume?: number, nextUseContainer?: boolean) => {
       if (!active) return;
       const hydrated = hydrateSections(template, records);
       setThemeId(nextThemeId);
       setMusicUrl(nextMusicUrl);
       setMusicVolume(typeof nextMusicVolume === "number" ? nextMusicVolume : 0.6);
       setCustomThemeColors(nextCustomColors ?? {});
+      if (typeof nextUseContainer === "boolean") {
+        setUseContainer(nextUseContainer);
+      }
       setSections(hydrated);
       setSelectedId(hydrated[0]?.id ?? "");
       setDraftReady(true);
@@ -712,7 +721,7 @@ export function ConsoleWorkspace({
       const savedMusicUrl = typeof payload.draft.styleOverrides?.musicUrl === "string"
         ? payload.draft.styleOverrides.musicUrl
         : defaultMusic;
-      applyState(payload.draft.themeId, savedMusicUrl, payload.sections, payload.draft.styleOverrides?.customColors, payload.draft.styleOverrides?.musicVolume);
+      applyState(payload.draft.themeId, savedMusicUrl, payload.sections, payload.draft.styleOverrides?.customColors, payload.draft.styleOverrides?.musicVolume, payload.draft.styleOverrides?.useContainer);
       return true;
     }
 
@@ -724,7 +733,7 @@ export function ConsoleWorkspace({
         if (requestedDraftId) {
           requestLogin("Masuk dengan Google untuk membuka dan mengedit draft kolaborasi ini.");
         }
-        if (localSnapshot) applyState(localSnapshot.themeId, typeof localSnapshot.musicUrl === "string" ? localSnapshot.musicUrl : defaultMusic, localSnapshot.sections, localSnapshot.customColors, localSnapshot.musicVolume);
+        if (localSnapshot) applyState(localSnapshot.themeId, typeof localSnapshot.musicUrl === "string" ? localSnapshot.musicUrl : defaultMusic, localSnapshot.sections, localSnapshot.customColors, localSnapshot.musicVolume, localSnapshot.useContainer);
         else setDraftReady(true);
         return;
       }
@@ -752,11 +761,11 @@ export function ConsoleWorkspace({
         if (!created.ok) return;
         const createdPayload = await created.json();
         const migratedSections = localSnapshot.sections.map((section) => ({ ...section, id: crypto.randomUUID() }));
-        await fetch(`/api/drafts/${createdPayload.draftId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ themeId: localSnapshot.themeId, settings: { musicUrl: localSnapshot.musicUrl, musicVolume: localSnapshot.musicVolume, customColors: localSnapshot.customColors }, sections: migratedSections.map((section, order) => ({ ...section, order })) }) });
+        await fetch(`/api/drafts/${createdPayload.draftId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ themeId: localSnapshot.themeId, settings: { musicUrl: localSnapshot.musicUrl, musicVolume: localSnapshot.musicVolume, customColors: localSnapshot.customColors, useContainer: localSnapshot.useContainer }, sections: migratedSections.map((section, order) => ({ ...section, order })) }) });
         window.localStorage.removeItem(localDraftKey);
         window.localStorage.setItem(activeDraftKey, createdPayload.draftId);
         setDraftId(createdPayload.draftId);
-        applyState(localSnapshot.themeId, typeof localSnapshot.musicUrl === "string" ? localSnapshot.musicUrl : defaultMusic, migratedSections, localSnapshot.customColors, localSnapshot.musicVolume);
+        applyState(localSnapshot.themeId, typeof localSnapshot.musicUrl === "string" ? localSnapshot.musicUrl : defaultMusic, migratedSections, localSnapshot.customColors, localSnapshot.musicVolume, localSnapshot.useContainer);
         return;
       }
 
@@ -790,13 +799,14 @@ export function ConsoleWorkspace({
     musicUrl,
     musicVolume,
     customColors: customThemeColors,
+    useContainer,
     sections: sections.map((section) => ({
       id: section.id,
       type: section.type,
       enabled: section.enabled,
       data: section.defaultData,
     })),
-  }), [themeId, musicUrl, musicVolume, customThemeColors, sections]);
+  }), [themeId, musicUrl, musicVolume, customThemeColors, useContainer, sections]);
 
   const presence = usePresence({
     draftId: draftId ?? undefined,
@@ -850,6 +860,7 @@ export function ConsoleWorkspace({
         musicUrl: dataToSave.musicUrl,
         musicVolume: dataToSave.musicVolume,
         customColors: dataToSave.customColors,
+        useContainer: dataToSave.useContainer,
         sections: dataToSave.sections,
       };
 
@@ -869,6 +880,7 @@ export function ConsoleWorkspace({
               musicUrl: dataToSave.musicUrl,
               musicVolume: dataToSave.musicVolume,
               customColors: dataToSave.customColors,
+              useContainer: dataToSave.useContainer,
             },
             sections: dataToSave.sections.map((section, order) => ({ ...section, order })),
           }),
@@ -1514,18 +1526,6 @@ export function ConsoleWorkspace({
             </div>
           )}
 
-          {!isViewer && draftId && (
-            <button
-              type="button"
-              onClick={() => setIsVersionHistoryOpen(true)}
-              className="hidden items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 active:scale-95 lg:inline-flex"
-              title="Lihat dan pulihkan riwayat versi"
-            >
-              <History size={14} />
-              <span>Riwayat</span>
-            </button>
-          )}
-
           {/* Quick Invite Team Button */}
           {isOwner && (
             <button
@@ -1992,7 +1992,7 @@ export function ConsoleWorkspace({
 
           <aside
             ref={inspectorPanelRef}
-            className={`console-scrollbar fixed inset-y-0 right-0 z-50 w-[min(400px,88vw)] max-h-none overflow-y-auto overscroll-contain border-l border-slate-200 bg-slate-50 p-3 shadow-2xl transition-transform duration-300 ease-out lg:relative lg:inset-auto lg:z-auto lg:w-auto lg:h-full lg:min-h-0 lg:max-h-none lg:shadow-none lg:transition-all lg:duration-200 ${
+            className={`editor-inspector-panel console-scrollbar fixed inset-y-0 right-0 z-50 w-[min(420px,88vw)] max-h-none min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-slate-200 bg-slate-50 p-3 shadow-2xl transition-transform duration-300 ease-out lg:relative lg:inset-auto lg:z-auto lg:w-auto lg:h-full lg:min-h-0 lg:max-h-none lg:shadow-none lg:transition-all lg:duration-200 ${
               isInspectorCollapsed
                 ? "translate-x-full pointer-events-none lg:translate-x-0 lg:overflow-hidden lg:p-0 lg:border-0 lg:opacity-0"
                 : "translate-x-0 pointer-events-auto lg:opacity-100"
@@ -2025,7 +2025,7 @@ export function ConsoleWorkspace({
                 title="Tarik untuk mengubah lebar · klik dua kali untuk reset"
               ><span className="absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-slate-200 transition group-hover:w-0.5 group-hover:bg-emerald-500 group-focus:w-0.5 group-focus:bg-emerald-600" /></div>
             )}
-            <div className="space-y-3">
+            <div className="editor-inspector-content min-w-0 space-y-3">
               {/* Quick Actions Card: Full Icon Toolbar (Undo, Redo, Asset Manager, Save) - Sticky Header */}
               <div className="sticky top-0 z-30 flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-[0_8px_24px_rgba(15,23,42,.08)] backdrop-blur-md">
                 <div className="flex items-center gap-1">
@@ -2062,6 +2062,21 @@ export function ConsoleWorkspace({
                   >
                     <FolderOpen size={15} />
                   </button>
+
+                  {!isViewer && draftId && (
+                    <>
+                      <div className="mx-1 h-4 w-px bg-slate-200" />
+                      <button
+                        type="button"
+                        onClick={() => setIsVersionHistoryOpen(true)}
+                        title="Lihat dan pulihkan riwayat versi"
+                        aria-label="Riwayat versi"
+                        className="grid h-8 w-8 place-items-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 active:scale-95"
+                      >
+                        <History size={15} />
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* Right: Manual Save Trigger Button */}
@@ -2121,6 +2136,7 @@ export function ConsoleWorkspace({
                   musicUrl={musicUrl}
                   musicVolume={musicVolume}
                   customColors={customThemeColors}
+                  useContainer={useContainer}
                   authResolved={authResolved}
                   isLoggedIn={Boolean(currentUser)}
                   draftReady={draftReady}
