@@ -126,7 +126,7 @@ export function FigmaColorPicker({
   const hasEyeDropper = typeof window !== "undefined" && "EyeDropper" in window;
 
   return (
-    <div ref={containerRef} className={`relative ${isOpen ? "z-50" : "z-auto"}`}>
+    <div ref={containerRef} className={`relative min-w-0 max-w-full ${isOpen ? "z-50" : "z-auto"}`}>
       {compact ? (
         <button
           type="button"
@@ -144,8 +144,8 @@ export function FigmaColorPicker({
         </button>
       ) : (
         /* Trigger Row (Figma Property Style) */
-        <div className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-2 text-[11px] font-semibold text-slate-700 transition hover:border-slate-300 shadow-2xs">
-          <span className="flex items-center gap-2 truncate pr-2">
+        <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white p-2 text-[11px] font-semibold text-slate-700 transition hover:border-slate-300 shadow-2xs">
+          <span className="flex min-w-0 flex-1 items-center gap-2 truncate pr-2">
             <span className="truncate">{label}</span>
             {onReset && value && value.toLowerCase() !== fallbackValue.toLowerCase() && (
               <button
@@ -168,14 +168,14 @@ export function FigmaColorPicker({
             type="button"
             disabled={disabled}
             onClick={handleToggle}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition active:scale-95 disabled:opacity-50"
+            className="flex min-w-0 shrink items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-mono font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition active:scale-95 disabled:opacity-50"
           >
             {/* Swatch circle with checkered border */}
             <span
               className="h-4 w-4 rounded-full border border-black/15 shadow-2xs shrink-0"
               style={{ backgroundColor: currentColor }}
             />
-            <span className="tracking-wider">{currentColor.toUpperCase()}</span>
+            <span className="truncate tracking-wider">{currentColor.toUpperCase()}</span>
           </button>
         </div>
       )}
