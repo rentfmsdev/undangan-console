@@ -285,8 +285,8 @@ export function MyInvitationsDashboard({ initialUser }: { initialUser?: AuthUser
                 <Image src="/assets/fav.png" width={32} height={32} alt="Undangan Studio" className="h-full w-full object-cover" priority />
               </div>
               <div className="hidden sm:block">
-                <span className="block text-xs font-extrabold text-slate-900 leading-tight">Undangan Studio</span>
-                <span className="block text-[10px] font-semibold text-slate-500">Dashboard Pengguna</span>
+                <span className="block font-brand text-base font-bold text-slate-900 leading-none">Undangan Studio</span>
+                <span className="block text-[10px] font-semibold text-slate-500 mt-0.5">Dashboard Pengguna</span>
               </div>
             </Link>
           </div>

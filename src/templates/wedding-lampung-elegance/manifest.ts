@@ -9,6 +9,12 @@ const photos = {
   lampungGallery: "/assets/my/DSC_0711%20(1).jpg.jpeg",
 } as const;
 
+const visualCapabilities = {
+  backgroundColor: true,
+  backgroundImage: true,
+  textStyle: true,
+} as const;
+
 export const weddingLampungElegance = defineTemplate({
   id: "wedding-lampung-elegance",
   code: "hjydg",
@@ -60,6 +66,7 @@ export const weddingLampungElegance = defineTemplate({
       required: true,
       reorderable: false,
       maxInstances: 1,
+      capabilities: visualCapabilities,
       fields: [
         { key: "eyebrow", label: "Label pembuka", control: "text" },
         { key: "kicker", label: "Kicker", control: "text" },
@@ -92,6 +99,7 @@ export const weddingLampungElegance = defineTemplate({
       required: true,
       reorderable: false,
       maxInstances: 1,
+      capabilities: { ...visualCapabilities, image: true },
       fields: [
         { key: "monogram", label: "Monogram atas", control: "text" },
         { key: "kicker", label: "Kicker", control: "text" },
@@ -118,6 +126,7 @@ export const weddingLampungElegance = defineTemplate({
       required: true,
       reorderable: true,
       maxInstances: 1,
+      capabilities: { ...visualCapabilities, image: true },
       fields: [
         { key: "bismillah", label: "Bismillah", control: "text" },
         { key: "greeting", label: "Salam pembuka", control: "text" },
@@ -155,6 +164,7 @@ export const weddingLampungElegance = defineTemplate({
       required: false,
       reorderable: true,
       maxInstances: 1,
+      capabilities: visualCapabilities,
       fields: [
         { key: "subtitle", label: "Label", control: "text" },
         { key: "title", label: "Judul", control: "text" },
@@ -187,6 +197,7 @@ export const weddingLampungElegance = defineTemplate({
       required: true,
       reorderable: true,
       maxInstances: 1,
+      capabilities: visualCapabilities,
       fields: [
         { key: "eyebrow", label: "Label section", control: "text" },
         { key: "title", label: "Judul", control: "text" },
@@ -223,6 +234,7 @@ export const weddingLampungElegance = defineTemplate({
       required: false,
       reorderable: true,
       maxInstances: 1,
+      capabilities: { ...visualCapabilities, map: true },
       fields: [
         { key: "title", label: "Label lokasi", control: "text" },
         { key: "subtitle", label: "Alamat", control: "textarea", rows: 4 },
@@ -243,6 +255,7 @@ export const weddingLampungElegance = defineTemplate({
       required: false,
       reorderable: true,
       maxInstances: 1,
+      capabilities: { ...visualCapabilities, map: true },
       fields: [
         { key: "kicker", label: "Keterangan", control: "text" },
         { key: "title", label: "Nama acara", control: "text" },
@@ -267,6 +280,7 @@ export const weddingLampungElegance = defineTemplate({
       required: false,
       reorderable: true,
       maxInstances: 1,
+      capabilities: { ...visualCapabilities, image: true },
       fields: [
         { key: "title", label: "Kutipan", control: "textarea", rows: 5 },
         { key: "subtitle", label: "Sumber", control: "text" },
@@ -285,6 +299,7 @@ export const weddingLampungElegance = defineTemplate({
       required: false,
       reorderable: true,
       maxInstances: 1,
+      capabilities: { ...visualCapabilities, gallery: true },
       fields: [
         { key: "eyebrow", label: "Label section", control: "text" },
         { key: "title", label: "Judul", control: "text" },
@@ -309,6 +324,7 @@ export const weddingLampungElegance = defineTemplate({
       required: false,
       reorderable: true,
       maxInstances: 1,
+      capabilities: visualCapabilities,
       fields: [
         { key: "eyebrow", label: "Label section", control: "text" },
         { key: "title", label: "Judul", control: "text" },
@@ -343,6 +359,7 @@ export const weddingLampungElegance = defineTemplate({
       required: false,
       reorderable: true,
       maxInstances: 1,
+      capabilities: visualCapabilities,
       fields: [
         { key: "eyebrow", label: "Label section", control: "text" },
         { key: "title", label: "Judul", control: "text" },
@@ -391,6 +408,7 @@ export const weddingLampungElegance = defineTemplate({
       required: true,
       reorderable: true,
       maxInstances: 1,
+      capabilities: { ...visualCapabilities, image: true },
       fields: [
         { key: "title", label: "Judul", control: "text" },
         { key: "copy", label: "Ucapan penutup", control: "textarea", rows: 4 },

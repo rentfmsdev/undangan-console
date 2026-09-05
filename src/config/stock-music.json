@@ -28,6 +28,62 @@
     "isDefault": false
   },
   {
+    "id": "stock-fly-me-to-the-moon-piano",
+    "title": "Fly Me to the Moon",
+    "artist": "Piano Version",
+    "genre": "Jazz Romantis",
+    "category": "wedding",
+    "categoryLabel": "Pernikahan",
+    "categories": [
+      "wedding"
+    ],
+    "url": "/assets/audio/FLY-ME-TO-THE-MOON-Piano-Version.mp3",
+    "duration": "2:19",
+    "isDefault": false
+  },
+  {
+    "id": "stock-until-i-found-you-piano",
+    "title": "Until I Found You",
+    "artist": "Piano Cover",
+    "genre": "Piano Romantis",
+    "category": "wedding",
+    "categoryLabel": "Pernikahan",
+    "categories": [
+      "wedding"
+    ],
+    "url": "/assets/audio/Until-I-Found-You-Piano-Cover.mp3",
+    "duration": "3:29",
+    "isDefault": false
+  },
+  {
+    "id": "stock-cant-help-falling-in-love-piano",
+    "title": "Can't Help Falling in Love",
+    "artist": "Piano Version",
+    "genre": "Piano Romantis",
+    "category": "wedding",
+    "categoryLabel": "Pernikahan",
+    "categories": [
+      "wedding"
+    ],
+    "url": "/assets/audio/Can't-Help-Falling-In-Love-Piano-Version.mp3",
+    "duration": "3:31",
+    "isDefault": false
+  },
+  {
+    "id": "stock-janji-suci-piano",
+    "title": "Janji Suci",
+    "artist": "Piano Cover",
+    "genre": "Piano Romantis Indonesia",
+    "category": "wedding",
+    "categoryLabel": "Pernikahan",
+    "categories": [
+      "wedding"
+    ],
+    "url": "/assets/audio/Janji-Suc-Piano-Cover.mp3",
+    "duration": "3:44",
+    "isDefault": false
+  },
+  {
     "id": "stock-canon-in-d",
     "title": "Canon in D Major",
     "artist": "Johann Pachelbel (Piano & Cello)",

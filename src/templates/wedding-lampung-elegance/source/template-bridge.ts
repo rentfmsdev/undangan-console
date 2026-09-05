@@ -147,10 +147,7 @@ const fieldFontTargets: Record<string, Record<string, string>> = {
 };
 
 const backgroundImageTargets: Record<string, string> = {
-  hero: ".hero-photo",
   countdown: ".countdown-image",
-  quote: ":scope > img",
-  closing: ":scope > img",
 };
 
 const nativeBackgroundImages: Record<string, string> = {
@@ -229,6 +226,18 @@ function restoreImage(element: HTMLElement, selector: string) {
   if (!image?.dataset.templateOriginalSrc) return;
   image.src = image.dataset.templateOriginalSrc;
   image.srcset = image.dataset.templateOriginalSrcset ?? "";
+}
+
+function applyEditableImage(element: HTMLElement, selector: string, url: unknown) {
+  const image = element.querySelector<HTMLImageElement>(selector);
+  if (!image) return;
+  const nextUrl = typeof url === "string" ? url.trim() : "";
+  if (!nextUrl) {
+    image.style.display = "none";
+    return;
+  }
+  image.style.removeProperty("display");
+  applyImage(element, selector, nextUrl);
 }
 
 function applySectionBackground(section: WeddingPreviewSection, element: HTMLElement) {
@@ -353,7 +362,7 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement) 
       setText(element.querySelector(".hero-date"), subtitle);
       setText(element.querySelector(".hero-guest small"), field("guestLabel"));
       setText(element.querySelector(".scroll-cue span"), field("scrollLabel"));
-      applyImage(element, ".hero-photo img", imageUrl);
+      applyEditableImage(element, ".hero-photo", imageUrl);
       break;
     case "couple": {
       const headings = element.querySelectorAll(".couple-block h2");
@@ -370,7 +379,7 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement) 
       setText(blocks[1]?.querySelector(".script-label"), field("groomLabel"));
       setText(blocks[1]?.querySelector(":scope > p:not(.script-label)"), field("groomOrder"));
       setText(blocks[1]?.querySelector(":scope > strong"), field("groomParents"));
-      applyImage(element, ".welcome-portrait img", imageUrl);
+      applyEditableImage(element, ".welcome-portrait img", imageUrl);
       break;
     }
     case "countdown":
@@ -411,7 +420,7 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement) 
     case "quote":
       setQuoteText(element.querySelector<HTMLElement>("blockquote"), title);
       setText(element.querySelector("blockquote cite"), subtitle);
-      applyImage(element, ":scope > img", imageUrl);
+      applyEditableImage(element, ":scope > img", imageUrl);
       break;
     case "gallery":
       setText(element.querySelector(".section-heading > span"), field("eyebrow"));
@@ -473,7 +482,7 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement) 
       setText(element.querySelector(".closing-content > span"), field("copy"));
       setText(element.querySelector(".closing-content > small"), field("greeting"));
       setText(element.querySelector(".closing-content > b"), field("date"));
-      applyImage(element, ":scope > img", imageUrl);
+      applyEditableImage(element, ":scope > img", imageUrl);
       break;
   }
 }

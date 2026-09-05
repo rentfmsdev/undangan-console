@@ -25,6 +25,10 @@ import VerdantVowsSource from "./wedding-verdant-vows/source/VerdantVowsSource";
 import { VerdantVowsNavigationAdapter } from "./wedding-verdant-vows/navigation-adapter";
 import { normalizeVerdantVowsSectionState } from "./wedding-verdant-vows/normalize-section-state";
 import { applyVerdantVowsTemplateState, watchVerdantVowsTemplateState, type VerdantPreviewSection, type VerdantSettings } from "./wedding-verdant-vows/source/template-bridge";
+import EternalOrbitSource from "./wedding-eternal-orbit/source/EternalOrbitSource";
+import { EternalOrbitNavigationAdapter } from "./wedding-eternal-orbit/navigation-adapter";
+import { normalizeEternalOrbitSectionState } from "./wedding-eternal-orbit/normalize-section-state";
+import { applyEternalOrbitTemplateState, watchEternalOrbitTemplateState, type EternalOrbitPreviewSection, type EternalOrbitSettings } from "./wedding-eternal-orbit/source/template-bridge";
 
 export type RuntimeState = { sections: unknown[]; themeId: string; settings: Record<string, unknown> };
 export type StoredTemplateSection = { id: string; type: string; enabled: boolean; data: Record<string, unknown> };
@@ -100,6 +104,16 @@ const verdantVowsRuntime: TemplateRuntime = {
   watchState: ({ sections, themeId, settings }) => watchVerdantVowsTemplateState(sections as VerdantPreviewSection[], themeId, settings as VerdantSettings),
 };
 
+const eternalOrbitRuntime: TemplateRuntime = {
+  templateId: "wedding-eternal-orbit",
+  code: "orbit",
+  Renderer: EternalOrbitSource,
+  createNavigationAdapter: () => new EternalOrbitNavigationAdapter(),
+  normalizeSections: normalizeEternalOrbitSectionState,
+  applyState: ({ sections, themeId, settings }) => applyEternalOrbitTemplateState(sections as EternalOrbitPreviewSection[], themeId, settings as EternalOrbitSettings),
+  watchState: ({ sections, themeId, settings }) => watchEternalOrbitTemplateState(sections as EternalOrbitPreviewSection[], themeId, settings as EternalOrbitSettings),
+};
+
 export const templateRuntimeRegistry: TemplateRuntime[] = [
   weddingLampungRuntime,
   birthdayCelestialRuntime,
@@ -107,6 +121,7 @@ export const templateRuntimeRegistry: TemplateRuntime[] = [
   aqiqahLittleBloomRuntime,
   wisudaEleganceRuntime,
   verdantVowsRuntime,
+  eternalOrbitRuntime,
 ];
 
 export function getTemplateRuntime(code: string) {

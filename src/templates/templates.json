@@ -250,5 +250,24 @@
       "modern",
       "minimalist"
     ]
+  },
+  {
+    "id": "wedding-eternal-orbit",
+    "code": "orbit",
+    "name": "Eternal Orbit",
+    "category": "pernikahan",
+    "categoryLabel": "Pernikahan",
+    "description": "Undangan pernikahan sinematik dengan envelope, transisi perspektif 3D, dan empat preset warna elegan.",
+    "price": 65000,
+    "rating": 5,
+    "favoriteCount": 0,
+    "releaseDate": "2026-09-05",
+    "status": "available",
+    "defaultView": "mobile",
+    "useContainer": true,
+    "covers": ["/thumb/wedding-eternal-orbit.svg"],
+    "themeColors": ["#bfa66a", "#e1ad8c", "#5d768b", "#aad5ce"],
+    "features": ["Opening Envelope", "Transisi Perspektif 3D", "Hero Foto", "Profil Mempelai", "Rangkaian Acara & Maps", "Galeri Frame", "RSVP & Buku Tamu", "Amplop Digital Modular"],
+    "tags": ["pernikahan", "wedding", "3d", "cinematic", "night", "modern"]
   }
 ]

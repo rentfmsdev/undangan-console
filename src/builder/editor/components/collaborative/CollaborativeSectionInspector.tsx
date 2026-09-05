@@ -92,10 +92,12 @@ export function CollaborativeSectionInspector({
               ),
           )
           .map((field) => {
-            const value =
-              typeof defaultData[field.key] === "string"
-                ? String(defaultData[field.key])
-                : "";
+            const rawValue = defaultData[field.key];
+            const value = field.control === "toggle"
+              ? rawValue !== false
+              : field.control === "range"
+                ? typeof rawValue === "number" ? rawValue : (field.min ?? 0)
+                : typeof rawValue === "string" ? rawValue : "";
             const textStyles =
               defaultData.textStyles &&
               typeof defaultData.textStyles === "object"

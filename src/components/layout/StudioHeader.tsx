@@ -21,9 +21,13 @@ export function StudioHeader({ user, onLoginClick, onLogout }: StudioHeaderProps
           <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl transition group-hover:scale-105">
             <Image src="/assets/fav.png" width={40} height={40} alt="" className="h-full w-full object-cover" priority />
           </div>
-          <div>
-            <span className="block text-base font-extrabold leading-tight text-slate-900">Undangan Studio</span>
-            <span className="block text-[11px] font-semibold text-slate-500">Marketplace & Builder</span>
+          <div className="flex flex-col justify-center">
+            <span className="block font-brand text-2xl font-bold leading-none text-slate-900 tracking-tight transition group-hover:text-emerald-700">
+              Undangan Studio
+            </span>
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">
+              Marketplace &amp; Builder
+            </span>
           </div>
         </Link>
 

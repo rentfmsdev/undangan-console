@@ -22,6 +22,8 @@ import {
   Sparkles,
   UserRound,
   UsersRound,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -597,8 +599,24 @@ function WeddingInvitation({
     : "Bapak/Ibu/Saudara/i";
   const [stage, setStage] = useState<OpeningStage>("sealed");
   const [countdown, setCountdown] = useState<Countdown>(emptyCountdown);
+  const [musicPlaying, setMusicPlaying] = useState(false);
   const musicRef = useRef<HTMLAudioElement>(null);
   const opened = stage === "opened";
+
+  useEffect(() => {
+    const music = musicRef.current;
+    if (!music) return;
+    const handlePlay = () => setMusicPlaying(true);
+    const handlePause = () => setMusicPlaying(false);
+    music.addEventListener("play", handlePlay);
+    music.addEventListener("pause", handlePause);
+    music.addEventListener("emptied", handlePause);
+    return () => {
+      music.removeEventListener("play", handlePlay);
+      music.removeEventListener("pause", handlePause);
+      music.removeEventListener("emptied", handlePause);
+    };
+  }, []);
 
   useEffect(() => {
     const root = document.querySelector<HTMLElement>("[data-template-scroll-root]");
@@ -692,6 +710,18 @@ function WeddingInvitation({
 
   const mainClass = useMemo(() => `invitation-shell ${opened ? "is-open" : ""}`, [opened]);
 
+  const toggleMusic = () => {
+    const music = musicRef.current;
+    const source = music?.querySelector<HTMLSourceElement>("source");
+    if (!music || !source?.getAttribute("src")) return;
+    if (!music.paused) {
+      music.pause();
+      return;
+    }
+    music.muted = false;
+    void music.play().catch(() => setMusicPlaying(false));
+  };
+
   return (
     <main className={mainClass}>
       <TemplateNavigationRuntime createAdapter={createWeddingNavigationAdapter} />
@@ -699,6 +729,18 @@ function WeddingInvitation({
         <source src="/assets/audio/easy-on-me.webm" type="audio/webm" />
       </audio>
       {!opened && <OpeningEnvelope guestName={guestName} onOpen={openInvitation} stage={stage} />}
+      {opened && (
+        <button
+          type="button"
+          className={`wedding-music-toggle${musicPlaying ? " is-playing" : ""}`}
+          onClick={toggleMusic}
+          aria-label={musicPlaying ? "Jeda musik undangan" : "Putar musik undangan"}
+          aria-pressed={musicPlaying}
+          title={musicPlaying ? "Jeda musik" : "Putar musik"}
+        >
+          {musicPlaying ? <Volume2 size={20} /> : <VolumeX size={20} />}
+        </button>
+      )}
       <div className="wedding-scroll-root" data-template-scroll-root data-opened={opened ? "true" : "false"}>
         <div className="invitation-page" aria-hidden={!opened}>
           <Hero guestName={guestName} />

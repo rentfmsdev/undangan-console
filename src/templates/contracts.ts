@@ -8,8 +8,12 @@ export type TemplateTheme = {
 export type TemplateEditorField = {
   key: string;
   label: string;
-  control: "text" | "textarea" | "url" | "datetime-local";
+  control: "text" | "textarea" | "url" | "datetime-local" | "select" | "toggle" | "range";
   rows?: number;
+  options?: Array<{ value: string; label: string }>;
+  min?: number;
+  max?: number;
+  step?: number;
 };
 
 export type TemplateSection = {

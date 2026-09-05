@@ -93,8 +93,8 @@ function LoginForm() {
               <Sparkles size={18} />
             </div>
             <div>
-              <span className="block text-sm font-extrabold text-slate-900 leading-tight">Undangan Studio</span>
-              <span className="block text-[10px] font-semibold text-slate-500">Marketplace & Console</span>
+              <span className="block font-brand text-lg font-bold text-slate-900 leading-none">Undangan Studio</span>
+              <span className="block text-[10px] font-semibold text-slate-500 mt-0.5">Marketplace & Console</span>
             </div>
           </Link>
 

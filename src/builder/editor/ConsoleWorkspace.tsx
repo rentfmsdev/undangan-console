@@ -2332,7 +2332,7 @@ export function ConsoleWorkspace({
               />
             </Link>
             <div className="min-w-0">
-              <p className="truncate text-sm font-extrabold text-slate-900 leading-tight">
+              <p className="truncate font-brand text-lg font-bold text-slate-900 leading-none">
                 Undangan Studio
               </p>
               <div className="truncate text-[10px] font-semibold text-slate-500 flex items-center gap-1.5">

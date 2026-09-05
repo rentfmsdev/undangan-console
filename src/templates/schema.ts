@@ -4,8 +4,12 @@ import type { TemplateKit } from "./contracts";
 const editorFieldSchema = z.object({
   key: z.string().min(1),
   label: z.string().min(1),
-  control: z.enum(["text", "textarea", "url", "datetime-local"]),
+  control: z.enum(["text", "textarea", "url", "datetime-local", "select", "toggle", "range"]),
   rows: z.number().int().positive().optional(),
+  options: z.array(z.object({ value: z.string(), label: z.string() })).min(1).optional(),
+  min: z.number().optional(),
+  max: z.number().optional(),
+  step: z.number().positive().optional(),
 });
 
 export const templateKitSchema = z.object({

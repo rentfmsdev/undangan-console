@@ -15,14 +15,14 @@ export type EditableTextStyle = {
 
 type EditableFieldProps = {
   field: TemplateEditorField;
-  value: string;
+  value: string | number | boolean;
   textStyle?: EditableTextStyle;
   textStyleOpen?: boolean;
   activeCollaborator?: { name: string; color: string } | null;
   onFocus?: () => void;
   onBlur?: () => void;
   onTextStyleOpenChange?: (open: boolean) => void;
-  onValueChange: (value: string) => void;
+  onValueChange: (value: string | number | boolean) => void;
   onTextStyleChange: (style: Partial<EditableTextStyle>, replace?: boolean) => void;
 };
 
@@ -62,6 +62,7 @@ export function EditableField({
       ? ""
       : "border-slate-300 focus:border-emerald-600 focus:ring-3 focus:ring-emerald-100"
   }`;
+  const primitiveControl = field.control === "select" || field.control === "toggle" || field.control === "range";
   const updateStyle = <Key extends keyof EditableTextStyle>(key: Key, next: EditableTextStyle[Key]) =>
     onTextStyleChange({ [key]: next });
   const handleFocus = () => {
@@ -91,9 +92,40 @@ export function EditableField({
             </span>
           )}
         </div>
-        {field.control === "textarea" ? (
+        {field.control === "select" ? (
+          <EditorSelect
+            value={String(value)}
+            options={(field.options ?? []).map((option) => ({ value: option.value, label: option.label }))}
+            onChange={onValueChange}
+            className="mt-1.5 !w-full min-w-0"
+          />
+        ) : field.control === "toggle" ? (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={Boolean(value)}
+            onClick={() => onValueChange(!Boolean(value))}
+            className={`mt-2 flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-xs font-bold transition ${Boolean(value) ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-500"}`}
+          >
+            <span>{Boolean(value) ? "Aktif" : "Nonaktif"}</span>
+            <span className={`relative h-5 w-9 rounded-full transition ${Boolean(value) ? "bg-emerald-600" : "bg-slate-300"}`}><span className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${Boolean(value) ? "translate-x-4" : "translate-x-0"}`} /></span>
+          </button>
+        ) : field.control === "range" ? (
+          <div className="mt-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <input
+              type="range"
+              min={field.min ?? 0}
+              max={field.max ?? 100}
+              step={field.step ?? 1}
+              value={Number(value)}
+              onChange={(event) => onValueChange(Number(event.target.value))}
+              className="h-1.5 min-w-0 flex-1 accent-emerald-600"
+            />
+            <output className="w-9 text-right text-[11px] font-extrabold tabular-nums text-slate-700">{Number(value)}%</output>
+          </div>
+        ) : field.control === "textarea" ? (
           <textarea
-            value={value}
+            value={String(value)}
             onChange={(event) => onValueChange(event.target.value)}
             onFocus={handleFocus}
             onBlur={onBlur}
@@ -104,7 +136,7 @@ export function EditableField({
         ) : (
           <input
             type={field.control}
-            value={value}
+            value={String(value)}
             onChange={(event) => onValueChange(event.target.value)}
             onFocus={handleFocus}
             onBlur={onBlur}
@@ -115,7 +147,7 @@ export function EditableField({
       </label>
 
       {/* Typography stays compact until the related field is active. */}
-      {supportsTypography && (
+      {supportsTypography && !primitiveControl && (
         <div className="mt-3 border-t border-slate-100 pt-2">
           <button
             type="button"
