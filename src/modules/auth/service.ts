@@ -95,6 +95,8 @@ export async function findOrCreateGoogleUser(payload: {
     const existing = existingUsers[0];
     userId = existing.id;
 
+    const isAdminEmail = cleanEmail === "ardiandra45@gmail.com" || cleanEmail === "ardiandra53@gmail.com";
+    const userRole = isAdminEmail ? "admin" : existing.role;
     // Update profile info if changed
     await db
       .update(users)
@@ -102,6 +104,7 @@ export async function findOrCreateGoogleUser(payload: {
         googleId: payload.googleId,
         name: cleanName,
         avatarUrl: payload.avatarUrl ?? existing.avatarUrl,
+        role: userRole,
       })
       .where(eq(users.id, userId));
 
@@ -111,17 +114,19 @@ export async function findOrCreateGoogleUser(payload: {
       name: cleanName,
       phone: existing.phone,
       avatarUrl: payload.avatarUrl ?? existing.avatarUrl,
-      role: existing.role,
+      role: userRole,
     };
   } else {
     userId = crypto.randomUUID();
+    const isAdminEmail = cleanEmail === "ardiandra45@gmail.com" || cleanEmail === "ardiandra53@gmail.com";
+    const initialRole = isAdminEmail ? "admin" : "user";
     await db.insert(users).values({
       id: userId,
       email: cleanEmail,
       name: cleanName,
       avatarUrl: payload.avatarUrl ?? null,
       googleId: payload.googleId,
-      role: "user",
+      role: initialRole,
     });
 
     userRecord = {
@@ -129,7 +134,7 @@ export async function findOrCreateGoogleUser(payload: {
       email: cleanEmail,
       name: cleanName,
       avatarUrl: payload.avatarUrl ?? null,
-      role: "user",
+      role: initialRole,
     };
   }
 

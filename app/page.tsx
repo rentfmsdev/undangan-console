@@ -214,14 +214,10 @@ export default function MarketplaceHomePage() {
         <div className="pointer-events-none absolute inset-0 opacity-[.42] [background-image:linear-gradient(rgba(16,185,129,.10)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,.10)_1px,transparent_1px)] [background-size:32px_32px]" />
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-50/90 px-3.5 py-1 text-xs font-bold text-emerald-800 shadow-sm backdrop-blur-sm">
-              <Sparkles size={14} className="text-emerald-600" />
-              <span>Satu-satunya Editor Undangan Digital No. 1 di Indonesia</span>
-            </div>
-            <h1 className="mt-4 text-2xl font-black tracking-[-.04em] text-slate-950 sm:text-4xl sm:leading-[1.08] lg:text-5xl">
+            <h1 className="text-3xl font-black tracking-[-.04em] text-slate-950 sm:text-4xl sm:leading-[1.08] lg:text-5xl">
               Editor Undangan Digital <span className="text-emerald-600">No. 1 di Indonesia.</span>
             </h1>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
               Satu-satunya platform & studio undangan digital modular dengan visual realtime dan kolaborasi bersama pasangan. Buat undangan pernikahan, wisuda, dan momen spesial Anda terasa istimewa dalam hitungan menit.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">

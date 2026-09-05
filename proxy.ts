@@ -13,7 +13,7 @@ const reservedRootPaths = new Set([
   "uploads",
   "assets",
   "thumb",
-  "admin",
+  "roots",
   "console",
   "dashboard",
   "undangan-saya",
