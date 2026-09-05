@@ -76,25 +76,48 @@
 .eo-envelope-card { box-sizing: border-box; }
 
 /* Premium decorative system: every section owns a distinct asset and remains theme-driven. */
-.eo-section::after {
-  inset: -18% 0 0;
-  z-index: -1;
-  width: auto;
-  height: auto;
-  left: 0;
-  top: -18%;
-  opacity: 0;
+.eo-celestial-shower {
+  position: absolute;
+  z-index: 9;
+  inset: 0;
+  overflow: hidden;
   pointer-events: none;
-  background-image:
-    radial-gradient(circle, var(--eo-accent) 0 1.4px, transparent 1.8px),
-    radial-gradient(circle, var(--eo-primary) 0 2px, transparent 2.5px),
-    radial-gradient(circle, var(--eo-text) 0 1px, transparent 1.5px);
-  background-position: 12px 0, 63px 28px, 31px 61px;
-  background-size: 73px 89px, 121px 137px, 97px 113px;
-  transition: opacity .5s ease;
 }
-.eo-section.is-revealed[data-particles="on"]::after { opacity: calc(var(--eo-decor-intensity, .65) * .42); animation: eo-celestial-shower 9s linear infinite; }
-.eo-section[data-particles="off"]::after { display: none; }
+.eo-celestial-shower i {
+  --eo-snow-x: 8%;
+  --eo-snow-size: 5px;
+  --eo-snow-duration: 7.8s;
+  --eo-snow-delay: -1s;
+  position: absolute;
+  top: -24px;
+  left: var(--eo-snow-x);
+  width: var(--eo-snow-size);
+  height: var(--eo-snow-size);
+  border-radius: 50%;
+  background: var(--eo-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--eo-accent) 78%, transparent), 0 0 16px color-mix(in srgb, var(--eo-primary) 38%, transparent);
+  opacity: .78;
+  animation: eo-snow-fall var(--eo-snow-duration) linear var(--eo-snow-delay) infinite;
+  will-change: transform, opacity;
+}
+.eo-celestial-shower i:nth-child(2n) { border-radius: 1px; background: var(--eo-primary); transform: rotate(45deg); }
+.eo-celestial-shower i:nth-child(3n) { background: var(--eo-text); opacity: .56; }
+.eo-celestial-shower i:nth-child(2) { --eo-snow-x: 17%; --eo-snow-size: 3px; --eo-snow-duration: 9.4s; --eo-snow-delay: -6.2s; }
+.eo-celestial-shower i:nth-child(3) { --eo-snow-x: 28%; --eo-snow-size: 6px; --eo-snow-duration: 8.7s; --eo-snow-delay: -3.5s; }
+.eo-celestial-shower i:nth-child(4) { --eo-snow-x: 39%; --eo-snow-size: 4px; --eo-snow-duration: 10.2s; --eo-snow-delay: -8.1s; }
+.eo-celestial-shower i:nth-child(5) { --eo-snow-x: 51%; --eo-snow-size: 7px; --eo-snow-duration: 7.1s; --eo-snow-delay: -4.7s; }
+.eo-celestial-shower i:nth-child(6) { --eo-snow-x: 63%; --eo-snow-size: 3px; --eo-snow-duration: 9.8s; --eo-snow-delay: -2.4s; }
+.eo-celestial-shower i:nth-child(7) { --eo-snow-x: 74%; --eo-snow-size: 5px; --eo-snow-duration: 8.1s; --eo-snow-delay: -7.3s; }
+.eo-celestial-shower i:nth-child(8) { --eo-snow-x: 87%; --eo-snow-size: 4px; --eo-snow-duration: 10.8s; --eo-snow-delay: -5.1s; }
+.eo-celestial-shower i:nth-child(9) { --eo-snow-x: 94%; --eo-snow-size: 6px; --eo-snow-duration: 7.6s; --eo-snow-delay: -1.8s; }
+.eo-celestial-shower i:nth-child(10) { --eo-snow-x: 12%; --eo-snow-size: 4px; --eo-snow-duration: 11s; --eo-snow-delay: -9.2s; }
+.eo-celestial-shower i:nth-child(11) { --eo-snow-x: 33%; --eo-snow-size: 3px; --eo-snow-duration: 8.9s; --eo-snow-delay: -6.8s; }
+.eo-celestial-shower i:nth-child(12) { --eo-snow-x: 57%; --eo-snow-size: 5px; --eo-snow-duration: 10.4s; --eo-snow-delay: -3.1s; }
+.eo-celestial-shower i:nth-child(13) { --eo-snow-x: 69%; --eo-snow-size: 7px; --eo-snow-duration: 9.1s; --eo-snow-delay: -8.7s; }
+.eo-celestial-shower i:nth-child(14) { --eo-snow-x: 81%; --eo-snow-size: 3px; --eo-snow-duration: 7.4s; --eo-snow-delay: -5.8s; }
+.eo-celestial-shower i:nth-child(15) { --eo-snow-x: 23%; --eo-snow-size: 5px; --eo-snow-duration: 10.6s; --eo-snow-delay: -2.9s; }
+.eo-celestial-shower i:nth-child(16) { --eo-snow-x: 46%; --eo-snow-size: 4px; --eo-snow-duration: 8.3s; --eo-snow-delay: -7.9s; }
+.eternal-orbit-shell:has(.eo-section.is-revealed[data-particles="off"]) .eo-celestial-shower { display: none; }
 
 .eo-hero .eo-starfield::before,
 .eo-couple-grid::before,
@@ -159,9 +182,11 @@
 .eo-section[data-motion="off"] > :not(.eo-orbit):not(.eo-starfield):not(.eo-closing-dove) { opacity: 1 !important; filter: none !important; transform: none !important; transition: none !important; animation: none !important; }
 .eo-section[data-motion="off"] .eo-timeline-card, .eo-section[data-motion="off"] .eo-gallery-frame { animation: none !important; }
 
-@keyframes eo-celestial-shower {
-  from { background-position: 12px -178px, 63px -246px, 31px -206px; }
-  to { background-position: 12px 0, 63px 28px, 31px 61px; }
+@keyframes eo-snow-fall {
+  0% { opacity: 0; transform: translate3d(-7px, -5vh, 0) rotate(0deg) scale(.72); }
+  12% { opacity: calc(var(--eo-shower-intensity, .65) * 1.12); }
+  72% { opacity: var(--eo-shower-intensity, .65); }
+  100% { opacity: 0; transform: translate3d(18px, 108vh, 0) rotate(250deg) scale(1.08); }
 }
 
 @media (max-width: 350px) {
@@ -170,7 +195,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .eo-section::after { animation: none !important; opacity: calc(var(--eo-decor-intensity, .65) * .16) !important; }
+  .eo-celestial-shower { display: none; }
   .eo-hero .eo-starfield::before, .eo-couple-grid::before, .eo-event-card::before, .eo-timeline::before, .eo-gallery-grid::before, .eo-gift-grid::before, .eo-wish-form::before { transition: none !important; transform: none !important; }
 }
 

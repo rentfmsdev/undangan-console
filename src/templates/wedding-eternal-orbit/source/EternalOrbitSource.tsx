@@ -19,6 +19,10 @@ function OrbitMark({ className = "" }: { className?: string }) {
   return <svg className={className} viewBox="0 0 260 260" fill="none" aria-hidden="true"><ellipse cx="130" cy="130" rx="118" ry="53" stroke="var(--eo-primary)" strokeWidth="1" opacity=".58"/><ellipse cx="130" cy="130" rx="84" ry="128" stroke="var(--eo-mid)" strokeWidth="1" opacity=".45" transform="rotate(34 130 130)"/><circle cx="130" cy="130" r="6" fill="var(--eo-accent)"/><circle cx="236" cy="117" r="3" fill="var(--eo-primary)"/><path d="M139 14a13 13 0 1 0 0 20 10 10 0 1 1 0-20Z" fill="var(--eo-accent)"/></svg>;
 }
 
+function CelestialShower() {
+  return <div className="eo-celestial-shower" aria-hidden="true">{Array.from({ length: 16 }, (_, index) => <i key={index} />)}</div>;
+}
+
 export default function EternalOrbitSource({ invitationId, verifiedGuestName }: Props) {
   const rootRef = useRef<HTMLElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -93,6 +97,8 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
       });
       const visible = rail.filter(([id]) => { const section = root.querySelector<HTMLElement>(`[data-template-section="${id}"]`); return section && !section.hidden && getComputedStyle(section).display !== "none"; });
       const current = visible.reduce<string>((active, [id]) => { const section = root.querySelector<HTMLElement>(`[data-template-section="${id}"]`); return section && section.getBoundingClientRect().top <= marker ? id : active; }, visible[0]?.[0] ?? "hero");
+      const currentSection = root.querySelector<HTMLElement>(`[data-template-section="${current}"]`);
+      root.parentElement?.style.setProperty("--eo-shower-intensity", currentSection?.style.getPropertyValue("--eo-decor-intensity") || ".65");
       setActiveSection(current);
     };
     onScroll(); root.addEventListener("scroll", onScroll, { passive: true });
@@ -178,6 +184,7 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
 
   return <div className="eternal-orbit-shell" data-use-container="true" data-opened={opened ? "true" : "false"}>
     <audio ref={audioRef} loop preload="metadata"><source src="/assets/audio/Can't-Help-Falling-In-Love-Piano-Version.mp3" type="audio/mpeg" /></audio>
+    {opened && <CelestialShower key={activeSection} />}
     <main ref={rootRef} data-template-scroll-root data-template-hydrated="true" data-opened={opened ? "true" : "false"} className="eo-scroll">
       <button type="button" className="eo-audio" onClick={toggleMusic} aria-label={musicOn ? "Jeda musik" : "Putar musik"}>{musicOn ? "Ⅱ" : "♪"}</button>
       <section className="eo-section eo-hero" data-template-section="hero" data-orbit-reveal><OrbitMark className="eo-orbit eo-orbit-hero"/><div className="eo-starfield"/><p className="eo-kicker" data-field="eyebrow">A love written in the stars</p><div className="eo-hero-frame"><img data-image alt=""/><span>Foto Mempelai</span></div><h1 data-field="title">Nara &amp; Elang</h1><p className="eo-date" data-field="subtitle">14 November 2026 · Bandung</p><p className="eo-guest"><span data-field="guestLabel">Dengan penuh cinta, mengundang</span><strong data-field="guestName">Tamu Undangan</strong></p><span className="eo-scroll-hint" data-field="scrollLabel">Jelajahi kisah kami</span></section>
