@@ -134,8 +134,11 @@ export function applyEternalOrbitTemplateState(
       const qris = node.querySelector<HTMLImageElement>("[data-gift-qris]");
       const placeholder = node.querySelector<HTMLElement>("[data-gift-qris-placeholder]");
       const qrisUrl = typeof data.imageUrl === "string" ? data.imageUrl.trim() : "";
-      if (qris) qris.src = qrisUrl;
-      if (qris) qris.hidden = !qrisUrl;
+      if (qris) {
+        if (qrisUrl) qris.setAttribute("src", qrisUrl);
+        else qris.removeAttribute("src");
+        qris.hidden = !qrisUrl;
+      }
       if (placeholder) placeholder.hidden = Boolean(qrisUrl);
     }
     if (section.type === "gallery" && imageUrls) window.dispatchEvent(new CustomEvent("eternal-orbit-gallery", { detail: { urls: imageUrls.filter((url): url is string => typeof url === "string" && Boolean(url.trim())) } }));
