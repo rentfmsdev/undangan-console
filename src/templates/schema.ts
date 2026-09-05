@@ -12,7 +12,7 @@ export const templateKitSchema = z.object({
   id: z.string().min(1),
   code: z.string().length(5),
   version: z.number().int().positive(),
-  category: z.enum(["wedding", "birthday", "khitanan", "aqiqah"]),
+  category: z.enum(["wedding", "birthday", "khitanan", "aqiqah", "wisuda"]),
   name: z.string().min(1),
   description: z.string().min(1),
   price: z.number().int().nonnegative().optional(),

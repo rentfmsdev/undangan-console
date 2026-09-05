@@ -41,6 +41,7 @@ export function buildInvitationSeo(
     birthday: "Undangan Ulang Tahun",
     aqiqah: "Undangan Tasyakuran Walimatul Aqiqah",
     khitanan: "Undangan Walimatul Khitan",
+    wisuda: "Undangan Wisuda & Syukuran Kelulusan",
   };
   const categoryLabel = categoryLabels[template.category] || "Undangan Digital";
 
@@ -61,6 +62,10 @@ export function buildInvitationSeo(
     const childName = firstText(sections.filter((s) => s.type === "profile" || s.type === "hero"), ["childName", "name", "title"]);
     const envelopeTitle = firstText(sections.filter((s) => s.type === "opening-envelope"), ["title"]);
     titleSubject = childName || envelopeTitle;
+  } else if (template.category === "wisuda") {
+    const graduateName = firstText(sections.filter((s) => s.type === "profile" || s.type === "hero"), ["graduateName", "name", "title"]);
+    const envelopeTitle = firstText(sections.filter((s) => s.type === "opening-envelope"), ["title"]);
+    titleSubject = graduateName || envelopeTitle;
   }
 
   if (!titleSubject) {

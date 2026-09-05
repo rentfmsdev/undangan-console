@@ -29,10 +29,17 @@ import {
 } from "lucide-react";
 import { templatesCatalog } from "@/templates/registry";
 import type { TemplateCatalogItem } from "@/templates/contracts";
-import { UserAuthDropdown } from "@/components/auth/UserAuthDropdown";
 import { GoogleOneTap } from "@/components/auth/GoogleOneTap";
+import { StudioHeader } from "@/components/layout/StudioHeader";
 
 export type TemplateItem = TemplateCatalogItem;
+
+type ExistingTemplateDraft = {
+  id: string;
+  title: string;
+  status: "draft" | "published" | "custom" | "archived";
+  updatedAt: string;
+};
 
 // Ambil template langsung dari database / file standar templates.json
 const TEMPLATES: TemplateItem[] = templatesCatalog;
@@ -105,6 +112,13 @@ export default function MarketplaceHomePage() {
   const [authResolved, setAuthResolved] = useState(false);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [customizeTemplate, setCustomizeTemplate] =
+    useState<TemplateItem | null>(null);
+  const [existingTemplateDrafts, setExistingTemplateDrafts] = useState<
+    ExistingTemplateDraft[]
+  >([]);
+  const [isCustomizing, setIsCustomizing] = useState(false);
+  const [customizeError, setCustomizeError] = useState("");
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -121,32 +135,79 @@ export default function MarketplaceHomePage() {
     setCurrentUser(null);
   };
 
+  const createNewDraft = async (template: TemplateItem) => {
+    setIsCustomizing(true);
+    setCustomizeError("");
+    try {
+      const response = await fetch("/api/drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateCode: template.code }),
+      });
+      const payload = await response.json();
+      if (response.status === 401) {
+        setCustomizeTemplate(null);
+        setIsAuthModalOpen(true);
+        return;
+      }
+      if (!response.ok)
+        throw new Error(payload.error || "Gagal membuat undangan baru.");
+      router.push(`/editor/${template.code}/${payload.draftId}`);
+    } catch (error) {
+      setCustomizeError(
+        error instanceof Error ? error.message : "Gagal membuat undangan baru.",
+      );
+    } finally {
+      setIsCustomizing(false);
+    }
+  };
+
+  const handleCustomize = async (template: TemplateItem) => {
+    if (!authResolved || isCustomizing) return;
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setIsCustomizing(true);
+    setCustomizeError("");
+    try {
+      const response = await fetch(
+        `/api/drafts?templateCode=${encodeURIComponent(template.code)}`,
+        { cache: "no-store" },
+      );
+      const payload = await response.json();
+      if (!response.ok)
+        throw new Error(payload.error || "Gagal memeriksa undangan Anda.");
+      const drafts = Array.isArray(payload.drafts)
+        ? (payload.drafts as ExistingTemplateDraft[])
+        : [];
+      if (drafts.length) {
+        setExistingTemplateDrafts(drafts);
+        setCustomizeTemplate(template);
+        return;
+      }
+      await createNewDraft(template);
+    } catch (error) {
+      setCustomizeTemplate(template);
+      setExistingTemplateDrafts([]);
+      setCustomizeError(
+        error instanceof Error
+          ? error.message
+          : "Gagal memeriksa undangan Anda.",
+      );
+    } finally {
+      setIsCustomizing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       <GoogleOneTap enabled={authResolved && !currentUser} onAuthenticated={setCurrentUser} />
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur px-4 py-3.5 sm:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl transition group-hover:scale-105">
-              <Image src="/assets/fav.png" width={40} height={40} alt="Undangan Studio" className="h-full w-full object-cover" priority />
-            </div>
-            <div>
-              <span className="block text-base font-extrabold text-slate-900 leading-tight">Undangan Studio</span>
-              <span className="block text-[11px] font-semibold text-slate-500">Marketplace & Builder</span>
-            </div>
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <UserAuthDropdown
-              user={currentUser}
-              onLoginClick={() => setIsAuthModalOpen(true)}
-              onLogout={() => setCurrentUser(null)}
-              onMyInvitationsClick={() => router.push("/undangan-saya")}
-            />
-          </div>
-        </div>
-      </header>
+      <StudioHeader
+        user={currentUser}
+        onLoginClick={() => setIsAuthModalOpen(true)}
+        onLogout={() => setCurrentUser(null)}
+      />
 
       {/* Product landing hero */}
       <section className="relative overflow-hidden border-b border-slate-200 bg-[radial-gradient(circle_at_8%_18%,rgba(16,185,129,.15),transparent_28%),radial-gradient(circle_at_90%_6%,rgba(59,130,246,.12),transparent_26%),linear-gradient(180deg,#fff_0%,#f8fafc_100%)] px-4 py-12 sm:px-8 sm:py-20">
@@ -496,13 +557,15 @@ export default function MarketplaceHomePage() {
                       </Link>
 
                       {isReady ? (
-                        <Link
-                          href={`/editor/${template.code}`}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white whitespace-nowrap shadow-xs transition hover:bg-emerald-700 active:scale-95"
+                        <button
+                          type="button"
+                          onClick={() => void handleCustomize(template)}
+                          disabled={!authResolved || isCustomizing}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white whitespace-nowrap shadow-sm transition hover:bg-emerald-700 active:scale-95"
                         >
                           <span>Customize</span>
                           <ArrowRight size={13} />
-                        </Link>
+                        </button>
                       ) : (
                         <button
                           type="button"
@@ -606,13 +669,15 @@ export default function MarketplaceHomePage() {
               </div>
 
               {previewTemplate.status === "available" ? (
-                <Link
-                  href={`/${previewTemplate.code}`}
+                <button
+                  type="button"
+                  onClick={() => void handleCustomize(previewTemplate)}
+                  disabled={!authResolved || isCustomizing}
                   className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
                 >
                   <span>Customize Template Ini</span>
                   <ArrowRight size={14} />
-                </Link>
+                </button>
               ) : (
                 <span className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-400">
                   Segera Hadir
@@ -675,6 +740,107 @@ export default function MarketplaceHomePage() {
             <p className="mt-5 text-[10px] text-slate-400">
               *1 Action: Jika belum terdaftar, akun dibuat otomatis seketika.
             </p>
+          </div>
+        </div>
+      )}
+
+      {customizeTemplate && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="existing-draft-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isCustomizing) {
+              setCustomizeTemplate(null);
+              setCustomizeError("");
+            }
+          }}
+        >
+          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white p-6 shadow-[0_28px_80px_rgba(15,23,42,.28)]">
+            <div className="flex items-start justify-between gap-4">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <Layers size={21} />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomizeTemplate(null);
+                  setCustomizeError("");
+                }}
+                disabled={isCustomizing}
+                className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+                aria-label="Tutup"
+              >
+                <X size={17} />
+              </button>
+            </div>
+            <h2 id="existing-draft-title" className="mt-4 text-lg font-extrabold tracking-tight text-slate-950">
+              Template ini sudah pernah digunakan
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              {customizeError
+                ? "Pengecekan draf belum berhasil. Anda tetap dapat mencoba membuat undangan baru."
+                : <>Anda memiliki {existingTemplateDrafts.length} undangan dengan template <strong className="font-semibold text-slate-700">{customizeTemplate.name}</strong>. Pilih draf yang ingin dilanjutkan atau mulai undangan baru.</>}
+            </p>
+
+            {existingTemplateDrafts[0] && (
+              <button
+                type="button"
+                disabled={isCustomizing}
+                onClick={() =>
+                  router.push(
+                    `/editor/${customizeTemplate.code}/${existingTemplateDrafts[0].id}`,
+                  )
+                }
+                className="mt-5 flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:border-emerald-300 hover:bg-emerald-50/40 disabled:opacity-50"
+              >
+                <span className="min-w-0">
+                  <strong className="block truncate text-sm text-slate-800">{existingTemplateDrafts[0].title}</strong>
+                  <span className="mt-1 block text-xs text-slate-500">
+                    {existingTemplateDrafts[0].status === "published"
+                      ? "Sudah diterbitkan"
+                      : existingTemplateDrafts[0].status === "custom"
+                        ? "Menunggu alamat"
+                        : existingTemplateDrafts[0].status === "archived"
+                          ? "Kedaluwarsa"
+                          : "Masih draf"}
+                  </span>
+                </span>
+                <ArrowRight size={17} className="shrink-0 text-emerald-600" />
+              </button>
+            )}
+
+            {customizeError && (
+              <p className="mt-4 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                {customizeError}
+              </p>
+            )}
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                disabled={isCustomizing || !existingTemplateDrafts[0]}
+                onClick={() =>
+                  existingTemplateDrafts[0] &&
+                  router.push(
+                    `/editor/${customizeTemplate.code}/${existingTemplateDrafts[0].id}`,
+                  )
+                }
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Lanjut edit
+              </button>
+              <button
+                type="button"
+                disabled={isCustomizing}
+                onClick={() => void createNewDraft(customizeTemplate)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isCustomizing ? "Membuat…" : "Buat baru"}
+                <ArrowRight size={15} />
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -166,5 +166,89 @@
       "pastel",
       "starlight"
     ]
+  },
+  {
+    "id": "wisuda-elegance",
+    "code": "wsdeg",
+    "name": "Wisuda Elegance",
+    "category": "wisuda",
+    "categoryLabel": "Wisuda & Kelulusan",
+    "description": "Undangan wisuda & syukuran kelulusan akademis bernuansa Academic Prestige yang megah, elegan, dan penuh rasa syukur.",
+    "price": 35000,
+    "rating": 5,
+    "favoriteCount": 164,
+    "releaseDate": "2026-09-05",
+    "status": "available",
+    "defaultView": "mobile",
+    "useContainer": true,
+    "covers": [
+      "/thumb/wisuda-elegance.svg"
+    ],
+    "themeColors": [
+      "#1e1b4b",
+      "#3b0764",
+      "#0c4a6e",
+      "#064e3b"
+    ],
+    "features": [
+      "Opening Envelope",
+      "Hero Wisudawan",
+      "Kutipan Syukur",
+      "Profil Akademik",
+      "Rangkaian Acara",
+      "Galeri Foto Lightbox",
+      "Kado & Hadiah Wisuda",
+      "Ucapan & Doa Selamat"
+    ],
+    "tags": [
+      "wisuda",
+      "kelulusan",
+      "graduation",
+      "academic",
+      "sarjana",
+      "kuliah"
+    ]
+  },
+  {
+    "id": "wedding-verdant-vows",
+    "code": "vowgr",
+    "name": "Verdant Vows",
+    "category": "pernikahan",
+    "categoryLabel": "Pernikahan",
+    "description": "Undangan pernikahan modern dengan opening envelope, botanical line art, dan empat preset warna: sage, eucalyptus, forest ivory, hingga moonlit mauve.",
+    "price": 50000,
+    "rating": 5,
+    "favoriteCount": 80,
+    "releaseDate": "2026-09-05",
+    "status": "available",
+    "defaultView": "mobile",
+    "useContainer": true,
+    "covers": [
+      "/thumb/wedding-verdant-vows.svg"
+    ],
+    "themeColors": [
+      "#235f4d",
+      "#416f62",
+      "#315a44",
+      "#6b416d"
+    ],
+    "features": [
+      "Opening Envelope",
+      "Floating Navigation",
+      "Hero Foto",
+      "Profil Mempelai",
+      "Rangkaian Acara & Maps",
+      "Galeri Foto",
+      "Cerita Cinta",
+      "Buku Tamu & Amplop Digital"
+    ],
+    "tags": [
+      "pernikahan",
+      "wedding",
+      "botanical",
+      "sage",
+      "modern",
+      "minimalist"
+    ]
   }
 ]

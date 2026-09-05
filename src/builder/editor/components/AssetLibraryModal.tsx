@@ -623,46 +623,6 @@ export function AssetLibraryModal({
                         className="object-cover transition duration-300 group-hover:scale-105"
                       />
 
-                      {/* Overlay action buttons */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-slate-950/45 p-2.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
-                        {mode === "select" && (
-                          <button
-                            type="button"
-                            onClick={() => handleSelectAsset(asset)}
-                            className="inline-flex w-full items-center justify-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-md transition hover:bg-emerald-700 active:scale-95"
-                          >
-                            <Check size={13} />
-                            <span className="whitespace-nowrap">Pilih Foto</span>
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCropTarget(asset);
-                          }}
-                          className="inline-flex w-full items-center justify-center gap-1 rounded-xl bg-white/95 backdrop-blur px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-sm transition hover:bg-white active:scale-95"
-                        >
-                          <Crop size={13} className="text-emerald-600" />
-                          <span className="whitespace-nowrap">Edit / Crop</span>
-                        </button>
-                      </div>
-
-                      {/* Delete button */}
-                      <button
-                        type="button"
-                        disabled={deletingId === asset.id}
-                        onClick={(e) => handleDeleteAsset(e, asset.id)}
-                        title="Hapus foto"
-                        className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-slate-950/70 text-white shadow-md opacity-100 transition hover:bg-rose-600 active:scale-95 disabled:opacity-50 sm:h-7 sm:w-7 sm:opacity-0 sm:group-hover:opacity-100"
-                      >
-                        {deletingId === asset.id ? (
-                          <LoaderCircle className="animate-spin" size={12} />
-                        ) : (
-                          <Trash2 size={13} />
-                        )}
-                      </button>
                     </div>
 
                     <div className="p-2.5">
@@ -674,6 +634,44 @@ export function AssetLibraryModal({
                           year: "numeric",
                         })}
                       </p>
+                      <div className="mt-2.5 flex items-center gap-1.5 border-t border-slate-100 pt-2.5">
+                        {mode === "select" && (
+                          <button
+                            type="button"
+                            onClick={() => handleSelectAsset(asset)}
+                            className="inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
+                          >
+                            <Check size={13} />
+                            <span>Pilih</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setCropTarget(asset)}
+                          title="Edit atau crop foto"
+                          aria-label="Edit atau crop foto"
+                          className={`inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 active:scale-95 ${
+                            mode === "manage" ? "flex-1" : "w-9"
+                          }`}
+                        >
+                          <Crop size={13} className="text-emerald-600" />
+                          {mode === "manage" && <span>Edit / Crop</span>}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={deletingId === asset.id}
+                          onClick={(e) => handleDeleteAsset(e, asset.id)}
+                          title="Hapus foto"
+                          aria-label="Hapus foto"
+                          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 active:scale-95 disabled:opacity-50"
+                        >
+                          {deletingId === asset.id ? (
+                            <LoaderCircle className="animate-spin" size={13} />
+                          ) : (
+                            <Trash2 size={14} />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -5,6 +5,8 @@ import { weddingLampungElegance } from "./wedding-lampung-elegance/manifest";
 import { birthdayCelestial } from "./birthday-celestial/manifest";
 import { khitanKsatriaJawa } from "./khitan-ksatria-jawa/manifest";
 import { aqiqahLittleBloom } from "./aqiqah-little-bloom/manifest";
+import { wisudaElegance } from "./wisuda-elegance/manifest";
+import { weddingVerdantVows } from "./wedding-verdant-vows/manifest";
 
 /**
  * Daftar template catalog marketplace yang dibaca dari file standar templates.json.
@@ -20,6 +22,8 @@ export const templateRegistry: TemplateKit[] = [
   birthdayCelestial,
   khitanKsatriaJawa,
   aqiqahLittleBloom,
+  wisudaElegance,
+  weddingVerdantVows,
 ];
 
 export function getTemplateCatalogItem(codeOrId: string): TemplateCatalogItem | undefined {

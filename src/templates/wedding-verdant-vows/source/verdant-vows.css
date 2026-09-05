@@ -1,0 +1,1761 @@
+.verdant-shell {
+  --vv-bg: #edf4ef;
+  --vv-surface: #fff;
+  --vv-primary: #235f4d;
+  --vv-accent: #c3a66a;
+  --vv-text: #163b31;
+  --vv-dark: #12382f;
+  --vv-rich: #1a4c3e;
+  --vv-mid: #5f8977;
+  --vv-cream: #f7faf6;
+  --vv-border: #cfe0d4;
+  --vv-muted: #70867e;
+  --vv-on-dark: var(--vv-surface);
+  --vv-dark-shadow: color-mix(in srgb, var(--vv-dark) 22%, transparent);
+  --vv-surface-faint: color-mix(in srgb, var(--vv-surface) 18%, transparent);
+  --vv-surface-soft: color-mix(in srgb, var(--vv-surface) 76%, transparent);
+  --vv-surface-strong: color-mix(in srgb, var(--vv-surface) 90%, transparent);
+  --vv-accent-faint: color-mix(in srgb, var(--vv-accent) 20%, transparent);
+  --vv-accent-soft: color-mix(in srgb, var(--vv-accent) 48%, transparent);
+  --vv-mid-soft: color-mix(in srgb, var(--vv-mid) 46%, transparent);
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  overflow: hidden;
+  background: var(--vv-bg);
+  box-shadow:
+    0 0 50px var(--vv-dark-shadow),
+    0 0 0 1px var(--vv-border);
+  color: var(--vv-text);
+  font-family: var(--font-manrope, Arial, sans-serif);
+}
+.verdant-shell[data-use-container="false"] {
+  max-width: 100% !important;
+  box-shadow: none !important;
+}
+.verdant-scroll {
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  background: var(--vv-bg);
+}
+.verdant-scroll::-webkit-scrollbar {
+  display: none;
+}
+.vv-section {
+  position: relative;
+  box-sizing: border-box;
+  padding: 64px 32px;
+  overflow: hidden;
+}
+.vv-section h2 {
+  margin: 8px 0 14px;
+  font-family: var(--font-cormorant, Georgia, serif);
+  font-size: clamp(34px, 10vw, 48px);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+.vv-kicker {
+  margin: 0;
+  color: var(--vv-primary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+.vv-lead {
+  margin: 0;
+  color: var(--vv-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.vv-hero {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 54px 30px calc(24px + env(safe-area-inset-bottom));
+  text-align: center;
+  background: linear-gradient(155deg, var(--vv-cream), var(--vv-bg));
+}
+.vv-hero-orbit,
+.vv-closing-orbit {
+  position: absolute;
+  width: 390px;
+  height: 390px;
+  border: 1px solid var(--vv-border);
+  border-radius: 48% 52% 44% 56%;
+  opacity: 0.8;
+}
+.vv-hero-orbit {
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%) rotate(18deg);
+}
+.vv-photo-frame {
+  z-index: 1;
+  width: min(62vw, 265px);
+  aspect-ratio: 3/4;
+  padding: 8px;
+  border-radius: 150px 150px 36px 36px;
+  background: var(--vv-surface);
+  box-shadow: 0 20px 50px var(--vv-dark-shadow);
+}
+.vv-photo-frame img,
+.vv-couple-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.vv-photo-frame img {
+  border-radius: 145px 145px 30px 30px;
+}
+.vv-hero-copy {
+  z-index: 1;
+}
+.vv-hero h1 {
+  margin: 0;
+  font-family: var(--font-great-vibes, cursive);
+  font-size: clamp(52px, 16vw, 76px);
+  font-weight: 400;
+  line-height: 0.8;
+  color: var(--vv-primary);
+}
+.vv-hero-copy p {
+  margin: 16px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.vv-guest {
+  z-index: 1;
+  display: grid;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--vv-muted);
+}
+.vv-guest strong {
+  font-size: 13px;
+  color: var(--vv-text);
+}
+.vv-scroll-cue {
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  color: var(--vv-primary);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.vv-scroll-cue i {
+  display: block;
+  margin-top: 7px;
+  font-size: 20px;
+  font-style: normal;
+}
+.vv-couple {
+  background: var(--vv-surface);
+  text-align: center;
+}
+.vv-couple-grid {
+  display: grid;
+  gap: 22px;
+  margin-top: 32px;
+}
+.vv-couple-grid article {
+  padding: 12px 18px;
+}
+.vv-couple-grid article span,
+.vv-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: var(--vv-primary);
+  text-transform: uppercase;
+}
+.vv-couple-grid h3 {
+  margin: 7px 0;
+  font-family: var(--font-cormorant, Georgia, serif);
+  font-size: 30px;
+}
+.vv-couple-grid p {
+  margin: 0;
+  color: var(--vv-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.vv-couple-image {
+  width: 154px;
+  height: 190px;
+  margin: 0 auto;
+  padding: 7px;
+  border: 1px solid var(--vv-border);
+  border-radius: 80px 80px 12px 12px;
+}
+.vv-couple-image img {
+  border-radius: 74px 74px 7px 7px;
+}
+.vv-event {
+  background: linear-gradient(160deg, var(--vv-primary), var(--vv-rich));
+  color: var(--vv-on-dark);
+  text-align: center;
+}
+.vv-event .vv-kicker,
+.vv-event .vv-label {
+  color: var(--vv-accent);
+}
+.vv-date {
+  display: grid;
+  gap: 5px;
+  margin: 30px 0;
+}
+.vv-date span {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.vv-date strong {
+  font-family: var(--font-cormorant, Georgia, serif);
+  font-size: 34px;
+}
+.vv-event-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 28px -8px;
+  border: 1px solid color-mix(in srgb, var(--vv-on-dark) 23%, transparent);
+  border-radius: 18px;
+}
+.vv-event-card div {
+  padding: 18px 10px;
+}
+.vv-event-card div + div {
+  border-left: 1px solid color-mix(in srgb, var(--vv-on-dark) 23%, transparent);
+}
+.vv-event-card p {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.vv-venue {
+  margin-top: 28px;
+  padding: 22px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--vv-on-dark) 10%, transparent);
+  text-align: left;
+}
+.vv-venue h3 {
+  margin: 8px 0 5px;
+  font-family: var(--font-cormorant, Georgia, serif);
+  font-size: 27px;
+}
+.vv-venue p {
+  margin: 0;
+  color: color-mix(in srgb, var(--vv-on-dark) 75%, transparent);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.vv-venue a,
+.vv-wish-form button,
+.vv-bank button {
+  display: inline-block;
+  margin-top: 17px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--vv-accent);
+  padding: 11px 15px;
+  color: var(--vv-dark);
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.vv-gallery {
+  background: var(--vv-cream);
+}
+.vv-gallery-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 28px;
+}
+.vv-gallery-grid img {
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  border-radius: 16px;
+}
+.vv-gallery-grid img:first-child {
+  grid-column: span 2;
+  height: 235px;
+}
+.vv-gallery-empty {
+  grid-column: span 2;
+  padding: 30px;
+  border: 1px dashed var(--vv-border);
+  border-radius: 16px;
+  color: var(--vv-muted);
+  font-size: 12px;
+  text-align: center;
+}
+.vv-gift {
+  background: var(--vv-surface);
+  text-align: center;
+}
+.vv-bank {
+  margin-top: 28px;
+  border: 1px solid var(--vv-border);
+  border-radius: 22px;
+  padding: 25px;
+  background: linear-gradient(135deg, var(--vv-cream), var(--vv-surface));
+}
+.vv-bank span {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--vv-primary);
+  letter-spacing: 0.1em;
+}
+.vv-bank strong {
+  display: block;
+  margin: 10px 0 5px;
+  font-size: 25px;
+  letter-spacing: 0.04em;
+}
+.vv-bank p {
+  margin: 0;
+  color: var(--vv-muted);
+  font-size: 11px;
+}
+.vv-wishes {
+  background: var(--vv-cream);
+}
+.vv-wish-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 25px;
+}
+.vv-wish-form input,
+.vv-wish-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--vv-border);
+  border-radius: 14px;
+  background: var(--vv-surface);
+  padding: 13px;
+  color: var(--vv-text);
+  font: inherit;
+  font-size: 12px;
+}
+.vv-wish-form textarea {
+  min-height: 95px;
+  resize: vertical;
+}
+.vv-wish-form button {
+  margin: 0;
+  justify-self: start;
+}
+.vv-wish {
+  margin-top: 12px;
+  border-left: 3px solid var(--vv-accent);
+  padding: 10px 13px;
+  background: var(--vv-surface);
+}
+.vv-wish strong {
+  font-size: 12px;
+}
+.vv-wish p {
+  margin: 5px 0 0;
+  color: var(--vv-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.vv-closing {
+  min-height: 70dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: var(--vv-primary);
+  color: var(--vv-on-dark);
+}
+.vv-closing h2,
+.vv-closing p,
+.vv-closing strong {
+  z-index: 1;
+}
+.vv-closing h2 {
+  font-family: var(--font-great-vibes, cursive);
+  font-size: 62px;
+  font-weight: 400;
+}
+.vv-closing p {
+  max-width: 300px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: color-mix(in srgb, var(--vv-on-dark) 76%, transparent);
+}
+.vv-closing strong {
+  margin-top: 20px;
+  font-family: var(--font-cormorant, Georgia, serif);
+  font-size: 27px;
+}
+.verdant-rail {
+  position: absolute;
+  z-index: 30;
+  right: 10px;
+  top: 50%;
+  display: grid;
+  gap: 7px;
+  transform: translateY(-50%);
+}
+.verdant-rail button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--vv-surface) 75%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vv-surface) 88%, transparent);
+  padding: 8px;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--vv-dark) 12%, transparent);
+  color: var(--vv-primary);
+  font: inherit;
+}
+.verdant-rail span {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  font-size: 13px;
+}
+.verdant-rail em {
+  display: none;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+.vv-audio {
+  position: absolute;
+  z-index: 31;
+  top: 16px;
+  right: 14px;
+  width: 35px;
+  height: 35px;
+  border: 1px solid var(--vv-border);
+  border-radius: 50%;
+  background: var(--vv-surface);
+  color: var(--vv-primary);
+  font-size: 17px;
+}
+.vv-audio.is-on {
+  background: var(--vv-primary);
+  color: var(--vv-on-dark);
+}
+.vv-envelope {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(
+      circle at 80% 12%,
+       color-mix(in srgb, var(--vv-accent) 22%, transparent),
+      transparent 30%
+    ),
+    linear-gradient(145deg, var(--vv-bg), var(--vv-cream));
+  text-align: center;
+}
+.vv-envelope-card {
+  width: min(100%, 335px);
+  padding: 42px 26px 30px;
+  border: 1px solid var(--vv-border);
+  border-radius: 34px 34px 22px 22px;
+  background: var(--vv-surface);
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--vv-dark) 17%, transparent);
+}
+.vv-envelope-card p {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--vv-primary);
+}
+.vv-envelope-card h1 {
+  margin: 20px 0 12px;
+  font-family: var(--font-great-vibes, cursive);
+  font-size: 60px;
+  font-weight: 400;
+  line-height: 0.8;
+  color: var(--vv-primary);
+}
+.vv-envelope-card > span {
+  font-size: 11px;
+  color: var(--vv-muted);
+}
+.vv-envelope-line {
+  height: 1px;
+  margin: 25px 0;
+  background: var(--vv-border);
+}
+.vv-envelope-card small {
+  display: block;
+  font-size: 10px;
+  color: var(--vv-muted);
+}
+.vv-envelope-card strong {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-cormorant, Georgia, serif);
+  font-size: 24px;
+}
+.vv-envelope-card button {
+  display: block;
+  width: 100%;
+  margin-top: 27px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--vv-primary);
+  padding: 14px;
+  color: var(--vv-on-dark);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+.vv-envelope-card i {
+  display: block;
+  margin-top: 18px;
+  color: var(--vv-muted);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1.5;
+}
+[data-template-section][hidden] {
+  display: none !important;
+}
+@media (min-width: 640px) {
+  .verdant-rail {
+    right: 18px;
+  }
+  .verdant-rail button:hover em {
+    display: block;
+  }
+  .vv-section {
+    padding-left: 45px;
+    padding-right: 45px;
+  }
+}
+@media (max-height: 650px) {
+  .vv-envelope-card {
+    padding: 29px 24px 22px;
+  }
+  .vv-envelope-card h1 {
+    font-size: 52px;
+    margin: 15px 0 8px;
+  }
+  .vv-envelope-card button {
+    margin-top: 18px;
+  }
+  .vv-envelope-line {
+    margin: 17px 0;
+  }
+}
+
+/* Finishing layer: responsive botanical assets and an active floating rail. */
+.verdant-rail button {
+  position: relative;
+  background: color-mix(in srgb, var(--vv-surface) 76%, transparent);
+  backdrop-filter: blur(12px);
+  transition:
+    transform 0.24s ease,
+    background 0.24s ease,
+    color 0.24s ease,
+    box-shadow 0.24s ease;
+}
+.verdant-rail button::before {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 5px);
+  width: 3px;
+  height: 0;
+  border-radius: 999px;
+  background: var(--vv-accent);
+  content: "";
+  transform: translateY(-50%);
+  transition: height 0.24s ease;
+}
+.verdant-rail button:hover {
+  transform: translateX(-2px);
+  background: var(--vv-surface);
+}
+.verdant-rail button.is-active {
+  border-color: var(--vv-primary);
+  background: var(--vv-primary);
+  color: var(--vv-on-dark);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--vv-dark) 28%, transparent);
+  transform: translateX(-3px) scale(1.05);
+}
+.verdant-rail button.is-active::before {
+  height: 18px;
+}
+.verdant-rail {
+  transition: opacity 0.42s ease, transform 0.42s cubic-bezier(0.22, 0.8, 0.25, 1);
+}
+.verdant-rail.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(24px, -50%);
+}
+.vv-audio {
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+.vv-audio:hover {
+  transform: scale(1.06);
+}
+.vv-envelope-botanical {
+  position: absolute;
+  right: -78px;
+  bottom: -128px;
+  width: 270px;
+  opacity: 0.6;
+  transform: rotate(18deg);
+}
+.vv-envelope-card {
+  position: relative;
+  background: color-mix(in srgb, var(--vv-surface) 90%, transparent);
+  backdrop-filter: blur(8px);
+}
+.vv-envelope-card button {
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--vv-dark) 16%, transparent);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.vv-envelope-card button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px color-mix(in srgb, var(--vv-dark) 22%, transparent);
+}
+.vv-botanical {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+.vv-botanical--hero {
+  top: -106px;
+  left: -135px;
+  width: 270px;
+  opacity: 0.42;
+  transform: rotate(-38deg);
+}
+.vv-dove {
+  position: absolute;
+  z-index: 2;
+  width: 82px;
+  height: auto;
+  opacity: 0.92;
+  pointer-events: none;
+  filter: drop-shadow(0 7px 9px color-mix(in srgb, var(--vv-primary) 12%, transparent));
+}
+.vv-dove--one {
+  top: 17%;
+  right: 6%;
+  transform: rotate(-10deg);
+}
+.vv-dove--two {
+  top: 28%;
+  left: 5%;
+  width: 62px;
+  opacity: 0.76;
+  transform: scaleX(-1) rotate(-14deg);
+}
+.vv-botanical--couple {
+  right: -120px;
+  bottom: -175px;
+  width: 270px;
+  opacity: 0.44;
+  transform: rotate(157deg);
+}
+.vv-botanical--gift {
+  top: -150px;
+  right: -145px;
+  width: 285px;
+  opacity: 0.45;
+  transform: rotate(79deg);
+}
+.vv-divider {
+  display: block;
+  width: 150px;
+  height: auto;
+  margin: 0 auto 23px;
+  opacity: 0.92;
+}
+@media (min-width: 640px) {
+  .verdant-rail button:hover em,
+  .verdant-rail button.is-active em {
+    display: block;
+  }
+}
+
+/* Each section opens like a light paper leaf as it enters the invitation. */
+@media (prefers-reduced-motion: no-preference) {
+  .vv-section:not(.vv-hero) {
+    transform: perspective(1300px) rotateX(-7deg) translateY(30px);
+    transform-origin: 50% 0;
+    opacity: 0.01;
+    filter: saturate(0.88);
+    transition:
+      transform 0.82s cubic-bezier(0.22, 0.8, 0.25, 1),
+      opacity 0.48s ease,
+      filter 0.7s ease;
+    will-change: transform, opacity;
+  }
+  .vv-section:not(.vv-hero)::after {
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+       color-mix(in srgb, var(--vv-surface) 30%, transparent),
+      transparent 28%
+    );
+    content: "";
+    opacity: 0.55;
+    pointer-events: none;
+    transition: opacity 0.62s ease;
+  }
+  .vv-section.vv-page-open {
+    transform: perspective(1300px) rotateX(0) translateY(0);
+    opacity: 1;
+    filter: saturate(1);
+  }
+  .vv-section.vv-page-open::after {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vv-section {
+    scroll-behavior: auto;
+  }
+}
+
+/* Individual portrait frames remain elegant when empty and accept up to two editor images. */
+.vv-couple-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+}
+.vv-person-card {
+  min-width: 0;
+  padding: 0 !important;
+}
+.vv-portrait-frame {
+  position: relative;
+  display: grid;
+  width: 100%;
+  aspect-ratio: 0.78;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--vv-border);
+  border-radius: 94px 94px 24px 24px;
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+       color-mix(in srgb, var(--vv-accent) 18%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(150deg, var(--vv-cream), var(--vv-bg));
+  box-shadow: inset 0 0 0 7px color-mix(in srgb, var(--vv-surface) 46%, transparent);
+}
+.vv-portrait-frame::before {
+  position: absolute;
+  inset: 12px;
+  border: 1px dashed color-mix(in srgb, var(--vv-mid) 52%, transparent);
+  border-radius: 82px 82px 17px 17px;
+  content: "";
+}
+.vv-portrait-frame img {
+  position: absolute;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.vv-portrait-frame span {
+  position: relative;
+  z-index: 2;
+  max-width: 88px;
+  color: var(--vv-primary);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+.vv-portrait-frame img[src] + span {
+  opacity: 0;
+}
+.vv-person-card > span:not(.vv-portrait-frame span) {
+  display: block;
+  margin-top: 14px;
+}
+.vv-person-card h3 {
+  font-size: clamp(24px, 7.5vw, 30px);
+}
+
+/* A clearer text rhythm while retaining the template's soft editorial character. */
+.verdant-shell {
+  font-weight: 500;
+}
+.vv-section h2 {
+  font-weight: 500;
+}
+.vv-couple-grid h3,
+.vv-venue h3,
+.vv-timeline-item h3 {
+  font-weight: 600;
+}
+.vv-lead,
+.vv-couple-grid p,
+.vv-venue p,
+.vv-timeline-item p {
+  font-weight: 500;
+}
+
+.vv-story {
+  background: var(--vv-surface);
+}
+.vv-botanical--story {
+  right: -132px;
+  bottom: -138px;
+  width: 275px;
+  opacity: 0.4;
+  transform: rotate(145deg);
+}
+.vv-timeline {
+  position: relative;
+  display: grid;
+  gap: 27px;
+  margin-top: 31px;
+  text-align: left;
+}
+.vv-timeline::before {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 37px;
+  width: 1px;
+  background: linear-gradient(var(--vv-accent), var(--vv-border));
+  content: "";
+}
+.vv-timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 18px;
+}
+.vv-timeline-item time {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 58px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--vv-border);
+  border-radius: 999px;
+  background: var(--vv-cream);
+  color: var(--vv-primary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.vv-timeline-item h3 {
+  margin: 2px 0 6px;
+  font-family: var(--font-cormorant, Georgia, serif);
+  font-size: 27px;
+  line-height: 1;
+}
+.vv-timeline-item p {
+  margin: 0;
+  color: var(--vv-muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+/* Event details become the main call-to-action, without losing the calm palette. */
+.vv-event {
+  isolation: isolate;
+}
+.vv-event::before {
+  position: absolute;
+  z-index: 0;
+  top: 72px;
+  left: 50%;
+  width: 280px;
+  height: 280px;
+  border: 1px solid color-mix(in srgb, var(--vv-accent) 35%, transparent);
+  border-radius: 50%;
+  content: "";
+  opacity: 0.72;
+  transform: translateX(-50%);
+}
+.vv-event > * {
+  position: relative;
+  z-index: 1;
+}
+.vv-event .vv-divider {
+  filter: brightness(1.3) saturate(0.8);
+}
+.vv-event .vv-date {
+  width: min(100%, 278px);
+  margin: 26px auto 22px;
+  padding: 18px 14px;
+  border: 1px solid color-mix(in srgb, var(--vv-on-dark) 26%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--vv-on-dark) 10%, transparent);
+  box-shadow: 0 16px 30px color-mix(in srgb, var(--vv-dark) 18%, transparent);
+}
+.vv-event-card {
+  overflow: hidden;
+  margin: 0 !important;
+  background: color-mix(in srgb, var(--vv-dark) 16%, transparent);
+  box-shadow: 0 15px 30px color-mix(in srgb, var(--vv-dark) 13%, transparent);
+}
+.vv-event-card div {
+  padding: 20px 10px;
+}
+.vv-venue {
+  border: 1px solid color-mix(in srgb, var(--vv-on-dark) 17%, transparent);
+  box-shadow: 0 15px 30px color-mix(in srgb, var(--vv-dark) 10%, transparent);
+}
+.vv-venue a,
+.vv-calendar {
+  display: inline-flex;
+  min-height: 39px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  border-radius: 999px;
+  padding: 0 15px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.vv-venue a {
+  background: var(--vv-accent);
+  color: var(--vv-dark);
+}
+.vv-calendar {
+  margin-left: 7px;
+  border: 1px solid color-mix(in srgb, var(--vv-on-dark) 45%, transparent);
+  background: transparent;
+  color: var(--vv-on-dark);
+  cursor: pointer;
+}
+.vv-venue a:hover,
+.vv-calendar:hover {
+  transform: translateY(-1px);
+}
+
+/* Empty gallery has its own composed frame layout; images only appear after upload. */
+.vv-gallery-grid {
+  position: relative;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  align-items: center;
+  padding: 12px 8px 18px;
+}
+.vv-gallery-frame {
+  position: relative;
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  margin: 0;
+  border: 7px solid color-mix(in srgb, var(--vv-surface) 90%, transparent);
+  border-radius: 5px;
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+       color-mix(in srgb, var(--vv-accent) 19%, transparent),
+      transparent 28%
+    ),
+    linear-gradient(145deg, var(--vv-surface), var(--vv-bg));
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--vv-text) 13%, transparent);
+}
+.vv-gallery-frame:nth-child(1) {
+  transform: rotate(-5deg) translateY(6px);
+}
+.vv-gallery-frame:nth-child(2) {
+  transform: rotate(4deg) translateY(-7px);
+}
+.vv-gallery-frame:nth-child(3) {
+  transform: rotate(3deg) translateX(7px);
+}
+.vv-gallery-frame:nth-child(4) {
+  transform: rotate(-4deg) translateX(-5px) translateY(5px);
+}
+.vv-gallery-frame::before {
+  position: absolute;
+  width: 25%;
+  height: 1px;
+  background: var(--vv-border);
+  content: "";
+}
+.vv-gallery-frame span {
+  position: relative;
+  z-index: 1;
+  color: var(--vv-primary);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+.vv-gallery-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vv-event-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 9px;
+  margin-top: 20px;
+}
+.vv-venue .vv-event-actions a,
+.vv-event-actions .vv-calendar {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+}
+.vv-event-actions svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+.vv-event-actions .vv-calendar {
+  border-radius: 10px;
+}
+
+/* Hero and gallery are intentionally blank until the couple selects their own assets. */
+.vv-photo-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 50% 34%,
+       color-mix(in srgb, var(--vv-accent) 20%, transparent),
+      transparent 27%
+    ),
+    linear-gradient(150deg, var(--vv-cream), var(--vv-bg));
+}
+.vv-photo-frame::before {
+  position: absolute;
+  inset: 12px;
+  border: 1px dashed color-mix(in srgb, var(--vv-mid) 55%, transparent);
+  border-radius: 138px 138px 24px 24px;
+  content: "";
+}
+.vv-photo-frame img {
+  position: absolute;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.vv-photo-frame span {
+  position: relative;
+  z-index: 2;
+  color: var(--vv-primary);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.vv-photo-frame img[src] + span {
+  opacity: 0;
+}
+
+/* Gift controls from the inspector map directly to these two areas. */
+.vv-gift-content {
+  display: grid;
+  gap: 16px;
+  margin-top: 27px;
+}
+.vv-bank-stack {
+  display: grid;
+  gap: 11px;
+}
+.vv-gift .vv-bank {
+  margin-top: 0;
+}
+.vv-bank--secondary {
+  background: var(--vv-surface);
+}
+.vv-qris {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  padding: 18px;
+  border: 1px solid var(--vv-border);
+  border-radius: 19px;
+  background: var(--vv-cream);
+}
+.vv-qris-box {
+  position: relative;
+  display: grid;
+  width: 128px;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 1px dashed var(--vv-mid);
+  border-radius: 12px;
+  background: var(--vv-surface);
+}
+.vv-qris-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.vv-qris-placeholder {
+  display: grid;
+  gap: 6px;
+  place-items: center;
+  color: var(--vv-primary);
+}
+.vv-qris-placeholder span {
+  font-size: 31px;
+  line-height: 1;
+}
+.vv-qris-placeholder small,
+.vv-qris > span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.vv-qris > span {
+  color: var(--vv-primary);
+}
+
+/* Taller 3:4 editorial frames: intentionally beautiful before any image is chosen. */
+.vv-gallery-grid {
+  gap: 13px;
+  padding: 18px 12px 24px;
+}
+.vv-gallery-frame {
+  box-sizing: border-box;
+  aspect-ratio: 3 / 4;
+  border: 8px solid color-mix(in srgb, var(--vv-surface) 92%, transparent);
+  border-radius: 3px;
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      color-mix(in srgb, var(--vv-accent) 20%, transparent),
+      transparent 26%
+    ),
+    linear-gradient(145deg, var(--vv-surface), var(--vv-cream));
+  box-shadow:
+    0 14px 24px color-mix(in srgb, var(--vv-text) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--vv-border) 62%, transparent);
+}
+.vv-gallery-frame:nth-child(1) {
+  transform: rotate(-5deg) translateY(9px);
+}
+.vv-gallery-frame:nth-child(2) {
+  transform: rotate(4.5deg) translateY(-10px);
+}
+.vv-gallery-frame:nth-child(3) {
+  transform: rotate(3deg) translate(8px, -2px);
+}
+.vv-gallery-frame:nth-child(4) {
+  transform: rotate(-4deg) translate(-7px, 10px);
+}
+.vv-gallery-frame::before {
+  z-index: 1;
+  inset: 8px;
+  width: auto;
+  height: auto;
+  border: 1px solid color-mix(in srgb, var(--vv-mid) 28%, transparent);
+  background: transparent;
+  pointer-events: none;
+}
+.vv-gallery-frame::after {
+  position: absolute;
+  z-index: 2;
+  right: 11px;
+  bottom: 10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--vv-accent);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--vv-text) 16%, transparent);
+  content: "";
+}
+.vv-gallery-frame span {
+  z-index: 3;
+  max-width: 78px;
+  padding: 7px 8px;
+  border: 1px solid color-mix(in srgb, var(--vv-border) 80%, transparent);
+  background: color-mix(in srgb, var(--vv-surface) 72%, transparent);
+  font-size: 8px;
+  line-height: 1.45;
+  text-align: center;
+}
+.vv-gallery-frame img {
+  position: absolute;
+  z-index: 0;
+  inset: 8px;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+}
+
+/* Modern colour-block treatment: more image area, less polaroid padding. */
+.vv-gallery-frame {
+  border: 1px solid color-mix(in srgb, var(--vv-mid) 30%, transparent);
+  border-radius: 13px;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--vv-primary) 11%, var(--vv-surface)),
+    color-mix(in srgb, var(--vv-mid) 27%, var(--vv-cream))
+  );
+  box-shadow: 0 14px 26px color-mix(in srgb, var(--vv-text) 13%, transparent);
+}
+.vv-gallery-frame:nth-child(2) {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--vv-accent) 15%, var(--vv-surface)),
+    color-mix(in srgb, var(--vv-accent) 42%, var(--vv-cream))
+  );
+}
+.vv-gallery-frame:nth-child(3) {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--vv-mid) 11%, var(--vv-surface)),
+    color-mix(in srgb, var(--vv-primary) 20%, var(--vv-cream))
+  );
+}
+.vv-gallery-frame:nth-child(4) {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--vv-muted) 10%, var(--vv-surface)),
+    color-mix(in srgb, var(--vv-accent) 21%, var(--vv-cream))
+  );
+}
+.vv-gallery-frame::before {
+  inset: 4px;
+  border: 1px solid color-mix(in srgb, var(--vv-surface) 72%, transparent);
+  border-radius: 10px;
+}
+.vv-gallery-frame::after {
+  top: 12px;
+  right: 12px;
+  bottom: auto;
+  width: 32px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--vv-primary);
+  box-shadow: none;
+}
+.vv-gallery-frame:nth-child(2)::after {
+  background: var(--vv-accent);
+}
+.vv-gallery-frame:nth-child(3)::after {
+  background: var(--vv-mid);
+}
+.vv-gallery-frame:nth-child(4)::after {
+  background: var(--vv-muted);
+}
+.vv-gallery-frame span {
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--vv-text);
+  font-size: 8px;
+}
+.vv-gallery-frame img {
+  inset: 4px;
+  border-radius: 10px;
+}
+
+/* The event card receives a brief travelling light when this page opens. */
+.vv-event-card {
+  position: relative;
+}
+.vv-event-card p {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.vv-event-card::before {
+  position: absolute;
+  z-index: 3;
+  inset: -1px;
+  border-radius: 18px;
+  padding: 1px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 255deg,
+    color-mix(in srgb, var(--vv-surface) 18%, transparent) 280deg,
+    var(--vv-accent) 314deg,
+    color-mix(in srgb, var(--vv-surface) 84%, transparent) 335deg,
+    transparent 360deg
+  );
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: rotate(0deg);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+.vv-event.vv-page-open .vv-event-card::before {
+  animation: vv-event-border-sweep 1.8s cubic-bezier(0.22, 0.8, 0.25, 1) both;
+}
+@keyframes vv-event-border-sweep {
+  0% {
+    opacity: 0;
+    transform: rotate(-90deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(300deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vv-event.vv-page-open .vv-event-card::before {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* A static coloured glow is more dependable than a travelling border animation. */
+.vv-event-card {
+  border-color: color-mix(in srgb, var(--vv-accent) 72%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--vv-surface) 10%, transparent),
+    0 0 22px color-mix(in srgb, var(--vv-accent) 26%, transparent),
+    0 0 46px color-mix(in srgb, var(--vv-mid) 20%, transparent);
+}
+.vv-event-card::before {
+  opacity: 0.76;
+  animation: none !important;
+  transform: none !important;
+}
+.vv-closing-dove {
+  position: absolute;
+  z-index: 0;
+  top: 6%;
+  left: 50%;
+  width: min(74vw, 290px);
+  height: auto;
+  margin: 0;
+  opacity: 0.19;
+  transform: translateX(-50%) rotate(-8deg);
+  filter: saturate(0.72) drop-shadow(0 12px 18px color-mix(in srgb, var(--vv-dark) 16%, transparent));
+}
+
+/* Closing: content stays clear while the dove and orbit become quiet background layers. */
+.vv-closing {
+  justify-content: center;
+  padding-top: 122px;
+  padding-bottom: 126px;
+  background:
+    radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--vv-surface) 8%, transparent), transparent 34%),
+    linear-gradient(160deg, var(--vv-rich), var(--vv-primary));
+}
+.vv-closing-orbit {
+  z-index: 0;
+  top: auto;
+  bottom: -103px;
+  left: 50%;
+  width: 440px;
+  height: 235px;
+  border-color: color-mix(in srgb, var(--vv-accent) 56%, transparent);
+  border-radius: 50%;
+  opacity: 0.78;
+  transform: translateX(-50%) rotate(-7deg);
+}
+.vv-closing h2,
+.vv-closing p,
+.vv-closing strong { position: relative; z-index: 1; }
+.vv-closing h2 {
+  margin-top: 0;
+  margin-bottom: 18px;
+  text-shadow: 0 7px 20px color-mix(in srgb, var(--vv-dark) 28%, transparent);
+}
+.vv-closing p {
+  padding: 16px 17px;
+  border-top: 1px solid color-mix(in srgb, var(--vv-accent) 44%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--vv-accent) 24%, transparent);
+  background: color-mix(in srgb, var(--vv-dark) 16%, transparent);
+}
+.vv-closing strong {
+  margin-top: 26px;
+  color: color-mix(in srgb, var(--vv-surface) 88%, var(--vv-accent));
+  font-family: var(--font-great-vibes, cursive);
+  font-size: 48px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  text-shadow: 0 3px 12px color-mix(in srgb, var(--vv-dark) 28%, transparent);
+}
+
+/* Couple details need stronger editorial hierarchy on small screens. */
+.vv-person-card h3 {
+  font-family: var(--font-cormorant, Georgia, serif);
+  font-size: clamp(28px, 8.2vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--vv-surface) 70%, transparent);
+}
+.vv-person-card p {
+  color: color-mix(in srgb, var(--vv-text) 74%, var(--vv-muted));
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.62;
+}
+
+/* Closing footer composition: small flying doves plus a botanical horizon. */
+.vv-closing-dove { opacity: 0.12; }
+.vv-closing-flight {
+  position: absolute;
+  z-index: 1;
+  width: 76px;
+  height: auto;
+  opacity: 0.9;
+  filter: drop-shadow(0 8px 12px color-mix(in srgb, var(--vv-dark) 20%, transparent));
+}
+.vv-closing-flight--one {
+  bottom: 83px;
+  left: 17%;
+  transform: rotate(-10deg);
+}
+.vv-closing-flight--two {
+  right: 16%;
+  bottom: 105px;
+  width: 57px;
+  opacity: 0.76;
+  transform: scaleX(-1) rotate(-14deg);
+}
+.vv-closing-flourish {
+  position: absolute;
+  z-index: 1;
+  bottom: -13px;
+  left: 50%;
+  width: min(100%, 440px);
+  opacity: 0.92;
+  transform: translateX(-50%);
+}
+
+/* A restrained diamond glimmer draws attention to the couple's names. */
+.vv-hero h1 {
+  position: relative;
+  isolation: isolate;
+  text-shadow: 0 0 0 color-mix(in srgb, var(--vv-accent) 0%, transparent);
+  animation: vv-name-diamond-glow 3.2s ease-in-out infinite;
+}
+.vv-hero h1::before,
+.vv-hero h1::after {
+  position: absolute;
+  z-index: 2;
+  color: var(--vv-accent);
+  content: "✦";
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+}
+.vv-hero h1::before {
+  top: -0.22em;
+  left: 18%;
+  font-size: 0.22em;
+  animation: vv-diamond-twinkle 3.2s ease-in-out infinite;
+}
+.vv-hero h1::after {
+  right: 12%;
+  bottom: 0.04em;
+  font-size: 0.15em;
+  animation: vv-diamond-twinkle 3.2s ease-in-out 1.2s infinite;
+}
+@keyframes vv-name-diamond-glow {
+  0%, 100% { text-shadow: 0 0 0 color-mix(in srgb, var(--vv-accent) 0%, transparent); }
+  42%, 58% { text-shadow: 0 0 9px color-mix(in srgb, var(--vv-accent) 62%, transparent), 0 0 22px color-mix(in srgb, var(--vv-accent) 25%, transparent); }
+}
+@keyframes vv-diamond-twinkle {
+  0%, 28%, 100% { opacity: 0; transform: scale(0.35) rotate(0deg); }
+  40%, 54% { opacity: 1; transform: scale(1.25) rotate(18deg); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--vv-surface) 90%, transparent)); }
+  66% { opacity: 0; transform: scale(0.45) rotate(38deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vv-hero h1, .vv-hero h1::before, .vv-hero h1::after { animation: none; }
+  .vv-hero h1::before { opacity: 0.72; }
+}
+
+/* Visible luminous outline on the actual letterforms, not only around the title. */
+.vv-hero h1 {
+  font-weight: 700;
+  font-synthesis: weight;
+  -webkit-text-stroke: 0.7px currentColor;
+  paint-order: stroke fill;
+  text-shadow:
+    0 0 1px color-mix(in srgb, var(--vv-surface) 98%, transparent),
+    0 0 7px color-mix(in srgb, var(--vv-surface) 76%, var(--vv-accent)),
+    0 0 17px color-mix(in srgb, var(--vv-accent) 56%, transparent),
+    0 0 29px color-mix(in srgb, var(--vv-accent) 24%, transparent);
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--vv-accent) 45%, transparent));
+  animation: vv-name-diamond-glow-strong 3.2s ease-in-out infinite;
+}
+@keyframes vv-name-diamond-glow-strong {
+  0%, 100% {
+    text-shadow:
+      0 0 1px color-mix(in srgb, var(--vv-surface) 90%, transparent),
+      0 0 7px color-mix(in srgb, var(--vv-surface) 62%, var(--vv-accent)),
+      0 0 17px color-mix(in srgb, var(--vv-accent) 42%, transparent),
+      0 0 29px color-mix(in srgb, var(--vv-accent) 18%, transparent);
+  }
+  45%, 57% {
+    text-shadow:
+      0 0 2px var(--vv-surface),
+      0 0 11px color-mix(in srgb, var(--vv-surface) 94%, var(--vv-accent)),
+      0 0 25px color-mix(in srgb, var(--vv-accent) 78%, transparent),
+      0 0 42px color-mix(in srgb, var(--vv-accent) 38%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vv-hero h1 { animation: none; }
+}
+
+/* RSVP, dress code, and gallery lightbox: mobile-first companion features. */
+.vv-dress-code {
+  width: min(100%, 278px);
+  margin: 0 auto 19px;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--vv-on-dark) 20%, transparent);
+  border-left: 3px solid var(--vv-accent);
+  background: color-mix(in srgb, var(--vv-on-dark) 8%, transparent);
+  text-align: left;
+}
+.vv-dress-code .vv-label {
+  display: block;
+  color: var(--vv-accent);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+.vv-dress-code strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--vv-on-dark);
+  font-size: 13px;
+  font-weight: 800;
+}
+.vv-dress-code p {
+  margin: 4px 0 0;
+  color: color-mix(in srgb, var(--vv-on-dark) 74%, transparent);
+  font-size: 10px;
+  line-height: 1.55;
+}
+.vv-gallery-open {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: zoom-in;
+}
+.vv-gallery-open img { display: block; }
+.vv-gallery-open:focus-visible {
+  outline: 2px solid var(--vv-accent);
+  outline-offset: -4px;
+}
+.vv-rsvp {
+  min-width: 0;
+  margin: 4px 0 0;
+  border: 1px solid var(--vv-border);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--vv-surface) 82%, var(--vv-bg));
+  padding: 12px;
+}
+.vv-rsvp legend {
+  padding: 0 2px;
+  margin-bottom: 10px;
+  color: var(--vv-primary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.vv-rsvp > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.vv-wish-form .vv-rsvp button {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  margin: 0;
+  justify-self: stretch;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--vv-primary) 18%, var(--vv-border));
+  border-radius: 11px;
+  background: var(--vv-surface);
+  padding: 7px 6px;
+  color: var(--vv-muted);
+  font: inherit;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  transition: border-color .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.vv-wish-form .vv-rsvp button.is-selected {
+  border-color: var(--vv-primary);
+  background: var(--vv-primary);
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--vv-primary) 24%, transparent);
+  color: var(--vv-on-dark);
+}
+.vv-wish-form .vv-rsvp button:hover:not(.is-selected) {
+  border-color: var(--vv-mid);
+  color: var(--vv-primary);
+}
+.vv-wish-form .vv-rsvp button:focus-visible {
+  outline: 2px solid var(--vv-accent);
+  outline-offset: 2px;
+}
+.vv-wish-form > button[type="submit"] {
+  display: flex;
+  width: 100%;
+  min-height: 47px;
+  margin-top: 3px;
+  justify-self: stretch;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--vv-primary);
+  box-shadow: 0 9px 18px color-mix(in srgb, var(--vv-primary) 20%, transparent);
+  color: var(--vv-on-dark);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.vv-wish-form > button[type="submit"]:hover:not(:disabled) {
+  background: var(--vv-dark);
+  transform: translateY(-1px);
+}
+.vv-wish-feedback {
+  margin: 1px 0 0;
+  color: var(--vv-primary);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.vv-wish strong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.vv-wish strong small {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--vv-primary) 10%, var(--vv-surface));
+  padding: 3px 6px;
+  color: var(--vv-primary);
+  font-size: 8px;
+  font-weight: 800;
+}
+.vv-lightbox {
+  position: absolute;
+  z-index: 70;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--vv-dark) 88%, transparent);
+  padding: 20px;
+  backdrop-filter: blur(8px);
+}
+.vv-lightbox-content {
+  position: relative;
+  display: grid;
+  width: min(100%, 390px);
+  max-height: calc(100dvh - 40px);
+  place-items: center;
+  touch-action: pan-y;
+}
+.vv-lightbox-content > img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100dvh - 90px);
+  border: 1px solid color-mix(in srgb, var(--vv-surface) 48%, transparent);
+  border-radius: 13px;
+  box-shadow: 0 20px 45px color-mix(in srgb, var(--vv-dark) 42%, transparent);
+  object-fit: contain;
+}
+.vv-lightbox-content > span {
+  margin-top: 10px;
+  color: var(--vv-on-dark);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.vv-lightbox button {
+  position: absolute;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--vv-surface) 45%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--vv-dark) 42%, transparent);
+  color: var(--vv-on-dark);
+  font: inherit;
+  cursor: pointer;
+}
+.vv-lightbox-close { top: 9px; right: 9px; font-size: 22px !important; }
+.vv-lightbox-prev, .vv-lightbox-next { top: 50%; transform: translateY(-50%); font-size: 28px !important; }
+.vv-lightbox-prev { left: 8px; }
+.vv-lightbox-next { right: 8px; }
+@media (min-width: 640px) {
+  .vv-lightbox-prev { left: -48px; }
+  .vv-lightbox-next { right: -48px; }
+}

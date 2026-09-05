@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 960" fill="none">
+  <defs>
+    <linearGradient id="wisudaCoverBg" x1="0" y1="0" x2="720" y2="960" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="40%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+
+    <linearGradient id="goldFoil" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d97706" />
+      <stop offset="25%" stop-color="#fbbf24" />
+      <stop offset="50%" stop-color="#fef08a" />
+      <stop offset="75%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+
+    <linearGradient id="cardSurface" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="125%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- Background Canvas: Academic Deep Navy -->
+  <rect width="720" height="960" fill="url(#wisudaCoverBg)" />
+
+  <!-- Academic Arc Pattern Accents in Background -->
+  <path d="M0 160 C 180 80, 540 80, 720 160 L 720 0 L 0 0 Z" fill="#1e1b4b" opacity="0.4" />
+  <path d="M0 800 C 180 880, 540 880, 720 800 L 720 960 L 0 960 Z" fill="#1e1b4b" opacity="0.4" />
+
+  <!-- Confetti / Star Sparkles -->
+  <g fill="url(#goldFoil)" opacity="0.85">
+    <!-- Stars -->
+    <polygon points="110,120 113,128 121,130 113,132 110,140 107,132 99,130 107,128" />
+    <polygon points="610,130 613,138 621,140 613,142 610,150 607,142 599,140 607,138" />
+    <polygon points="120,830 122,836 128,838 122,840 120,846 118,840 112,838 118,836" />
+    <polygon points="600,820 602,826 608,828 602,830 600,836 598,830 592,828 598,826" />
+    <!-- Dots -->
+    <circle cx="85" cy="220" r="3.5" />
+    <circle cx="635" cy="240" r="3.5" />
+    <circle cx="95" cy="740" r="3" />
+    <circle cx="625" cy="720" r="3" />
+  </g>
+
+  <!-- Main Luxury Ivory Card -->
+  <rect x="52" y="56" width="616" height="848" rx="28" fill="url(#cardSurface)" filter="url(#cardShadow)" />
+
+  <!-- Architectural Gold Borders -->
+  <rect x="72" y="76" width="576" height="808" rx="20" fill="none" stroke="url(#goldFoil)" stroke-width="2.5" />
+  <rect x="82" y="86" width="556" height="788" rx="14" fill="none" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="5 5" />
+
+  <!-- Corner ✦ Motifs -->
+  <text x="96" y="112" font-family="Georgia, serif" font-size="18" font-weight="bold" fill="url(#goldFoil)">✦</text>
+  <text x="624" y="112" font-family="Georgia, serif" font-size="18" font-weight="bold" fill="url(#goldFoil)" text-anchor="end">✦</text>
+  <text x="96" y="852" font-family="Georgia, serif" font-size="18" font-weight="bold" fill="url(#goldFoil)">✦</text>
+  <text x="624" y="852" font-family="Georgia, serif" font-size="18" font-weight="bold" fill="url(#goldFoil)" text-anchor="end">✦</text>
+
+  <!-- Top Academic Laurel Crest & Graduation Cap -->
+  <g transform="translate(360, 235)">
+    <!-- Laurel Wreath Left -->
+    <path d="M-55 -40 C-75 -65 -105 -50 -115 -35 C-105 -25 -85 -30 -65 -20" fill="url(#goldFoil)" />
+    <path d="M-65 -10 C-90 -30 -120 -15 -125 5 C-110 10 -90 0 -70 5" fill="url(#goldFoil)" />
+    <path d="M-65 20 C-90 5 -115 25 -115 45 C-100 45 -85 30 -65 30" fill="url(#goldFoil)" />
+    <path d="M-55 50 C-75 40 -95 65 -85 85 C-75 80 -65 65 -50 60" fill="url(#goldFoil)" />
+
+    <!-- Laurel Wreath Right -->
+    <path d="M55 -40 C75 -65 105 -50 115 -35 C105 -25 85 -30 65 -20" fill="url(#goldFoil)" />
+    <path d="M65 -10 C90 -30 120 -15 125 5 C110 10 90 0 70 5" fill="url(#goldFoil)" />
+    <path d="M65 20 C90 5 115 25 115 45 C100 45 85 30 65 30" fill="url(#goldFoil)" />
+    <path d="M55 50 C75 40 95 65 85 85 C75 80 65 65 50 60" fill="url(#goldFoil)" />
+
+    <!-- Stem Arc -->
+    <path d="M-75 85 C-30 115 30 115 75 85" stroke="url(#goldFoil)" stroke-width="3" fill="none" stroke-linecap="round" />
+
+    <!-- Circular Academic Medallion -->
+    <circle cx="0" cy="0" r="62" fill="#1e1b4b" />
+    <circle cx="0" cy="0" r="57" fill="none" stroke="url(#goldFoil)" stroke-width="2" />
+    <circle cx="0" cy="0" r="51" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="3 3" />
+
+    <!-- Graduation Cap Symbol -->
+    <g transform="translate(0, -3)">
+      <polygon points="0,-24 38,-7 0,10 -38,-7" fill="url(#goldFoil)" />
+      <path d="M-20 -1 C-20 12 20 12 20 -1 Z" fill="#fef08a" />
+      <path d="M0 -7 C12 -5 24 2 26 10" stroke="#fef08a" stroke-width="2.5" fill="none" stroke-linecap="round" />
+      <circle cx="26" cy="13" r="2.5" fill="#f59e0b" />
+      <path d="M26 15 L24 25 M26 15 L26 26 M26 15 L28 25" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" />
+      <circle cx="0" cy="-7" r="3" fill="#ffffff" />
+    </g>
+  </g>
+
+  <!-- Typography Hierarchy -->
+  <!-- 1. Eyebrow Kicker -->
+  <text x="360" y="382" text-anchor="middle" fill="#4338ca" font-family="'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" letter-spacing="6">GRADUATION INVITATION</text>
+
+  <!-- 2. Main Title -->
+  <text x="360" y="425" text-anchor="middle" fill="#0f172a" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="bold" letter-spacing="1">Perayaan Kelulusan</text>
+
+  <!-- Decorative Gold Divider -->
+  <g transform="translate(360, 452)">
+    <line x1="-120" y1="0" x2="-20" y2="0" stroke="url(#goldFoil)" stroke-width="1.8" stroke-linecap="round" />
+    <polygon points="0,-5 5,0 0,5 -5,0" fill="#f59e0b" />
+    <circle cx="-10" cy="0" r="2" fill="#fbbf24" />
+    <circle cx="10" cy="0" r="2" fill="#fbbf24" />
+    <line x1="20" y1="0" x2="120" y2="0" stroke="url(#goldFoil)" stroke-width="1.8" stroke-linecap="round" />
+  </g>
+
+  <!-- 3. Graduate Name in Classical Elegant Serif -->
+  <text x="360" y="535" text-anchor="middle" fill="#1e1b4b" font-family="Georgia, 'Times New Roman', serif" font-size="44" font-weight="bold" letter-spacing="0.5">Anindya Putri Rahayu</text>
+
+  <!-- 4. Degree Badge Pill -->
+  <g transform="translate(360, 580)">
+    <rect x="-140" y="-18" width="280" height="36" rx="18" fill="#eef2ff" stroke="#c7d2fe" stroke-width="1.2" />
+    <text x="0" y="5" text-anchor="middle" fill="#3730a3" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" letter-spacing="2">SARJANA KOMPUTER (S.KOM)</text>
+  </g>
+
+  <!-- 5. University & Faculty Info -->
+  <text x="360" y="650" text-anchor="middle" fill="#0f172a" font-family="Georgia, serif" font-size="22" font-weight="bold" letter-spacing="0.5">Universitas Indonesia</text>
+  <text x="360" y="682" text-anchor="middle" fill="#64748b" font-family="'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="600">Fakultas Ilmu Komputer · Sistem Informasi</text>
+
+  <!-- 6. Ribbon Badge: WISUDA ELEGANCE -->
+  <g transform="translate(360, 755)">
+    <rect x="-140" y="-22" width="280" height="44" rx="22" fill="#1e1b4b" stroke="url(#goldFoil)" stroke-width="1.8" />
+    <text x="0" y="6" text-anchor="middle" fill="#ffffff" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" letter-spacing="4">WISUDA ELEGANCE</text>
+  </g>
+
+  <!-- Subtle Academic Year -->
+  <text x="360" y="820" text-anchor="middle" fill="#94a3b8" font-family="'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" letter-spacing="1">TAHUN AKADEMIK 2025/2026</text>
+</svg>

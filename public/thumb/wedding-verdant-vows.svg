@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 960" fill="none">
+  <rect width="720" height="960" fill="#edf4ef"/>
+  <path d="M0 172C132 73 206 91 313 172c105 80 209 79 407-14v802H0V172Z" fill="#d8e8dc"/>
+  <ellipse cx="360" cy="423" rx="222" ry="293" fill="#fff"/>
+  <ellipse cx="360" cy="423" rx="205" ry="276" stroke="#c3a66a" stroke-width="3"/>
+  <path d="M154 190c79 22 115 73 132 145M566 190c-79 22-115 73-132 145M153 673c76-5 120-43 149-105M567 673c-76-5-120-43-149-105" stroke="#235f4d" stroke-width="10" stroke-linecap="round"/>
+  <text x="360" y="330" text-anchor="middle" fill="#235f4d" font-family="Georgia,serif" font-size="23" letter-spacing="7">THE WEDDING OF</text>
+  <text x="360" y="445" text-anchor="middle" fill="#235f4d" font-family="cursive" font-size="92">Raisa &amp; Arga</text>
+  <path d="M285 495h150" stroke="#c3a66a" stroke-width="3"/>
+  <text x="360" y="542" text-anchor="middle" fill="#70867e" font-family="Arial,sans-serif" font-size="22" letter-spacing="3">VERDANT VOWS</text>
+</svg>

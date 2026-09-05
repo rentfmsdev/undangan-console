@@ -81,7 +81,6 @@ const dateFormatter = new Intl.DateTimeFormat("id-ID", {
 export function MyInvitationsDashboard({ initialUser }: { initialUser?: AuthUser | null }) {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(initialUser ?? null);
-
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [loadingDrafts, setLoadingDrafts] = useState(true);
   const [draftsError, setDraftsError] = useState("");

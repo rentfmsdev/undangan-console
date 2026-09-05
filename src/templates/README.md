@@ -321,3 +321,24 @@ Normalisasi berlaku untuk local draft, server draft, dan state kolaborasi. Setel
 13. Jalankan `npm run build` atau `npx tsc --noEmit`.
 
 Template baru tidak perlu menyalin section Wedding Elegance. Yang harus konsisten adalah kontrak editor, state, media, tema, navigasi, dan isolasi containernya.
+
+## 11. Aturan state hadiah digital
+
+Section `gift` harus mendukung hadiah secara modular; pengguna boleh menampilkan rekening, QRIS, keduanya, atau menyembunyikan keduanya tanpa menghapus data yang sudah diisi.
+
+- Rekening pertama memakai `bank1`, `account1`, dan `holder1`.
+- Rekening kedua memakai `bank2`, `account2`, dan `holder2`. Ia harus tetap dapat diedit, lalu hanya tampil bila `hasSecondAccount === true`.
+- Inspector menyediakan aksi **Tambah rekening** yang hanya mengubah `hasSecondAccount`; aksi ini tidak boleh menimpa data rekening kedua yang telah ada. Saat disembunyikan, data rekening kedua tetap tersimpan agar dapat ditampilkan kembali.
+- Toggle `showBank` hanya menyembunyikan area rekening pada preview, tanpa menghapus satu pun data rekening.
+- Toggle `showQris` hanya menyembunyikan area QRIS pada preview. Berkas QRIS memakai `imageUrl` dan `imageLabel`, dipilih lewat Asset Manager, dan harus dapat diganti atau dihapus tanpa memengaruhi rekening.
+- Tombol salin untuk setiap rekening harus menyalin nomor rekening yang sesuai. Jika tombol berbagi satu label `buttonLabel`, kedua tombol wajib mengikuti field tersebut secara realtime.
+- Bridge harus mengatur area tersembunyi dengan atribut `hidden`/`display: none` serta menjaga placeholder QRIS tetap muncul ketika QRIS aktif tetapi belum ada berkas yang dipilih.
+
+Untuk section multi-foto non-galeri (misalnya foto mempelai), gunakan `imageUrls` bersama `imageMax`. Urutan URL adalah urutan slot visual dan penghapusan satu foto tidak boleh menggeser atau menampilkan foto fallback yang tidak ada di state.
+
+## 12. RSVP, dress code, dan lightbox galeri
+
+- RSVP boleh memakai endpoint `POST /api/wishes` bila kontrak API telah menyediakan nilai kehadiran. Renderer harus mengirim pilihan tamu yang sebenarnya—jangan hard-code `Hadir`—dan menampilkan kegagalan kirim tanpa menyisipkan data palsu ke daftar ucapan.
+- Label RSVP yang dapat dilihat tamu wajib berada di `fields` dan diberi `data-field`; nilai semantik yang dikirim ke API boleh tetap stabil agar tidak rusak ketika label produk diubah pengguna.
+- Dress code adalah data section acara, bukan pengaturan global. Semua teksnya harus memiliki field manifest dan target `data-field` pada renderer.
+- Lightbox galeri harus berada di dalam shell template, mendukung tombol tutup, keyboard, dan swipe mobile. Saat URL foto aktif dihapus dari Asset Manager, lightbox harus menutup dan tidak boleh menampilkan URL/foto fallback lama.

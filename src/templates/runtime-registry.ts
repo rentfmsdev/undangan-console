@@ -17,6 +17,14 @@ import { AqiqahLittleBloomSource } from "./aqiqah-little-bloom/source/AqiqahLitt
 import { AqiqahLittleBloomNavigationAdapter } from "./aqiqah-little-bloom/navigation-adapter";
 import { normalizeAqiqahSectionState } from "./aqiqah-little-bloom/normalize-section-state";
 import { applyAqiqahTemplateState, watchAqiqahTemplateState, type AqiqahPreviewSection, type AqiqahGlobalSettings } from "./aqiqah-little-bloom/source/template-bridge";
+import WisudaEleganceSource from "./wisuda-elegance/source/WisudaEleganceSource";
+import { WisudaNavigationAdapter } from "./wisuda-elegance/navigation-adapter";
+import { normalizeWisudaSectionState } from "./wisuda-elegance/normalize-section-state";
+import { applyWisudaTemplateState, watchWisudaTemplateState, type WisudaPreviewSection, type WisudaSettings } from "./wisuda-elegance/source/template-bridge";
+import VerdantVowsSource from "./wedding-verdant-vows/source/VerdantVowsSource";
+import { VerdantVowsNavigationAdapter } from "./wedding-verdant-vows/navigation-adapter";
+import { normalizeVerdantVowsSectionState } from "./wedding-verdant-vows/normalize-section-state";
+import { applyVerdantVowsTemplateState, watchVerdantVowsTemplateState, type VerdantPreviewSection, type VerdantSettings } from "./wedding-verdant-vows/source/template-bridge";
 
 export type RuntimeState = { sections: unknown[]; themeId: string; settings: Record<string, unknown> };
 export type StoredTemplateSection = { id: string; type: string; enabled: boolean; data: Record<string, unknown> };
@@ -72,11 +80,33 @@ const aqiqahLittleBloomRuntime: TemplateRuntime = {
   watchState: ({ sections, themeId, settings }) => watchAqiqahTemplateState(sections as AqiqahPreviewSection[], themeId, settings as AqiqahGlobalSettings),
 };
 
+const wisudaEleganceRuntime: TemplateRuntime = {
+  templateId: "wisuda-elegance",
+  code: "wsdeg",
+  Renderer: WisudaEleganceSource,
+  createNavigationAdapter: () => new WisudaNavigationAdapter(),
+  normalizeSections: normalizeWisudaSectionState,
+  applyState: ({ sections, themeId, settings }) => applyWisudaTemplateState(sections as WisudaPreviewSection[], themeId, settings as WisudaSettings),
+  watchState: ({ sections, themeId, settings }) => watchWisudaTemplateState(sections as WisudaPreviewSection[], themeId, settings as WisudaSettings),
+};
+
+const verdantVowsRuntime: TemplateRuntime = {
+  templateId: "wedding-verdant-vows",
+  code: "vowgr",
+  Renderer: VerdantVowsSource,
+  createNavigationAdapter: () => new VerdantVowsNavigationAdapter(),
+  normalizeSections: normalizeVerdantVowsSectionState,
+  applyState: ({ sections, themeId, settings }) => applyVerdantVowsTemplateState(sections as VerdantPreviewSection[], themeId, settings as VerdantSettings),
+  watchState: ({ sections, themeId, settings }) => watchVerdantVowsTemplateState(sections as VerdantPreviewSection[], themeId, settings as VerdantSettings),
+};
+
 export const templateRuntimeRegistry: TemplateRuntime[] = [
   weddingLampungRuntime,
   birthdayCelestialRuntime,
   khitanKsatriaRuntime,
   aqiqahLittleBloomRuntime,
+  wisudaEleganceRuntime,
+  verdantVowsRuntime,
 ];
 
 export function getTemplateRuntime(code: string) {

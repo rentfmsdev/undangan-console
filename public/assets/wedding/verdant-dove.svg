@@ -1,0 +1,19 @@
+<svg width="180" height="116" viewBox="0 0 180 116" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#F9FCF8" stroke="#5A8871" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6">
+    <g transform="translate(79 55)">
+      <g>
+        <path d="M0 6C-24-6-49-18-68-11C-47 1-25 13-3 16L0 6Z"/>
+        <animateTransform attributeName="transform" type="rotate" values="0 0 6;-14 0 6;0 0 6" dur="2.8s" repeatCount="indefinite"/>
+      </g>
+      <g>
+        <path d="M3 8C21-15 42-28 62-24C49-7 31 11 8 18L3 8Z"/>
+        <animateTransform attributeName="transform" type="rotate" values="0 3 8;14 3 8;0 3 8" dur="2.8s" repeatCount="indefinite"/>
+      </g>
+      <path d="M-7 7C2-7 24-7 34 5C40 13 37 25 27 30C19 34 5 30-4 22C-9 18-11 12-7 7Z"/>
+      <path d="M29 6C43-1 54 4 62 11C53 17 44 20 34 18"/>
+      <circle cx="42" cy="8" r="1.7" fill="#235F4D" stroke="none"/>
+      <path d="M60 11L72 12L62 17" fill="#C6A96C"/>
+      <path d="M-4 22C-15 30-19 40-16 51C-6 45 1 37 7 28"/>
+    </g>
+  </g>
+</svg>

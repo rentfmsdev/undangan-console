@@ -28,7 +28,7 @@ export type TemplateKit = {
   id: string;
   code: string;
   version: number;
-  category: "wedding" | "birthday" | "khitanan" | "aqiqah";
+  category: "wedding" | "birthday" | "khitanan" | "aqiqah" | "wisuda";
   name: string;
   description: string;
   price?: number;
