@@ -1,6 +1,4 @@
-# syntax=docker/dockerfile:1.7
-
-FROM node:22-bookworm-slim AS dependencies
+FROM node:23-bookworm-slim AS dependencies
 WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -13,7 +11,6 @@ WORKDIR /app
 
 COPY . .
 
-# NEXT_PUBLIC variables are embedded into the browser bundle by `next build` from .env.
 ARG NEXT_PUBLIC_APP_URL
 ARG NEXT_PUBLIC_COLLAB_WS_URL
 ARG NEXT_PUBLIC_ADMIN_WHATSAPP
@@ -35,8 +32,6 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     PORT=3000
 
-# Keep dependencies in the shared image because the web server, collaboration
-# daemon, and Drizzle migration job use different packages from the same lockfile.
 COPY --from=dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/.next ./.next
 COPY --from=builder --chown=node:node /app/public ./public
