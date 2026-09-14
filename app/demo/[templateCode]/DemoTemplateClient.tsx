@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Megaphone, Monitor, QrCode, Smartphone, X } from "lucide-react";
+import { Check, Copy, Megaphone, Monitor, QrCode, Smartphone, Sparkles, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -31,9 +31,11 @@ function WhatsAppIcon({ size = 22, className }: { size?: number; className?: str
 export function DemoTemplateClient({
   template,
   defaultView = "mobile",
+  hasTouchScrollEffects = false,
 }: {
   template: TemplateKit;
   defaultView?: "mobile" | "desktop";
+  hasTouchScrollEffects?: boolean;
 }) {
   const [manualViewport, setManualViewport] = useState<"desktop" | "mobile" | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -158,6 +160,12 @@ export function DemoTemplateClient({
             />
           </div>
         </div>
+        {hasTouchScrollEffects && viewport === "desktop" && (
+          <p className="demo-touch-effect-note" role="status">
+            <Sparkles size={14} aria-hidden="true" />
+            <span><strong>Touch Scroll Effects</strong> aktif di layar sentuh. Gunakan perangkat touch atau Scan QR untuk mencoba di ponsel.</span>
+          </p>
+        )}
       </section>
 
       {/* Floating Left Ad Space (Dynamic via config/ads.ts) */}

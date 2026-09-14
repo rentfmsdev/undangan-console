@@ -83,6 +83,7 @@ export default async function DemoPage({
 
   const catalogItem = getTemplateCatalogItem(template.id) || getTemplateCatalogItem(template.code);
   const defaultView = catalogItem?.defaultView ?? template.defaultView ?? "mobile";
+  const hasTouchScrollEffects = catalogItem?.features.includes("Touch Scroll Effects") ?? false;
   const queryView = query.view === "desktop" || query.view === "mobile" ? query.view : undefined;
   const initialView = queryView ?? defaultView;
 
@@ -112,7 +113,11 @@ export default async function DemoPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <DemoTemplateClient template={template} defaultView={initialView} />
+      <DemoTemplateClient
+        template={template}
+        defaultView={initialView}
+        hasTouchScrollEffects={hasTouchScrollEffects}
+      />
     </>
   );
 }

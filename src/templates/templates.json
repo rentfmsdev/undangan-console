@@ -240,7 +240,8 @@
       "Rangkaian Acara & Maps",
       "Galeri Foto",
       "Cerita Cinta",
-      "Buku Tamu & Amplop Digital"
+      "Buku Tamu & Amplop Digital",
+      "Touch Scroll Effects"
     ],
     "tags": [
       "pernikahan",
@@ -267,7 +268,7 @@
     "useContainer": true,
     "covers": ["/thumb/wedding-eternal-orbit.svg"],
     "themeColors": ["#bfa66a", "#e1ad8c", "#5d768b", "#aad5ce"],
-    "features": ["Opening Envelope", "Transisi Perspektif 3D", "Hero Foto", "Profil Mempelai", "Rangkaian Acara & Maps", "Galeri Frame", "RSVP & Buku Tamu", "Amplop Digital Modular"],
+    "features": ["Opening Envelope", "Transisi Perspektif 3D", "Hero Foto", "Profil Mempelai", "Rangkaian Acara & Maps", "Galeri Frame", "RSVP & Buku Tamu", "Amplop Digital Modular", "Touch Scroll Effects"],
     "tags": ["pernikahan", "wedding", "3d", "cinematic", "night", "modern"]
   },
   {
@@ -286,7 +287,7 @@
     "useContainer": true,
     "covers": ["/thumb/wedding-avant-vows.svg"],
     "themeColors": ["#ed4b32", "#1648d8", "#7d245f", "#6f3d2e"],
-    "features": ["Opening Envelope", "Cover Story Editorial", "Profil Mempelai", "The Date & Maps", "Long Read Story", "Contact Sheet Gallery", "Gift Registry Modular", "Guest Notes RSVP", "Back Cover"],
+    "features": ["Opening Envelope", "Cover Story Editorial", "Profil Mempelai", "The Date & Maps", "Long Read Story", "Contact Sheet Gallery", "Gift Registry Modular", "Guest Notes RSVP", "Back Cover", "Touch Scroll Effects"],
     "tags": ["pernikahan", "wedding", "editorial", "magazine", "kinetic", "modern"]
   }
 ]

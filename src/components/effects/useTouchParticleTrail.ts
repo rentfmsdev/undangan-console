@@ -26,11 +26,10 @@ export function useTouchParticleTrail({ rootRef, layerRef, config, enabled = tru
   useEffect(() => {
     const root = rootRef.current;
     const layer = layerRef.current;
-    const coarsePointer = window.matchMedia("(pointer: coarse)");
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (!root || !layer || !enabled || disabled || !coarsePointer.matches || reducedMotion.matches) return;
+    if (!root || !layer || !enabled || disabled || reducedMotion.matches) return;
 
-    let touchId: number | null = null;
+    let pointerId: number | null = null;
     let startX = 0;
     let startY = 0;
     let emitted = false;
@@ -67,39 +66,36 @@ export function useTouchParticleTrail({ rootRef, layerRef, config, enabled = tru
     };
 
     const resetGesture = () => {
-      touchId = null;
+      pointerId = null;
       emitted = false;
     };
 
-    const handleTouchStart = (event: TouchEvent) => {
-      if (event.touches.length !== 1 || isInteractiveTarget(event.target)) return;
-      const touch = event.touches[0];
-      touchId = touch.identifier;
-      startX = touch.clientX;
-      startY = touch.clientY;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== "touch" || !event.isPrimary || isInteractiveTarget(event.target)) return;
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startY = event.clientY;
       emitted = false;
     };
 
-    const handleTouchMove = (event: TouchEvent) => {
-      if (touchId === null || emitted || event.touches.length !== 1) return;
-      const touch = Array.from(event.touches).find((item) => item.identifier === touchId);
-      if (!touch) return;
-      const distanceX = touch.clientX - startX;
-      const distanceY = touch.clientY - startY;
+    const handlePointerMove = (event: PointerEvent) => {
+      if (pointerId !== event.pointerId || emitted || event.pointerType !== "touch") return;
+      const distanceX = event.clientX - startX;
+      const distanceY = event.clientY - startY;
       if (Math.abs(distanceY) < minVerticalDistance || Math.abs(distanceY) <= Math.abs(distanceX)) return;
-      emitBurst(touch.clientX, touch.clientY);
+      emitBurst(event.clientX, event.clientY);
       emitted = true;
     };
 
-    root.addEventListener("touchstart", handleTouchStart, { passive: true });
-    root.addEventListener("touchmove", handleTouchMove, { passive: true });
-    root.addEventListener("touchend", resetGesture, { passive: true });
-    root.addEventListener("touchcancel", resetGesture, { passive: true });
+    root.addEventListener("pointerdown", handlePointerDown, { passive: true });
+    root.addEventListener("pointermove", handlePointerMove, { passive: true });
+    root.addEventListener("pointerup", resetGesture, { passive: true });
+    root.addEventListener("pointercancel", resetGesture, { passive: true });
     return () => {
-      root.removeEventListener("touchstart", handleTouchStart);
-      root.removeEventListener("touchmove", handleTouchMove);
-      root.removeEventListener("touchend", resetGesture);
-      root.removeEventListener("touchcancel", resetGesture);
+      root.removeEventListener("pointerdown", handlePointerDown);
+      root.removeEventListener("pointermove", handlePointerMove);
+      root.removeEventListener("pointerup", resetGesture);
+      root.removeEventListener("pointercancel", resetGesture);
       layer.replaceChildren();
     };
   }, [colors, disabled, durationMs, enabled, fadeDelayMs, layerRef, maxParticles, minVerticalDistance, particlesPerBurst, preset, rootRef, symbols]);
