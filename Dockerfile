@@ -24,7 +24,7 @@ ENV NODE_ENV=production \
 
 RUN npm run build
 
-FROM node:22-bookworm-slim AS runner
+FROM node:23-bookworm-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production \
