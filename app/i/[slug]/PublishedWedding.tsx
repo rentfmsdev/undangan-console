@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { trackMetaPixel } from "@/lib/meta-pixel";
 import { getTemplateRuntime, type NormalizedTemplateSection } from "@/templates/runtime-registry";
 
 export function PublishedWedding({
@@ -20,6 +21,18 @@ export function PublishedWedding({
 }) {
   const runtime = getTemplateRuntime(templateCode);
   const Renderer = runtime.Renderer;
+  const trackedInvitationId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (trackedInvitationId.current === invitationId) return;
+
+    trackMetaPixel("ViewContent", {
+      content_category: "invitation",
+      content_id: invitationId,
+      content_name: templateCode,
+    });
+    trackedInvitationId.current = invitationId;
+  }, [invitationId, templateCode]);
 
   useEffect(() => {
     let frame = 0;

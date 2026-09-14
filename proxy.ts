@@ -79,6 +79,11 @@ export function proxy(request: NextRequest) {
       targetUrl.pathname = `/i/${subdomain}`;
       return NextResponse.rewrite(targetUrl);
     }
+    if (subdomain && !reservedSubdomains.has(subdomain) && segments.length === 2 && firstSegment === "to") {
+      const targetUrl = request.nextUrl.clone();
+      targetUrl.pathname = `/i/${subdomain}/to/${segments[1]}`;
+      return NextResponse.rewrite(targetUrl);
+    }
   }
 
   return NextResponse.next();

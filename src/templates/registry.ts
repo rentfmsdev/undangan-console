@@ -8,6 +8,7 @@ import { aqiqahLittleBloom } from "./aqiqah-little-bloom/manifest";
 import { wisudaElegance } from "./wisuda-elegance/manifest";
 import { weddingVerdantVows } from "./wedding-verdant-vows/manifest";
 import { weddingEternalOrbit } from "./wedding-eternal-orbit/manifest";
+import { weddingAvantVows } from "./wedding-avant-vows/manifest";
 
 /**
  * Daftar template catalog marketplace yang dibaca dari file standar templates.json.
@@ -26,6 +27,7 @@ export const templateRegistry: TemplateKit[] = [
   wisudaElegance,
   weddingVerdantVows,
   weddingEternalOrbit,
+  weddingAvantVows,
 ];
 
 export function getTemplateCatalogItem(codeOrId: string): TemplateCatalogItem | undefined {

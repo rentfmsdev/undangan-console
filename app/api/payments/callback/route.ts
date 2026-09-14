@@ -25,12 +25,15 @@ interface PaymentCallbackPayload {
 
 export async function POST(request: Request) {
   const secret = process.env.PAYMENT_CALLBACK_SECRET;
-  if (secret) {
-    const incomingSecret = request.headers.get("X-Callback-Secret");
-    if (incomingSecret !== secret) {
-      console.warn("⚠️ [Payment Callback] Unauthorized: Invalid X-Callback-Secret");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!secret && process.env.NODE_ENV === "production") {
+    console.error("[Payment Callback] PAYMENT_CALLBACK_SECRET is not configured.");
+    return NextResponse.json({ error: "Payment callback is not configured." }, { status: 503 });
+  }
+
+  const incomingSecret = request.headers.get("X-Callback-Secret");
+  if (secret && incomingSecret !== secret) {
+    console.warn("⚠️ [Payment Callback] Unauthorized: Invalid X-Callback-Secret");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let payload: PaymentCallbackPayload;

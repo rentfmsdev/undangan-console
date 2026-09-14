@@ -235,6 +235,7 @@ export function FigmaColorPicker({
               <input
                 type="color"
                 value={currentColor}
+                disabled={disabled}
                 onChange={(e) => onChange(e.target.value)}
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 title="Pilih warna bebas"

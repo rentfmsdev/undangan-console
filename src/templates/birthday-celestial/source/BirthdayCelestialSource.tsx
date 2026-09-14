@@ -11,6 +11,7 @@ import { BirthdayCelestialNavigationAdapter } from "../navigation-adapter";
 import confetti from "canvas-confetti";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { trackMetaPixel } from "@/lib/meta-pixel";
 
 const POLAROID_CAPTIONS = [
   "✦ Sweet 17",
@@ -486,6 +487,11 @@ export default function BirthdayCelestialSource({ invitationId, verifiedGuestNam
           const data = await res.json();
           if (data?.wish) {
             newWish.id = data.wish.id;
+            trackMetaPixel("Lead", {
+              content_category: "invitation_rsvp",
+              content_id: invitationId,
+              content_name: "birthday-celestial",
+            });
           }
         } catch {
           // keep local optimistic wish

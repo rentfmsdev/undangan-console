@@ -313,6 +313,7 @@ export function CollaborativeSectionInspector({
                   ? `Pilih foto dari Asset Manager (Maks ${imageLimit})`
                   : "Pilih foto dari Asset Manager"),
             )}
+            disabled={isViewer}
             onOpenLibrary={onOpenContentLibrary}
             onRemove={(index) => {
               if (usesImageCollection) {
@@ -388,6 +389,7 @@ export function CollaborativeSectionInspector({
             defaultData.backgroundImageLabel ||
               "Pilih background dari Asset Manager",
           )}
+          disabled={isViewer}
           onOpenLibrary={onOpenBackgroundLibrary}
           onRemove={() => {
             updateFields(selected.id, {

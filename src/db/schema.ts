@@ -215,4 +215,45 @@ export const payments = mysqlTable("payments", {
   index("payments_status_idx").on(table.status),
 ]);
 
+export const rootAdminCredentials = mysqlTable("root_admin_credentials", {
+  id: char("id", { length: 36 }).primaryKey(),
+  userId: char("user_id", { length: 36 }).notNull(),
+  username: varchar("username", { length: 64 }).notNull(),
+  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  passwordSalt: varchar("password_salt", { length: 64 }).notNull(),
+  mustChangePassword: int("must_change_password").notNull().default(1),
+  failedAttempts: int("failed_attempts").notNull().default(0),
+  lockedUntil: datetime("locked_until"),
+  lastLoginAt: datetime("last_login_at"),
+  createdBy: char("created_by", { length: 36 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+}, (table) => [
+  uniqueIndex("root_admin_credentials_username_unique").on(table.username),
+  uniqueIndex("root_admin_credentials_user_id_unique").on(table.userId),
+]);
 
+export const rootAdminAuditLogs = mysqlTable("root_admin_audit_logs", {
+  id: char("id", { length: 36 }).primaryKey(),
+  actorUserId: char("actor_user_id", { length: 36 }),
+  action: varchar("action", { length: 64 }).notNull(),
+  targetUserId: char("target_user_id", { length: 36 }),
+  ipAddress: varchar("ip_address", { length: 64 }),
+  userAgent: varchar("user_agent", { length: 512 }),
+  details: json("details"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("root_admin_audit_logs_actor_idx").on(table.actorUserId),
+  index("root_admin_audit_logs_action_idx").on(table.action),
+  index("root_admin_audit_logs_created_at_idx").on(table.createdAt),
+]);
+
+export const platformSettings = mysqlTable("platform_settings", {
+  key: varchar("key", { length: 128 }).primaryKey(),
+  value: json("value").notNull(),
+  updatedBy: char("updated_by", { length: 36 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
+}, (table) => [
+  index("platform_settings_updated_at_idx").on(table.updatedAt),
+]);

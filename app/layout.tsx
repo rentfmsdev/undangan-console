@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Caveat } from "next/font/google";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 import "./globals.css";
 
 const brandFont = Caveat({
@@ -145,7 +146,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <MetaPixel />
+        {children}
+      </body>
     </html>
   );
 }

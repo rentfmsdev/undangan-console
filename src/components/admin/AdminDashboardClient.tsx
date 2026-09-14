@@ -24,8 +24,19 @@ import {
   SlidersHorizontal,
   Copy,
   Check,
+  Shield,
+  Calendar,
 } from "lucide-react";
 import type { AuthUser } from "@/modules/auth/service";
+import { RootsAdminManagement } from "./RootsAdminManagement";
+import { RootsPlatformSettings } from "./RootsPlatformSettings";
+import { RootsAvatar } from "./RootsAvatar";
+import {
+  isDateInRange,
+  getPresetDateRange,
+  formatDateLabel,
+  DatePreset,
+} from "@/modules/admin/date-filter";
 
 type AdminMetrics = {
   totalUsers: number;
@@ -126,19 +137,60 @@ function formatDate(dateStr?: string | null): string {
   }
 }
 
-export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser }) {
+export function AdminDashboardClient({
+  initialUser,
+  isSuperAdmin = false,
+}: {
+  initialUser: AuthUser;
+  isSuperAdmin?: boolean;
+}) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"invitations" | "users" | "payments">("invitations");
+  const [activeTab, setActiveTab] = useState<"invitations" | "users" | "payments" | "roots-admins">("invitations");
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Date Range Filter States
+  const [datePreset, setDatePreset] = useState<DatePreset>("all");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
   const [invitationsList, setInvitationsList] = useState<AdminInvitation[]>([]);
   const [paymentsList, setPaymentsList] = useState<AdminPayment[]>([]);
+
+  const handleSelectPreset = (preset: DatePreset) => {
+    setDatePreset(preset);
+    if (preset === "all") {
+      setStartDate("");
+      setEndDate("");
+      return;
+    }
+    const { startDate: s, endDate: e } = getPresetDateRange(preset);
+    setStartDate(s);
+    setEndDate(e);
+  };
+
+  const handleCustomStartDate = (val: string) => {
+    setStartDate(val);
+    setDatePreset("custom");
+  };
+
+  const handleCustomEndDate = (val: string) => {
+    setEndDate(val);
+    setDatePreset("custom");
+  };
+
+  const handleResetDate = () => {
+    setDatePreset("all");
+    setStartDate("");
+    setEndDate("");
+  };
+
+  const isDateFilterActive = Boolean(startDate || endDate);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -173,7 +225,7 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Filtered Invitations
+  // Filtered Invitations (Search + Status + Date Range)
   const filteredInvitations = useMemo(() => {
     return invitationsList.filter((inv) => {
       const q = searchQuery.toLowerCase();
@@ -191,24 +243,29 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
       const matchStatus =
         statusFilter === "all" || inv.status === statusFilter;
 
-      return matchSearch && matchPayment && matchStatus;
-    });
-  }, [invitationsList, searchQuery, paymentFilter, statusFilter]);
+      const matchDate = isDateInRange(inv.createdAt, startDate, endDate);
 
-  // Filtered Users
+      return matchSearch && matchPayment && matchStatus && matchDate;
+    });
+  }, [invitationsList, searchQuery, paymentFilter, statusFilter, startDate, endDate]);
+
+  // Filtered Users (Search + Date Range)
   const filteredUsers = useMemo(() => {
     return usersList.filter((u) => {
       const q = searchQuery.toLowerCase();
-      return (
+      const matchSearch =
         !q ||
         u.name.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
-        (u.phone && u.phone.includes(q))
-      );
-    });
-  }, [usersList, searchQuery]);
+        (u.phone && u.phone.includes(q));
 
-  // Filtered Payments
+      const matchDate = isDateInRange(u.createdAt, startDate, endDate);
+
+      return matchSearch && matchDate;
+    });
+  }, [usersList, searchQuery, startDate, endDate]);
+
+  // Filtered Payments (Search + Status + Date Range)
   const filteredPayments = useMemo(() => {
     return paymentsList.filter((p) => {
       const q = searchQuery.toLowerCase();
@@ -223,9 +280,39 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
       const matchStatus =
         paymentFilter === "all" || p.status === paymentFilter;
 
-      return matchSearch && matchStatus;
+      const matchDate = isDateInRange(p.paidAt || p.createdAt, startDate, endDate);
+
+      return matchSearch && matchStatus && matchDate;
     });
-  }, [paymentsList, searchQuery, paymentFilter]);
+  }, [paymentsList, searchQuery, paymentFilter, startDate, endDate]);
+
+  // Dynamic Metrics reflecting active Date Range
+  const activeMetrics = useMemo(() => {
+    if (!isDateFilterActive && metrics) {
+      return metrics;
+    }
+
+    // Compute metrics dynamically from date-filtered lists
+    const totalUsers = filteredUsers.length;
+    const totalInvitations = filteredInvitations.length;
+    const publishedInvitations = filteredInvitations.filter((i) => i.status === "published").length;
+    const draftInvitations = filteredInvitations.filter((i) => i.status === "draft").length;
+    const totalPayments = filteredPayments.length;
+    const paidPayments = filteredPayments.filter((p) => p.status === "paid");
+    const pendingPayments = filteredPayments.filter((p) => p.status === "pending");
+    const totalRevenue = paidPayments.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+
+    return {
+      totalUsers,
+      totalInvitations,
+      publishedInvitations,
+      draftInvitations,
+      totalPayments,
+      paidPaymentsCount: paidPayments.length,
+      pendingPaymentsCount: pendingPayments.length,
+      totalRevenue,
+    };
+  }, [isDateFilterActive, metrics, filteredUsers, filteredInvitations, filteredPayments]);
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 font-sans antialiased">
@@ -267,13 +354,13 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
             {/* Admin User Info */}
             <div className="flex items-center gap-2.5">
               <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-800 border border-emerald-500/30">
-                {initialUser.avatarUrl ? (
-                  <img src={initialUser.avatarUrl} alt={initialUser.name} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="h-full w-full grid place-items-center font-bold text-xs text-emerald-400">
-                    {initialUser.name[0]?.toUpperCase() || "A"}
-                  </div>
-                )}
+                <RootsAvatar
+                  userId={initialUser.id}
+                  name={initialUser.name}
+                  avatarUrl={initialUser.avatarUrl}
+                  fallbackClassName="text-emerald-400"
+                  fallbackLabel="A"
+                />
               </div>
               <div className="hidden md:block text-left text-xs leading-tight">
                 <span className="block font-bold text-white truncate max-w-[140px]">{initialUser.name}</span>
@@ -306,13 +393,13 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black tracking-tight text-white">
-                {metrics?.totalUsers ?? 0}
+                {activeMetrics?.totalUsers ?? 0}
               </span>
               <span className="text-xs text-slate-400">terdaftar</span>
             </div>
             <p className="mt-2 text-[11px] text-slate-500 flex items-center gap-1">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-400" />
-              Sinkron dengan akun Google
+              {isDateFilterActive ? "Daftar pada periode ini" : "Sinkron dengan akun Google"}
             </p>
           </div>
 
@@ -326,16 +413,16 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black tracking-tight text-white">
-                {metrics?.totalInvitations ?? 0}
+                {activeMetrics?.totalInvitations ?? 0}
               </span>
               <span className="text-xs text-slate-400">total draft</span>
             </div>
             <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-400">
               <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-                <CheckCircle2 size={12} /> {metrics?.publishedInvitations ?? 0} published
+                <CheckCircle2 size={12} /> {activeMetrics?.publishedInvitations ?? 0} published
               </span>
               <span className="text-slate-500">·</span>
-              <span className="text-slate-400">{metrics?.draftInvitations ?? 0} draft</span>
+              <span className="text-slate-400">{activeMetrics?.draftInvitations ?? 0} draft</span>
             </div>
           </div>
 
@@ -349,14 +436,14 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black tracking-tight text-white">
-                {metrics?.paidPaymentsCount ?? 0}
+                {activeMetrics?.paidPaymentsCount ?? 0}
               </span>
               <span className="text-xs text-emerald-400 font-bold">Lunas (Paid)</span>
             </div>
             <div className="mt-2 text-[11px] text-slate-400 flex items-center gap-2">
-              <span className="text-amber-400">{metrics?.pendingPaymentsCount ?? 0} pending</span>
+              <span className="text-amber-400">{activeMetrics?.pendingPaymentsCount ?? 0} pending</span>
               <span className="text-slate-500">·</span>
-              <span className="text-slate-500">{metrics?.totalPayments ?? 0} total rekaman</span>
+              <span className="text-slate-500">{activeMetrics?.totalPayments ?? 0} total rekaman</span>
             </div>
           </div>
 
@@ -370,14 +457,105 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
             </div>
             <div className="mt-3">
               <span className="text-2xl sm:text-3xl font-black tracking-tight text-emerald-400">
-                {formatRupiah(metrics?.totalRevenue ?? 0)}
+                {formatRupiah(activeMetrics?.totalRevenue ?? 0)}
               </span>
             </div>
             <p className="mt-2 text-[11px] text-slate-500 flex items-center gap-1">
               <CheckCircle2 size={12} className="text-emerald-400" />
-              Dari seluruh pembayaran berstatus Paid
+              {isDateFilterActive ? "Pendapatan pada periode ini" : "Dari seluruh pembayaran berstatus Paid"}
             </p>
           </div>
+        </section>
+
+        {/* Date Range Filter Bar */}
+        <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/70 p-4 sm:p-5 shadow-sm backdrop-blur">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            {/* Left: Presets */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                <div className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <Calendar size={15} />
+                </div>
+                <span>Periode Data:</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { key: "all", label: "Semua Waktu" },
+                  { key: "today", label: "Hari Ini" },
+                  { key: "7d", label: "7 Hari" },
+                  { key: "30d", label: "30 Hari" },
+                  { key: "this_month", label: "Bulan Ini" },
+                  { key: "last_month", label: "Bulan Lalu" },
+                ].map((p) => {
+                  const isActive = datePreset === p.key;
+                  return (
+                    <button
+                      key={p.key}
+                      onClick={() => handleSelectPreset(p.key as DatePreset)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                        isActive
+                          ? "bg-emerald-500 text-slate-950 shadow-sm"
+                          : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right: Custom Date Inputs & Reset */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                <span className="text-[11px] font-medium text-slate-400">Dari:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => handleCustomStartDate(e.target.value)}
+                  className="rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-200 [color-scheme:dark] focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                <span className="text-[11px] font-medium text-slate-400">Sampai:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => handleCustomEndDate(e.target.value)}
+                  className="rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-200 [color-scheme:dark] focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              {isDateFilterActive && (
+                <button
+                  onClick={handleResetDate}
+                  className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition cursor-pointer"
+                  title="Reset Filter Periode"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Active Period Indicator Badge */}
+          {isDateFilterActive && (
+            <div className="mt-3.5 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/20">
+                  <CheckCircle2 size={11} /> Filter Periode Aktif
+                </span>
+                <span className="text-slate-300">
+                  {startDate ? formatDateLabel(startDate) : "Awal"} &mdash; {endDate ? formatDateLabel(endDate) : "Sekarang"}
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500">
+                Semua tabel &amp; metrik ringkasan di bawah menyesuaikan periode ini.
+              </span>
+            </div>
+          )}
         </section>
 
         {/* Tab Selection & Search Filters Bar */}
@@ -397,7 +575,9 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
                 }`}
               >
                 <Mail size={14} />
-                <span>Semua Undangan ({invitationsList.length})</span>
+                <span>
+                  Semua Undangan ({isDateFilterActive ? `${filteredInvitations.length}/${invitationsList.length}` : invitationsList.length})
+                </span>
               </button>
 
               <button
@@ -412,7 +592,9 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
                 }`}
               >
                 <Users size={14} />
-                <span>Pengguna Terdaftar ({usersList.length})</span>
+                <span>
+                  Pengguna Terdaftar ({isDateFilterActive ? `${filteredUsers.length}/${usersList.length}` : usersList.length})
+                </span>
               </button>
 
               <button
@@ -427,7 +609,24 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
                 }`}
               >
                 <CreditCard size={14} />
-                <span>Riwayat Pembayaran ({paymentsList.length})</span>
+                <span>
+                  Riwayat Pembayaran ({isDateFilterActive ? `${filteredPayments.length}/${paymentsList.length}` : paymentsList.length})
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("roots-admins");
+                  setPaymentFilter("all");
+                }}
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold transition cursor-pointer ${
+                  activeTab === "roots-admins"
+                    ? "bg-emerald-500 text-slate-950 shadow-md"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Shield size={14} />
+                <span>Admin Roots</span>
               </button>
             </div>
 
@@ -445,9 +644,10 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
           </div>
 
           {/* Search & Filter Controls */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {/* Search Input */}
-            <div className="relative flex-1">
+          {activeTab !== "roots-admins" && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              {/* Search Input */}
+              <div className="relative flex-1">
               <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
@@ -515,6 +715,7 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
               </div>
             )}
           </div>
+          )}
         </section>
 
         {/* Tab 1: Semua Undangan Content */}
@@ -538,9 +739,19 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
                     {filteredInvitations.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="py-12 text-center text-slate-500">
-                          {searchQuery || paymentFilter !== "all"
-                            ? "Tidak ada undangan yang cocok dengan filter pencarian."
-                            : "Belum ada undangan yang dibuat."}
+                          <p>
+                            {searchQuery || paymentFilter !== "all" || isDateFilterActive
+                              ? "Tidak ada undangan yang cocok dengan filter pencarian atau periode tanggal yang dipilih."
+                              : "Belum ada undangan yang dibuat."}
+                          </p>
+                          {isDateFilterActive && (
+                            <button
+                              onClick={handleResetDate}
+                              className="mt-2.5 inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 underline font-medium"
+                            >
+                              Reset Filter Periode Tanggal
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ) : (
@@ -696,7 +907,19 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
                     {filteredUsers.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-12 text-center text-slate-500">
-                          Tidak ada pengguna yang cocok.
+                          <p>
+                            {searchQuery || isDateFilterActive
+                              ? "Tidak ada pengguna yang cocok dengan pencarian atau periode tanggal yang dipilih."
+                              : "Belum ada pengguna terdaftar."}
+                          </p>
+                          {isDateFilterActive && (
+                            <button
+                              onClick={handleResetDate}
+                              className="mt-2.5 inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 underline font-medium"
+                            >
+                              Reset Filter Periode Tanggal
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ) : (
@@ -706,13 +929,7 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-2.5">
                               <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
-                                {u.avatarUrl ? (
-                                  <img src={u.avatarUrl} alt={u.name} className="h-full w-full object-cover" />
-                                ) : (
-                                  <div className="h-full w-full grid place-items-center font-bold text-xs text-slate-400">
-                                    {u.name[0]?.toUpperCase() || "U"}
-                                  </div>
-                                )}
+                                <RootsAvatar userId={u.id} name={u.name} avatarUrl={u.avatarUrl} />
                               </div>
                               <div>
                                 <span className="font-bold text-white block">{u.name}</span>
@@ -791,9 +1008,19 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
                     {filteredPayments.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="py-12 text-center text-slate-500">
-                          {searchQuery || paymentFilter !== "all"
-                            ? "Tidak ada transaksi yang cocok dengan filter."
-                            : "Belum ada riwayat transaksi pembayaran tercatat di sistem."}
+                          <p>
+                            {searchQuery || paymentFilter !== "all" || isDateFilterActive
+                              ? "Tidak ada transaksi yang cocok dengan filter pencarian atau periode tanggal yang dipilih."
+                              : "Belum ada riwayat transaksi pembayaran tercatat di sistem."}
+                          </p>
+                          {isDateFilterActive && (
+                            <button
+                              onClick={handleResetDate}
+                              className="mt-2.5 inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 underline font-medium"
+                            >
+                              Reset Filter Periode Tanggal
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ) : (
@@ -884,6 +1111,20 @@ export function AdminDashboardClient({ initialUser }: { initialUser: AuthUser })
               </div>
             </div>
           </section>
+        )}
+
+        {/* Tab 4: Manajemen Admin Roots */}
+        {activeTab === "roots-admins" && (
+          <>
+            <RootsPlatformSettings isSuperAdmin={isSuperAdmin} />
+            <RootsAdminManagement
+              isSuperAdmin={isSuperAdmin}
+              currentUserId={initialUser.id}
+              startDate={startDate}
+              endDate={endDate}
+              onResetDate={handleResetDate}
+            />
+          </>
         )}
       </main>
     </div>

@@ -1,0 +1,49 @@
+.touch-particle-trail {
+  inset: 0;
+  pointer-events: none;
+  position: fixed;
+  z-index: 80;
+}
+
+.touch-particle-trail__particle {
+  animation: touch-particle-trail-drift var(--touch-particle-duration) cubic-bezier(.16, .72, .25, 1) forwards;
+  color: currentColor;
+  font-family: Georgia, serif;
+  font-weight: 700;
+  left: 0;
+  line-height: 1;
+  position: absolute;
+  text-align: center;
+  top: 0;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  will-change: opacity, transform;
+}
+
+.touch-particle-trail__particle[data-preset="leaves"] {
+  background: currentColor;
+  border-radius: 100% 0 100% 0;
+  height: calc(var(--touch-particle-size) * .62);
+  width: var(--touch-particle-size);
+}
+
+@keyframes touch-particle-trail-drift {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(0deg) scale(.3);
+  }
+  10% {
+    opacity: .94;
+  }
+  68% {
+    opacity: .8;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--touch-particle-drift-x)), calc(-50% + var(--touch-particle-drift-y))) rotate(var(--touch-particle-rotation)) scale(var(--touch-particle-scale));
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (pointer: fine) {
+  .touch-particle-trail { display: none; }
+}

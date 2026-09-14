@@ -33,6 +33,7 @@ import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNaviga
 import { WeddingLampungNavigationAdapter } from "../navigation-adapter";
 import { wedding } from "./wedding-data";
 import { WEDDING_GALLERY_UPDATE_EVENT } from "./template-bridge";
+import { trackMetaPixel } from "@/lib/meta-pixel";
 
 type Attendance = "Hadir" | "Belum pasti" | "Berhalangan hadir";
 type StoredWish = { id: string; name: string; attendance: Attendance; message: string; createdAt: string };
@@ -405,6 +406,11 @@ function WishesSection({ invitationId }: { invitationId?: string }) {
       const data = await response.json() as { wish?: StoredWish; message?: string };
       if (!response.ok || !data.wish) throw new Error(data.message ?? "Ucapan gagal disimpan.");
 
+      trackMetaPixel("Lead", {
+        content_category: "invitation_rsvp",
+        content_id: invitationId,
+        content_name: "wedding-lampung-elegance",
+      });
       setWishes((current) => [data.wish as StoredWish, ...current].slice(0, 12));
       setName("");
       setMessage("");

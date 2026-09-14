@@ -131,7 +131,7 @@
     "category": "aqiqah",
     "categoryLabel": "Aqiqah & Kelahiran",
     "description": "Undangan tasyakuran walimatul aqiqah & kelahiran buah hati dengan nuansa pastel lembut, ornamen awan bintang emas, doa tasyakuran, dan galeri manis.",
-    "price": 1000,
+    "price": 35000,
     "rating": 5,
     "favoriteCount": 186,
     "releaseDate": "2026-09-04",
@@ -269,5 +269,24 @@
     "themeColors": ["#bfa66a", "#e1ad8c", "#5d768b", "#aad5ce"],
     "features": ["Opening Envelope", "Transisi Perspektif 3D", "Hero Foto", "Profil Mempelai", "Rangkaian Acara & Maps", "Galeri Frame", "RSVP & Buku Tamu", "Amplop Digital Modular"],
     "tags": ["pernikahan", "wedding", "3d", "cinematic", "night", "modern"]
+  },
+  {
+    "id": "wedding-avant-vows",
+    "code": "folio",
+    "name": "Avant Vows",
+    "category": "pernikahan",
+    "categoryLabel": "Pernikahan",
+    "description": "Undangan pernikahan premium bergaya kinetic editorial dengan panel lipat 3D, contact-sheet gallery, dan empat art-direction preset.",
+    "price": 75000,
+    "rating": 5,
+    "favoriteCount": 0,
+    "releaseDate": "2026-09-06",
+    "status": "available",
+    "defaultView": "mobile",
+    "useContainer": true,
+    "covers": ["/thumb/wedding-avant-vows.svg"],
+    "themeColors": ["#ed4b32", "#1648d8", "#7d245f", "#6f3d2e"],
+    "features": ["Opening Envelope", "Cover Story Editorial", "Profil Mempelai", "The Date & Maps", "Long Read Story", "Contact Sheet Gallery", "Gift Registry Modular", "Guest Notes RSVP", "Back Cover"],
+    "tags": ["pernikahan", "wedding", "editorial", "magazine", "kinetic", "modern"]
   }
 ]

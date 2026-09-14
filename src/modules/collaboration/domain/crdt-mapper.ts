@@ -1,4 +1,5 @@
 import * as Y from "yjs";
+import { normalizeCardStyle, type CardStyleSettings } from "@/modules/share-card/contracts";
 
 export type SharedGlobalSettings = {
   themeId: string;
@@ -6,6 +7,7 @@ export type SharedGlobalSettings = {
   musicVolume: number;
   customColors: { primary?: string; accent?: string; background?: string };
   useContainer?: boolean;
+  cardStyle: CardStyleSettings;
 };
 
 export type SharedSectionRecord = {
@@ -61,6 +63,11 @@ export function initYDocFromState(state: SharedDraftState, doc: Y.Doc = new Y.Do
     globalSettingsMap.set("musicUrl", typeof state.globalSettings?.musicUrl === "string" ? state.globalSettings.musicUrl : defaultMusic);
     globalSettingsMap.set("musicVolume", state.globalSettings?.musicVolume ?? 0.6);
     globalSettingsMap.set("useContainer", state.globalSettings?.useContainer !== undefined ? Boolean(state.globalSettings.useContainer) : true);
+    const cardStyleMap = new Y.Map<unknown>();
+    Object.entries(normalizeCardStyle(state.globalSettings?.cardStyle)).forEach(([key, value]) => {
+      cardStyleMap.set(key, value);
+    });
+    globalSettingsMap.set("cardStyle", cardStyleMap);
 
     const customColorsMap = new Y.Map();
     if (state.globalSettings?.customColors) {
@@ -138,6 +145,10 @@ export function extractStateFromYDoc(doc: Y.Doc): SharedDraftState {
       customColors[k] = v;
     });
   }
+  const storedCardStyle = globalSettingsMap.get("cardStyle");
+  const cardStyleValue = storedCardStyle instanceof Y.Map
+    ? Object.fromEntries(Array.from(storedCardStyle.entries()))
+    : storedCardStyle;
 
   const sections: Record<string, SharedSectionRecord> = {};
   sectionsMap.forEach((val, key) => {
@@ -190,6 +201,7 @@ export function extractStateFromYDoc(doc: Y.Doc): SharedDraftState {
       musicVolume: Number(globalSettingsMap.get("musicVolume") ?? 0.6),
       customColors,
       useContainer: globalSettingsMap.get("useContainer") !== undefined ? Boolean(globalSettingsMap.get("useContainer")) : true,
+      cardStyle: normalizeCardStyle(cardStyleValue),
     },
     sectionOrder: sectionOrderArray.toArray(),
     sections,

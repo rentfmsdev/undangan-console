@@ -25,6 +25,7 @@ import QRCode from "qrcode";
 import jsQR from "jsqr";
 import { makeAdminWhatsAppUrl } from "@/config/contact";
 import { buildSubdomainUrl, getAppBaseUrl, getRootDomain } from "@/lib/app-url";
+import { trackMetaPixel } from "@/lib/meta-pixel";
 
 type PublishMode = "path" | "subdomain" | "custom_domain";
 type Availability = "idle" | "checking" | "available" | "unavailable" | "invalid";
@@ -444,6 +445,13 @@ export function PublishModal({
     if (!draftId) return;
     setSubmitting(true);
     setError("");
+
+    trackMetaPixel("InitiateCheckout", {
+      content_category: "invitation_publish",
+      content_id: draftId,
+      currency: "IDR",
+      value: totalAmount,
+    });
 
     try {
       const response = await fetch("/api/payments/create", {

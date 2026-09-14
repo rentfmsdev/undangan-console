@@ -19,6 +19,7 @@ import {
   Check,
   ChevronDown,
   Copy,
+  Download,
   ExternalLink,
   Eye,
   EyeOff,
@@ -28,6 +29,7 @@ import {
   Heart,
   History,
   ImagePlus,
+  Info,
   Keyboard,
   Layers,
   LayoutPanelTop,
@@ -107,6 +109,13 @@ import { buildInvitationUrl, getAppBaseUrl } from "@/lib/app-url";
 import { useAutoSave } from "./hooks/useAutoSave";
 import { AutoSaveStatusBadge } from "./components/AutoSaveStatusBadge";
 import { BulkGuestManager } from "./components/BulkGuestManager";
+import { buildInvitationShareData } from "@/modules/share-card/invitation-share-data";
+import { DEFAULT_CARD_STYLE, normalizeCardStyle, type CardStyleSettings } from "@/modules/share-card/contracts";
+import {
+  buildWhatsAppMessage,
+  type WhatsAppPreset,
+} from "@/modules/generator/build-whatsapp-message";
+import { buildPersonalInvitationUrl } from "@/modules/generator/build-personal-invitation-url";
 import { InviteCollaboratorModal } from "./components/InviteCollaboratorModal";
 import { VersionHistoryModal } from "./components/VersionHistoryModal";
 import { usePresence } from "@/modules/collaboration/client/usePresence";
@@ -123,6 +132,8 @@ import {
 } from "./components/collaborative/CollaborativeContext";
 import { CollaborativeGlobalEditor } from "./components/collaborative/CollaborativeGlobalEditor";
 import { CollaborativeSectionInspector } from "./components/collaborative/CollaborativeSectionInspector";
+import { CardStyleEditor } from "./components/CardStyleEditor";
+import { CardPreviewCanvas } from "./components/CardPreviewCanvas";
 import {
   TabbedInspectorSidebar,
   type InspectorSidebarTab,
@@ -134,9 +145,9 @@ type View = "editor" | "generator" | "wishes";
 export type EditableSection = TemplateSection & { id: string; enabled: boolean };
 type WishRecord = { id: string; name: string; attendance: string; message: string; createdAt: string };
 type ClientUser = { id: string; email: string; name: string; phone?: string | null; avatarUrl: string | null; role: "user" | "admin" };
-type LocalDraftSnapshot = { version: 1; themeId: string; musicUrl: string; musicVolume?: number; customColors?: { primary?: string; accent?: string; background?: string }; useContainer?: boolean; sections: Array<{ id: string; type: string; enabled: boolean; data: Record<string, unknown> }> };
+type LocalDraftSnapshot = { version: 1; themeId: string; musicUrl: string; musicVolume?: number; customColors?: { primary?: string; accent?: string; background?: string }; useContainer?: boolean; cardStyle?: CardStyleSettings; sections: Array<{ id: string; type: string; enabled: boolean; data: Record<string, unknown> }> };
 type PendingNavigation = { sectionType: string; requestId: string; navigationSource: NavigationSource };
-type AssetTarget = { kind: "image" | "audio"; target: "content" | "background" | "music" | "manager"; sectionId: string | null };
+type AssetTarget = { kind: "image" | "audio"; target: "content" | "background" | "music" | "card" | "manager"; sectionId: string | null };
 type StoredSectionRecord = { id: string; type: string; enabled: boolean; data: Record<string, unknown> };
 
 function makeSections(template: TemplateKit): EditableSection[] {
@@ -486,6 +497,7 @@ type HistorySnapshot = {
   musicUrl: string;
   musicVolume?: number;
   customColors?: { primary?: string; accent?: string; background?: string };
+  cardStyle?: CardStyleSettings;
 };
 
 export function ConsoleWorkspace({
@@ -522,6 +534,7 @@ export function ConsoleWorkspace({
   const [useContainer, setUseContainer] = useState<boolean>(
     () => template.useContainer !== false,
   );
+  const [cardStyle, setCardStyle] = useState<CardStyleSettings>(DEFAULT_CARD_STYLE);
   const [isPublished, setIsPublished] = useState(false);
   const [draftStatus, setDraftStatus] = useState<
     "draft" | "published" | "custom"
@@ -540,13 +553,14 @@ export function ConsoleWorkspace({
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  const [inspectorWidth, setInspectorWidth] = useState(340);
+  const [inspectorWidth, setInspectorWidth] = useState(400);
   const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
   const [isStructureCollapsed, setIsStructureCollapsed] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [showReconnectedBadge, setShowReconnectedBadge] = useState(false);
   const [isInspectorResizing, setIsInspectorResizing] = useState(false);
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
+  const [isCardDownloadOpen, setIsCardDownloadOpen] = useState(false);
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [frameMode, setFrameMode] = useState<
     "desktop" | "ios" | "android" | "clean"
@@ -569,9 +583,31 @@ export function ConsoleWorkspace({
   const [wishesLoading, setWishesLoading] = useState(true);
 
   const [sectionSearchQuery, setSectionSearchQuery] = useState("");
-  const [waPreset, setWaPreset] = useState<
-    "formal" | "islami" | "casual" | "english"
-  >("formal");
+  const templateCategory = (template.category || "").toLowerCase();
+  const isIslamicOnlyTradition =
+    templateCategory.includes("khitan") || templateCategory.includes("aqiqah");
+  const [waPreset, setWaPreset] = useState<WhatsAppPreset>("formal");
+
+  // Safeguard: Reset to formal if switching to an Islamic-only tradition template
+  useEffect(() => {
+    if (isIslamicOnlyTradition && waPreset === "non-muslim") {
+      setWaPreset("formal");
+    }
+  }, [isIslamicOnlyTradition, waPreset]);
+
+  const isEventDetailsIncomplete = useMemo(() => {
+    const share = buildInvitationShareData({
+      template,
+      sections: sections.map((s) => ({
+        type: s.type,
+        enabled: s.enabled,
+        data: s.defaultData || {},
+      })),
+      themeId,
+      styleOverrides: { customColors: customThemeColors, cardStyle },
+    });
+    return !share.eventDate && !share.venue && !share.primaryTime;
+  }, [template, sections, themeId, customThemeColors, cardStyle]);
 
   const applySharedState = useCallback(
     (remoteState: SharedDraftState) => {
@@ -589,6 +625,9 @@ export function ConsoleWorkspace({
       }
       if (typeof remoteState.globalSettings?.useContainer === "boolean") {
         setUseContainer(remoteState.globalSettings.useContainer);
+      }
+      if (remoteState.globalSettings?.cardStyle) {
+        setCardStyle(normalizeCardStyle(remoteState.globalSettings.cardStyle));
       }
 
       if (
@@ -751,7 +790,8 @@ export function ConsoleWorkspace({
         | "musicUrl"
         | "musicVolume"
         | "customColors"
-        | "useContainer",
+        | "useContainer"
+        | "cardStyle",
       value: unknown,
     ) => {
       if (isViewer) return;
@@ -766,6 +806,8 @@ export function ConsoleWorkspace({
         setCustomThemeColors(value as Record<string, string>);
       } else if (key === "useContainer") {
         setUseContainer(Boolean(value));
+      } else if (key === "cardStyle") {
+        setCardStyle(normalizeCardStyle(value));
       }
 
       collabDoc.updateLocalState((doc) => {
@@ -792,6 +834,18 @@ export function ConsoleWorkspace({
               if (v) (customColorsMap as Y.Map<string>).set(k, v);
             },
           );
+        } else if (key === "cardStyle") {
+          let cardStyleMap = globalSettings.get("cardStyle");
+          if (!(cardStyleMap instanceof Y.Map)) {
+            cardStyleMap = new Y.Map();
+            globalSettings.set("cardStyle", cardStyleMap);
+          }
+          Array.from((cardStyleMap as Y.Map<unknown>).keys()).forEach((entry) =>
+            (cardStyleMap as Y.Map<unknown>).delete(entry),
+          );
+          Object.entries(normalizeCardStyle(value)).forEach(([entry, item]) => {
+            (cardStyleMap as Y.Map<unknown>).set(entry, item);
+          });
         } else {
           globalSettings.set(key, value);
         }
@@ -826,6 +880,15 @@ export function ConsoleWorkspace({
     updateGlobalSetting("musicVolume", vol);
   }
 
+  const handleCardStyleChange = useCallback((nextStyle: CardStyleSettings) => {
+    const normalized = normalizeCardStyle(nextStyle);
+    updateGlobalSetting("cardStyle", { ...normalized, version: cardStyle.version + 1 });
+  }, [cardStyle.version, updateGlobalSetting]);
+
+  const resetCardStyle = useCallback(() => {
+    updateGlobalSetting("cardStyle", { ...DEFAULT_CARD_STYLE, version: cardStyle.version + 1 });
+  }, [cardStyle.version, updateGlobalSetting]);
+
   const handleSectionToggle = useCallback(
     (sectionId: string) => {
       if (isViewer) return;
@@ -859,7 +922,7 @@ export function ConsoleWorkspace({
   const previewPanelRef = useRef<HTMLElement>(null);
   const structurePanelRef = useRef<HTMLElement>(null);
   const inspectorPanelRef = useRef<HTMLElement>(null);
-  const inspectorWidthRef = useRef(340);
+  const inspectorWidthRef = useRef(400);
   const inspectorResizeRef = useRef(false);
   const pendingNavigationRef = useRef<PendingNavigation | null>(null);
   const draftInitializationRef = useRef("");
@@ -887,8 +950,19 @@ export function ConsoleWorkspace({
       musicVolume,
       customColors: customThemeColors,
       useContainer,
+      cardStyle,
     }),
-    [musicUrl, musicVolume, customThemeColors, useContainer],
+    [musicUrl, musicVolume, customThemeColors, useContainer, cardStyle],
+  );
+  const cardPreviewData = useMemo(
+    () => buildInvitationShareData({
+      template,
+      sections: previewSections,
+      themeId,
+      styleOverrides: { customColors: customThemeColors, cardStyle },
+      guestName: "Bpk. Budi Santoso",
+    }),
+    [template, previewSections, themeId, customThemeColors, cardStyle],
   );
   const localDraftKey = `undangan-console:local-draft:${template.code}`;
 
@@ -930,8 +1004,9 @@ export function ConsoleWorkspace({
       ),
     );
     if (Number.isFinite(savedWidth) && savedWidth >= 280 && savedWidth <= 620) {
-      inspectorWidthRef.current = savedWidth;
-      setInspectorWidth(savedWidth);
+      const restoredWidth = Math.max(400, savedWidth);
+      inspectorWidthRef.current = restoredWidth;
+      setInspectorWidth(restoredWidth);
     }
     const savedCollapsed = window.localStorage.getItem(
       `undangan-console:inspector-collapsed:${template.code}`,
@@ -1054,6 +1129,7 @@ export function ConsoleWorkspace({
       },
       nextMusicVolume?: number,
       nextUseContainer?: boolean,
+      nextCardStyle?: CardStyleSettings,
     ) => {
       if (!active) return;
       const hydrated = hydrateSections(template, records);
@@ -1066,6 +1142,7 @@ export function ConsoleWorkspace({
       if (typeof nextUseContainer === "boolean") {
         setUseContainer(nextUseContainer);
       }
+      setCardStyle(normalizeCardStyle(nextCardStyle));
       setSections(hydrated);
       setSelectedId(hydrated[0]?.id ?? "");
       setDraftReady(true);
@@ -1122,6 +1199,7 @@ export function ConsoleWorkspace({
         payload.draft.styleOverrides?.customColors,
         payload.draft.styleOverrides?.musicVolume,
         payload.draft.styleOverrides?.useContainer,
+        payload.draft.styleOverrides?.cardStyle,
       );
       return true;
     }
@@ -1147,6 +1225,7 @@ export function ConsoleWorkspace({
             localSnapshot.customColors,
             localSnapshot.musicVolume,
             localSnapshot.useContainer,
+            localSnapshot.cardStyle,
           );
         else setDraftReady(true);
         return;
@@ -1206,6 +1285,7 @@ export function ConsoleWorkspace({
               musicVolume: localSnapshot.musicVolume,
               customColors: localSnapshot.customColors,
               useContainer: localSnapshot.useContainer,
+              cardStyle: localSnapshot.cardStyle,
             },
             sections: migratedSections.map((section, order) => ({
               ...section,
@@ -1225,6 +1305,7 @@ export function ConsoleWorkspace({
           localSnapshot.customColors,
           localSnapshot.musicVolume,
           localSnapshot.useContainer,
+          localSnapshot.cardStyle,
         );
         return;
       }
@@ -1273,6 +1354,7 @@ export function ConsoleWorkspace({
       musicVolume,
       customColors: customThemeColors,
       useContainer,
+      cardStyle,
       sections: sections.map((section) => ({
         id: section.id,
         type: section.type,
@@ -1280,7 +1362,7 @@ export function ConsoleWorkspace({
         data: section.defaultData,
       })),
     }),
-    [themeId, musicUrl, musicVolume, customThemeColors, useContainer, sections],
+    [themeId, musicUrl, musicVolume, customThemeColors, useContainer, cardStyle, sections],
   );
 
   const presence = usePresence({
@@ -1341,6 +1423,7 @@ export function ConsoleWorkspace({
         musicVolume: dataToSave.musicVolume,
         customColors: dataToSave.customColors,
         useContainer: dataToSave.useContainer,
+        cardStyle: dataToSave.cardStyle,
         sections: dataToSave.sections,
       };
 
@@ -1361,6 +1444,7 @@ export function ConsoleWorkspace({
               musicVolume: dataToSave.musicVolume,
               customColors: dataToSave.customColors,
               useContainer: dataToSave.useContainer,
+              cardStyle: dataToSave.cardStyle,
             },
             sections: dataToSave.sections.map((section, order) => ({
               ...section,
@@ -2052,6 +2136,15 @@ export function ConsoleWorkspace({
       setAssetTarget(null);
       return;
     }
+    if (target.target === "card") {
+      handleCardStyleChange({
+        ...cardStyle,
+        imageUrl: asset.url,
+        backgroundMode: "photo",
+      });
+      setAssetTarget(null);
+      return;
+    }
     if (target.target === "background") {
       updateSelectedFields({
         backgroundImageUrl: asset.url,
@@ -2089,9 +2182,9 @@ export function ConsoleWorkspace({
   }
 
   function updateInspectorWidth(clientX: number) {
-    const maximum = Math.min(620, Math.max(320, window.innerWidth - 700));
+    const maximum = Math.min(620, Math.max(400, window.innerWidth - 700));
     const nextWidth = Math.round(
-      Math.min(maximum, Math.max(280, window.innerWidth - clientX)),
+      Math.min(maximum, Math.max(400, window.innerWidth - clientX)),
     );
     inspectorWidthRef.current = nextWidth;
     setInspectorWidth(nextWidth);
@@ -2127,143 +2220,44 @@ export function ConsoleWorkspace({
   }
 
   function resetInspectorWidth() {
-    inspectorWidthRef.current = 340;
-    setInspectorWidth(340);
+    inspectorWidthRef.current = 400;
+    setInspectorWidth(400);
     window.localStorage.setItem(
       `undangan-console:inspector-width:${template.code}`,
-      "340",
+      "400",
     );
   }
 
-  function getWhatsAppMessage(preset: "formal" | "islami" | "casual" | "english", name: string) {
-    const formattedName = name.trim().replace(/\s+/g, " ") || "Bapak/Ibu/Saudara/i";
-    const slug = publishIdentifier || defaultPublishIdentifier || template.code;
-    const rootDomain = "undangan.co";
-    const invitationPath =
-      publishUrl ||
-      (publishMode === "subdomain" && slug
-        ? `https://${slug}.${rootDomain}?for=${encodeURIComponent(formattedName)}`
-        : buildInvitationUrl(slug, formattedName));
+  function getWhatsAppMessage(preset: WhatsAppPreset, name: string) {
+    const shareSections = sections.map((s) => ({
+      type: s.type,
+      enabled: s.enabled,
+      data: s.defaultData || {},
+    }));
 
-    const cat = (template.category || "wedding").toLowerCase();
-    const mempelaiSection = sections.find(
-      (s) => s.type === "mempelai" || s.type === "couple",
-    );
-    const heroSection = sections.find(
-      (s) => s.type === "hero" || s.type === "opening",
-    );
+    const share = buildInvitationShareData({
+      template,
+      sections: shareSections,
+      themeId,
+      styleOverrides: { customColors: customThemeColors, cardStyle },
+      guestName: name,
+    });
 
-    // Wedding
-    if (cat === "wedding" || cat === "pernikahan") {
-      const bride = String(
-        mempelaiSection?.defaultData?.brideShortName ||
-          mempelaiSection?.defaultData?.brideName ||
-          "Ayu",
-      );
-      const groom = String(
-        mempelaiSection?.defaultData?.groomShortName ||
-          mempelaiSection?.defaultData?.groomName ||
-          "Ardi",
-      );
-      const couple = `${bride} & ${groom}`;
+    const invitationUrl = buildPersonalInvitationUrl({
+      identifier: publishIdentifier || defaultPublishIdentifier || template.code,
+      publishMode,
+      publishUrl,
+      guestName: name,
+      fallbackCode: template.code,
+    });
 
-      switch (preset) {
-        case "formal":
-          return `Assalamu'alaikum Wr. Wb.\n\nKepada Yth.\nBpk/Ibu/Saudara/i *${formattedName}*\n\nTanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara resepsi pernikahan kami:\n\n*${couple}*\n\nBerikut tautan undangan untuk info lengkap acara & lokasi:\n${invitationPath}\n\nMerupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.\n\nTerima kasih atas perhatian dan doanya.\nWassalamu'alaikum Wr. Wb.`;
-        case "islami":
-          return `Bismillahirrahmannirrahim\n\n_Maha Suci Allah yang telah menciptakan makhluk-Nya berpasang-pasangan._\n\nDengan memohon ridho dan rahmat Allah SWT, kami bermaksud mengundang Bpk/Ibu/Saudara/i *${formattedName}* pada acara pernikahan kami:\n\n*${couple}*\n\nInfo lengkap & lokasi acara dapat diakses melalui:\n${invitationPath}\n\nDoa restu dan kehadiran Bapak/Ibu/Saudara/i merupakan kebahagiaan yang tak ternilai bagi kami.\n\nJazakumullah Khairan Katsiran.\nWassalamu'alaikum Wr. Wb.`;
-        case "casual":
-          return `Hai *${formattedName}*! ✨\n\nSave the date yaa! Kami mau berbagi kabar bahagia dan mengundang kamu untuk hadir di pesta pernikahan kami:\n\n🎉 *${couple}* 🎉\n\nCek detail acara dan lokasinya di link undangan ini ya:\n${invitationPath}\n\nKehadiran dan doa dari kamu pasti bikin hari bahagia kami makin lengkap. See you there! 🙌`;
-        case "english":
-          return `Dear *${formattedName}*,\n\nTogether with our families, we joyfully invite you to celebrate the wedding of:\n\n*${couple}*\n\nPlease find the event details and location through this link:\n${invitationPath}\n\nYour presence and prayers would mean the world to us as we begin this new journey together.\n\nWarm regards,\n${couple}`;
-      }
-    }
-
-    // Khitanan
-    if (cat === "khitanan" || cat.includes("khitan")) {
-      const child = String(
-        heroSection?.defaultData?.childName ||
-          heroSection?.defaultData?.title ||
-          "Putra Kami",
-      );
-
-      switch (preset) {
-        case "formal":
-          return `Assalamu'alaikum Wr. Wb.\n\nKepada Yth.\nBpk/Ibu/Saudara/i *${formattedName}*\n\nDengan memohon rahmat Allah SWT, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara tasyakuran khitanan putra kami:\n\n*${child}*\n\nInformasi lengkap mengenai jadwal dan lokasi acara dapat diakses melalui:\n${invitationPath}\n\nMerupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.\n\nWassalamu'alaikum Wr. Wb.`;
-        case "islami":
-          return `Bismillahirrahmannirrahim\n\nDengan memohon ridho dan rahmat Allah SWT, kami bermaksud mengundang Bpk/Ibu/Saudara/i *${formattedName}* pada acara tasyakuran khitanan putra kami:\n\n*${child}*\n\nInfo lengkap & lokasi acara:\n${invitationPath}\n\nSemoga ananda menjadi anak yang sholeh, berbakti kepada kedua orang tua, agama, dan bangsa. Kehadiran dan doa restu Bapak/Ibu merupakan kebahagiaan bagi keluarga kami.\n\nJazakumullah Khairan Katsiran.\nWassalamu'alaikum Wr. Wb.`;
-        case "casual":
-          return `Hai *${formattedName}*! ✨\n\nKami mau mengundang kamu untuk hadir dan meramaikan acara tasyakuran khitanan adik kita:\n\n🎉 *${child}* 🎉\n\nYuk cek jadwal dan lokasi lengkapnya di link undangan ini:\n${invitationPath}\n\nKehadiran dan doa kamu sangat berarti buat kami. Ditunggu kedatangannya ya! 🙌`;
-        case "english":
-          return `Dear *${formattedName}*,\n\nWith great joy, our family cordially invites you to the Circumcision (Khitanan) Thanksgiving Celebration of our beloved son:\n\n*${child}*\n\nPlease find the event details and venue location through this link:\n${invitationPath}\n\nYour presence and warm prayers would be a blessing to our family.\n\nWarm regards,\nThe Family`;
-      }
-    }
-
-    // Aqiqah
-    if (cat === "aqiqah" || cat.includes("aqiqah")) {
-      const baby = String(
-        heroSection?.defaultData?.babyName ||
-          heroSection?.defaultData?.childName ||
-          "Putra/Putri Tercinta",
-      );
-
-      switch (preset) {
-        case "formal":
-          return `Assalamu'alaikum Wr. Wb.\n\nKepada Yth.\nBpk/Ibu/Saudara/i *${formattedName}*\n\nSebagai wujud rasa syukur kami atas kelahiran buah hati kami, perkenankan kami mengundang Bapak/Ibu/Saudara/i pada acara Tasyakuran Aqiqah:\n\n*${baby}*\n\nDetail jadwal & lokasi acara dapat dilihat pada tautan berikut:\n${invitationPath}\n\nAtas kehadiran dan doa restu Bapak/Ibu/Saudara/i, kami ucapkan terima kasih yang sebesar-besarnya.\n\nWassalamu'alaikum Wr. Wb.`;
-        case "islami":
-          return `Bismillahirrahmannirrahim\n\n_Segala puji bagi Allah SWT atas amanah dan karunia buah hati yang dianugerahkan kepada keluarga kami._\n\nKami mengundang Bpk/Ibu/Saudara/i *${formattedName}* untuk menghadiri acara Tasyakuran Aqiqah putra/putri kami:\n\n*${baby}*\n\nInfo lengkap acara & lokasi:\n${invitationPath}\n\nSemoga ananda tumbuh sehat, cerdas, berakhlak mulia, dan senantiasa dalam lindungan Allah SWT.\n\nJazakumullah Khairan Katsiran.\nWassalamu'alaikum Wr. Wb.`;
-        case "casual":
-          return `Hai *${formattedName}*! 👶✨\n\nAlhamdulillah, kami mau berbagi kebahagiaan atas kelahiran buah hati kami dan mengundang kamu di acara Tasyakuran Aqiqah:\n\n🌟 *${baby}* 🌟\n\nCek waktu dan lokasi acaranya di link ini ya:\n${invitationPath}\n\nYuk datang dan doakan si kecil bersama kami! Sampai jumpa yaa 🙌`;
-        case "english":
-          return `Dear *${formattedName}*,\n\nWith grateful hearts for the gift of our precious baby, we joyfully invite you to the Aqiqah Celebration of:\n\n*${baby}*\n\nPlease find the celebration details and location here:\n${invitationPath}\n\nYour presence and blessings mean the world to our family.\n\nWarm regards,\nThe Family`;
-      }
-    }
-
-    // Birthday / Ulang Tahun
-    if (cat === "birthday" || cat.includes("birth") || cat.includes("ulang")) {
-      const person = String(
-        heroSection?.defaultData?.name ||
-          heroSection?.defaultData?.birthdayPerson ||
-          "Teman Kami",
-      );
-
-      switch (preset) {
-        case "formal":
-          return `Kepada Yth.\nBpk/Ibu/Saudara/i *${formattedName}*\n\nDengan penuh sukacita, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara perayaan ulang tahun:\n\n*${person}*\n\nInformasi lengkap mengenai waktu dan lokasi acara dapat diakses melalui:\n${invitationPath}\n\nMerupakan suatu kebahagiaan bagi kami atas kehadiran dan doa restu Bapak/Ibu/Saudara/i.\n\nTerima kasih atas perhatiannya.`;
-        case "islami":
-          return `Bismillahirrahmannirrahim\n\nSebagai wujud rasa syukur kami atas bertambahnya usia dan limpahan rahmat Allah SWT, kami mengundang Bpk/Ibu/Saudara/i *${formattedName}* pada acara syukuran ulang tahun:\n\n*${person}*\n\nInfo lengkap acara:\n${invitationPath}\n\nSemoga senantiasa diberikan umur yang berkah, kesehatan, dan kemudahan dalam segala urusan.\n\nJazakumullah Khairan Katsiran.`;
-        case "casual":
-          return `Hai *${formattedName}*! 🥳🎉\n\nIt's party time! Kami mengundang kamu untuk datang dan merayakan hari ulang tahun:\n\n🎂 *${person}* 🎂\n\nCek info detail acara dan lokasinya di sini ya:\n${invitationPath}\n\nPasti seru banget kalau kamu hadir! See you at the party! ✨`;
-        case "english":
-          return `Dear *${formattedName}*,\n\nYou are warmly invited to join the Birthday Celebration of:\n\n*${person}*\n\nPlease check all event details and venue location through this link:\n${invitationPath}\n\nWe look forward to celebrating this special day with you!\n\nWarm regards,\n${person}`;
-      }
-    }
-
-    // Graduation / Wisuda
-    if (cat === "wisuda" || cat.includes("wisuda") || cat.includes("graduat")) {
-      const graduate = String(
-        heroSection?.defaultData?.graduateName ||
-          heroSection?.defaultData?.name ||
-          heroSection?.defaultData?.title ||
-          "Wisudawan",
-      );
-      const degree = String(heroSection?.defaultData?.degree || "");
-      const fullName = degree ? `${graduate}, ${degree}` : graduate;
-
-      switch (preset) {
-        case "formal":
-          return `Assalamu'alaikum Wr. Wb.\n\nKepada Yth.\nBpk/Ibu/Saudara/i *${formattedName}*\n\nSebagai wujud rasa syukur atas kelulusan dan terselesaikannya studi pendidikan, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara Syukuran Wisuda:\n\n🎓 *${fullName}* 🎓\n\nDetail jadwal & lokasi acara dapat dilihat pada tautan berikut:\n${invitationPath}\n\nMerupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.\n\nTerima kasih atas perhatian dan doanya.\nWassalamu'alaikum Wr. Wb.`;
-        case "islami":
-          return `Bismillahirrahmannirrahim\n\n_Alhamdulillah 'ala kulli hal, segala puji bagi Allah SWT atas karunia dan kelancaran yang dianugerahkan dalam menempuh pendidikan._\n\nDengan memohon ridho dan berkah-Nya, kami mengundang Bpk/Ibu/Saudara/i *${formattedName}* pada acara Tasyakuran Wisuda:\n\n🎓 *${fullName}* 🎓\n\nInformasi lengkap acara & lokasi:\n${invitationPath}\n\nSemoga ilmu yang diperoleh menjadi berkah dan bermanfaat bagi agama, keluarga, dan bangsa. Kehadiran dan doa restu Bapak/Ibu merupakan kebahagiaan bagi kami.\n\nJazakumullah Khairan Katsiran.\nWassalamu'alaikum Wr. Wb.`;
-        case "casual":
-          return `Hai *${formattedName}*! 🎓✨\n\nFinally graduated! Setelah perjuangan skripsi dan kuliah, saatnya kita rayakan bareng-bareng di acara syukuran kelulusan:\n\n🎉 *${fullName}* 🎉\n\nYuk cek jadwal dan lokasi lengkapnya di tautan undangan ini:\n${invitationPath}\n\nKehadiran dan foto bareng kamu pasti bikin momen ini makin berkesan. Ditunggu kedatangannya ya! 🙌`;
-        case "english":
-          return `Dear *${formattedName}*,\n\nWith immense joy and gratitude for the completion of academic journey, you are cordially invited to celebrate the Graduation of:\n\n🎓 *${fullName}* 🎓\n\nPlease find the ceremony details and location here:\n${invitationPath}\n\nYour presence and congratulations would make this milestone even more memorable.\n\nWarm regards,\n${graduate} & Family`;
-      }
-    }
-
-    // Default / General Event
-    return `Kepada Yth.\nBpk/Ibu/Saudara/i *${formattedName}*\n\nKami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara kami:\n\n*${template.name}*\n\nBerikut tautan undangan untuk info lengkap acara & lokasi:\n${invitationPath}\n\nTerima kasih atas perhatian dan kehadirannya.`;
+    return buildWhatsAppMessage({
+      preset,
+      category: template.category,
+      guestName: name,
+      invitationUrl,
+      share,
+    });
   }
 
   function handlePublishResult(result: PublishResult) {
@@ -2308,6 +2302,41 @@ export function ConsoleWorkspace({
     window.setTimeout(() => {
       setIsRefreshing(false);
     }, 600);
+  }
+
+  async function downloadShareCard(format: "png" | "jpg") {
+    try {
+      const response = await fetch("/api/share-card/render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: cardPreviewData }),
+      });
+      if (!response.ok) throw new Error("Share card render failed");
+
+      const pngBlob = await response.blob();
+      let file = pngBlob;
+      if (format === "jpg") {
+        const image = new window.Image();
+        const objectUrl = URL.createObjectURL(pngBlob);
+        image.src = objectUrl;
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext("2d");
+        context?.drawImage(image, 0, 0);
+        URL.revokeObjectURL(objectUrl);
+        file = await new Promise<Blob>((resolve) => canvas.toBlob((blob) => resolve(blob ?? pngBlob), "image/jpeg", 0.94));
+      }
+      const downloadUrl = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `share-card-${publishIdentifier || template.code}.${format}`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+    } catch {
+      setUploadError("Kartu share belum dapat diunduh. Periksa koneksi lalu coba lagi.");
+    }
   }
 
   return (
@@ -2788,9 +2817,24 @@ export function ConsoleWorkspace({
                 surface="canvas"
               />
 
+              {inspectorTab === "card" && (
+                <div className="relative mx-auto flex w-[min(1100px,100%)] flex-col items-center py-8">
+                  <div className="mb-5 flex w-full items-center justify-between gap-4 px-1">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.14em] text-emerald-800"><Share2 size={13} /> Preview WhatsApp / Open Graph</div>
+                    <div className="relative shrink-0">
+                      <button type="button" onClick={() => setIsCardDownloadOpen((open) => !open)} title="Unduh kartu share" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-extrabold text-slate-700 shadow-xs transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700"><Download size={13} /> Unduh <ChevronDown size={13} /></button>
+                      {isCardDownloadOpen && <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-32 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"><button type="button" onClick={() => { setIsCardDownloadOpen(false); void downloadShareCard("png"); }} className="block w-full rounded-lg px-2.5 py-2 text-left text-[10px] font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">Format PNG</button><button type="button" onClick={() => { setIsCardDownloadOpen(false); void downloadShareCard("jpg"); }} className="block w-full rounded-lg px-2.5 py-2 text-left text-[10px] font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700">Format JPG</button></div>}
+                    </div>
+                  </div>
+                  <CardPreviewCanvas data={cardPreviewData} />
+                  <p className="mt-3 text-center text-[11px] text-slate-500">Nama tamu contoh hanya untuk preview dan tidak disimpan.</p>
+                </div>
+              )}
+
               {/* Canvas Toolbar: Zoom & Device Frame Switcher */}
               <div
                 className={`mx-auto mb-3 flex max-w-full items-center justify-between gap-2 ${frameMode === "desktop" ? "w-[min(1100px,100%)]" : "w-[500px]"}`}
+                hidden={inspectorTab === "card"}
               >
                 {/* Left: Refresh & Zoom Controls */}
                 <div
@@ -2921,7 +2965,7 @@ export function ConsoleWorkspace({
                   transformOrigin: "top center",
                   transition: "transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)",
                 }}
-                className={`relative mx-auto box-border ${
+                className={`${inspectorTab === "card" ? "hidden" : ""} relative mx-auto box-border ${
                   frameMode === "desktop"
                     ? "w-full min-w-[768px] max-w-[1100px]"
                     : "w-[330px] max-w-[82vw] sm:w-[380px] sm:max-w-full"
@@ -3037,7 +3081,7 @@ export function ConsoleWorkspace({
                   role="separator"
                   aria-label="Ubah lebar sidebar editor"
                   aria-orientation="vertical"
-                  aria-valuemin={280}
+                  aria-valuemin={400}
                   aria-valuemax={620}
                   aria-valuenow={inspectorWidth}
                   tabIndex={0}
@@ -3054,7 +3098,7 @@ export function ConsoleWorkspace({
                     inspectorWidthRef.current = Math.min(
                       620,
                       Math.max(
-                        280,
+                        400,
                         inspectorWidthRef.current +
                           direction * (event.shiftKey ? 40 : 10),
                       ),
@@ -3295,6 +3339,18 @@ export function ConsoleWorkspace({
                       />
                     </div>
                   }
+                  cardContent={
+                    <CardStyleEditor
+                      value={cardStyle}
+                      templateBackground={cardPreviewData.colors.dark}
+                      templateAccent={cardPreviewData.colors.accent}
+                      templateText={cardPreviewData.colors.cream}
+                      disabled={isViewer}
+                      onChange={handleCardStyleChange}
+                      onChooseImage={() => openAssetLibrary("image", "card")}
+                      onReset={resetCardStyle}
+                    />
+                  }
                 />
               </div>
             </aside>
@@ -3357,7 +3413,13 @@ export function ConsoleWorkspace({
                 <label className="block text-xs font-bold text-slate-800 mb-2.5">
                   1. Pilih Format & Gaya Bahasa Template WhatsApp
                 </label>
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                <div
+                  className={`grid grid-cols-2 gap-2.5 ${
+                    isIslamicOnlyTradition
+                      ? "sm:grid-cols-4"
+                      : "sm:grid-cols-3 lg:grid-cols-5"
+                  }`}
+                >
                   {(
                     [
                       [
@@ -3370,6 +3432,15 @@ export function ConsoleWorkspace({
                         "Nuansa Islami",
                         "Lengkap dengan basmalah & doa",
                       ],
+                      ...(isIslamicOnlyTradition
+                        ? []
+                        : [
+                            [
+                              "non-muslim",
+                              "Nuansa Non-Muslim",
+                              "Salam sejahtera & doa berkat",
+                            ] as const,
+                          ]),
                       ["casual", "Santai & Akrab", "Asik untuk teman sebaya"],
                       [
                         "english",
@@ -3428,6 +3499,15 @@ export function ConsoleWorkspace({
                     </div>
                   </div>
                 </div>
+
+                {isEventDetailsIncomplete && (
+                  <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[11px] text-amber-800">
+                    <Info size={14} className="shrink-0 text-amber-600" />
+                    <span>
+                      Detail tanggal dan lokasi acara belum lengkap di editor. Lengkapi section acara agar jadwal dan lokasi otomatis tercantum pada pesan WhatsApp.
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Step 3: Publish Status Banner */}
@@ -3630,8 +3710,9 @@ export function ConsoleWorkspace({
           open={isPublishOpen && Boolean(currentUser)}
           draftId={draftId}
           draftReady={draftReady}
-          initialIdentifier={publishIdentifier}
+          initialIdentifier={publishIdentifier || defaultPublishIdentifier}
           templatePrice={templatePrice}
+          userPhone={currentUser?.phone}
           currentStatus={draftStatus}
           publishedUrl={publishUrl}
           onClose={() => setIsPublishOpen(false)}
@@ -3697,12 +3778,6 @@ export function ConsoleWorkspace({
             </div>
           </div>
         )}
-
-      {view === "wishes" && <section className="mx-auto max-w-3xl px-5 py-12"><div className="rounded-3xl border border-[#e5d7c8] bg-[#fffaf1] p-7 shadow-sm md:p-10"><div className="flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-emerald-700">Buku tamu</p><h1 className="mt-2 text-3xl font-extrabold">Ucapan & Kehadiran</h1><p className="mt-2 text-sm leading-6 text-[#806f67]">Ucapan tamu tersimpan di MySQL khusus untuk undangan ini.</p></div><span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700">{wishRecords.length} ucapan</span></div>{wishesLoading ? <div className="mt-7 grid place-items-center rounded-2xl border border-dashed border-[#d9c9b8] bg-white/70 p-10 text-sm text-[#9a887d]"><LoaderCircle className="mb-3 animate-spin text-emerald-600" size={28} />Memuat ucapan...</div> : wishRecords.length === 0 ? <div className="mt-7 rounded-2xl border border-dashed border-[#d9c9b8] bg-white/70 p-10 text-center text-sm text-[#9a887d]"><MessageCircleHeart className="mx-auto mb-3 text-emerald-600" size={30} />Belum ada ucapan pada undangan ini.</div> : <div className="mt-7 space-y-3">{wishRecords.map((wish) => <article key={wish.id} className="rounded-2xl border border-[#eadfd5] bg-white p-4 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm text-[#4f3034]">{wish.name}</strong><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">{wish.attendance}</span></div><p className="mt-2 text-sm leading-6 text-[#75645f]">{wish.message}</p><time className="mt-3 block text-[10px] text-[#a08c82]">{new Date(wish.createdAt).toLocaleString("id-ID")}</time></article>)}</div>}</div></section>}
-
-      <PublishModal open={isPublishOpen && Boolean(currentUser)} draftId={draftId} draftReady={draftReady} initialIdentifier={publishIdentifier || defaultPublishIdentifier} templatePrice={templatePrice} userPhone={currentUser?.phone} currentStatus={draftStatus} publishedUrl={publishUrl} onClose={() => setIsPublishOpen(false)} onResult={handlePublishResult} />
-
-      {publishNotice && <div className={`fixed left-1/2 top-20 z-[75] w-[min(92vw,620px)] -translate-x-1/2 rounded-2xl border p-4 shadow-[0_20px_60px_rgba(15,23,42,.24)] backdrop-blur ${publishNotice.tone === "success" ? "border-emerald-200 bg-emerald-50/95 text-emerald-950" : "border-amber-200 bg-amber-50/95 text-amber-950"}`} role="alert"><div className="flex items-start gap-3"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${publishNotice.tone === "success" ? "bg-emerald-600 text-white" : "bg-amber-500 text-white"}`}>{publishNotice.tone === "success" ? <Check size={18} /> : <LoaderCircle size={18} />}</span><div className="min-w-0 flex-1"><strong className="block text-sm">{publishNotice.tone === "success" ? "Publish berhasil!" : "Request custom diterima"}</strong><p className="mt-1 text-xs leading-5 opacity-80">{publishNotice.message}</p>{publishNotice.tone === "success" ? <button type="button" onClick={() => { setPublishNotice(null); setView("generator"); }} className="mt-3 rounded-xl bg-emerald-700 px-3 py-2 text-[10px] font-extrabold text-white hover:bg-emerald-800">Buka Generator</button> : <a href={makeAdminWhatsAppUrl(`Halo Admin, saya ingin menindaklanjuti request custom ${publishIdentifier} untuk draft ${draftId ?? "saya"}.`)} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2 text-[10px] font-extrabold text-white hover:bg-amber-700">Hubungi admin, klik di sini! <ExternalLink size={12} /></a>}</div><button type="button" onClick={() => setPublishNotice(null)} className="rounded-full p-1 opacity-55 hover:bg-black/5 hover:opacity-100" aria-label="Tutup pemberitahuan"><X size={16} /></button></div></div>}
 
       <AssetLibraryModal
         open={Boolean(assetTarget)}

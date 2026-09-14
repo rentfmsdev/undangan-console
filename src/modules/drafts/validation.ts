@@ -1,6 +1,25 @@
 import { z } from "zod";
 import { getTemplateById } from "@/templates/registry";
 
+const cardStyleSchema = z.object({
+  styleId: z.enum(["template", "elegant", "minimal"]).optional(),
+  imageUrl: z.string().max(1024).optional(),
+  backgroundMode: z.enum(["template", "photo", "solid"]).optional(),
+  overlayOpacity: z.number().min(0.2).max(0.9).optional(),
+  textAlign: z.enum(["left", "center"]).optional(),
+  colors: z.object({
+    background: z.string().max(32).optional(),
+    primary: z.string().max(32).optional(),
+    accent: z.string().max(32).optional(),
+    text: z.string().max(32).optional(),
+  }).optional(),
+  showGuestName: z.boolean().optional(),
+  showDate: z.boolean().optional(),
+  showVenue: z.boolean().optional(),
+  showSubject: z.boolean().optional(),
+  version: z.number().int().positive().optional(),
+}).optional();
+
 export const createDraftSchema = z.object({
   templateCode: z.string().regex(/^[a-z0-9]{5}$/),
   title: z.string().trim().min(1).max(120).optional(),
@@ -16,6 +35,8 @@ export const updateDraftSchema = z.object({
       accent: z.string().max(32).optional(),
       background: z.string().max(32).optional(),
     }).optional(),
+    useContainer: z.boolean().optional(),
+    cardStyle: cardStyleSchema,
   }).optional(),
   sections: z.array(z.object({
     id: z.string().min(1).max(64),

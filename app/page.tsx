@@ -165,7 +165,7 @@ export default function MarketplaceHomePage() {
   const handleCustomize = async (template: TemplateItem) => {
     if (!authResolved || isCustomizing) return;
     if (!currentUser) {
-      setIsAuthModalOpen(true);
+      router.push(`/editor/${template.code}`);
       return;
     }
     setIsCustomizing(true);

@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { TouchParticleTrail } from "@/components/effects/TouchParticleTrail";
+import type { TouchParticleConfig } from "@/components/effects/presets";
 import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNavigationRuntime";
 import { VerdantVowsNavigationAdapter } from "../navigation-adapter";
+import { trackMetaPixel } from "@/lib/meta-pixel";
 import "./verdant-vows.css";
 
 type Props = { invitationId?: string; verifiedGuestName?: string };
@@ -83,6 +86,11 @@ function ClosingFlourish() {
 
 const createVerdantVowsNavigationAdapter = () =>
   new VerdantVowsNavigationAdapter();
+
+const VERDANT_TOUCH_PARTICLES: TouchParticleConfig = {
+  preset: "leaves",
+  colors: ["var(--vv-primary)", "var(--vv-mid)", "var(--vv-accent)"],
+};
 
 export default function VerdantVowsSource({
   invitationId,
@@ -444,6 +452,11 @@ export default function VerdantVowsSource({
         if (!response.ok)
           throw new Error(payload.error || "Ucapan belum dapat dikirim.");
         if (payload.wish) setWishes((items) => [payload.wish as Wish, ...items]);
+        trackMetaPixel("Lead", {
+          content_category: "invitation_rsvp",
+          content_id: invitationId,
+          content_name: "wedding-verdant-vows",
+        });
       } else {
         setWishes((items) => [nextWish, ...items]);
       }
@@ -821,6 +834,7 @@ export default function VerdantVowsSource({
           <ClosingFlourish />
         </section>
       </main>
+      <TouchParticleTrail rootRef={rootRef} config={VERDANT_TOUCH_PARTICLES} enabled={opened} />
 
       {lightboxIndex !== null && gallery[lightboxIndex] && (
         <div

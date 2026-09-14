@@ -7,11 +7,12 @@ type Props = {
   title: string;
   urls: string[];
   hint: string;
+  disabled?: boolean;
   onOpenLibrary: () => void;
   onRemove: (index: number) => void;
 };
 
-export function AssetUploadField({ title, urls, hint, onOpenLibrary, onRemove }: Props) {
+export function AssetUploadField({ title, urls, hint, disabled = false, onOpenLibrary, onRemove }: Props) {
   const visibleUrls = urls.filter(Boolean);
 
   return (
@@ -40,9 +41,10 @@ export function AssetUploadField({ title, urls, hint, onOpenLibrary, onRemove }:
               />
               <button
                 type="button"
+                disabled={disabled}
                 onClick={() => onRemove(index)}
                 aria-label={`Hapus ${title} ${index + 1}`}
-                className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-slate-950/75 text-white shadow-lg backdrop-blur transition hover:bg-rose-600 active:scale-95"
+                className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-slate-950/75 text-white shadow-lg backdrop-blur transition hover:bg-rose-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <X size={14} />
               </button>
@@ -61,8 +63,9 @@ export function AssetUploadField({ title, urls, hint, onOpenLibrary, onRemove }:
       {/* Centralized Asset Selector Button */}
       <button
         type="button"
+        disabled={disabled}
         onClick={onOpenLibrary}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-2.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 hover:border-emerald-300 active:scale-95"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-2.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 hover:border-emerald-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <FolderOpen size={15} />
         <span>{visibleUrls.length ? "Ganti dari Asset Saya" : "Pilih dari Asset Saya"}</span>

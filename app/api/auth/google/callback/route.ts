@@ -4,6 +4,7 @@ import {
   getAppBaseUrl,
   isValidOAuthState,
   OAUTH_COOKIE_PATH,
+  OAUTH_POPUP_COOKIE_NAME,
   OAUTH_RETURN_TO_COOKIE_NAME,
   OAUTH_STATE_COOKIE_NAME,
   sanitizeReturnTo,
@@ -12,10 +13,25 @@ import {
 function clearOAuthCookies(response: NextResponse) {
   response.cookies.set(OAUTH_STATE_COOKIE_NAME, "", { maxAge: 0, path: OAUTH_COOKIE_PATH });
   response.cookies.set(OAUTH_RETURN_TO_COOKIE_NAME, "", { maxAge: 0, path: OAUTH_COOKIE_PATH });
+  response.cookies.set(OAUTH_POPUP_COOKIE_NAME, "", { maxAge: 0, path: OAUTH_COOKIE_PATH });
   return response;
 }
 
-function oauthError(request: Request, code: string) {
+function popupResponse(request: NextRequest, payload: { error?: string; returnTo: string; success: boolean }) {
+  const targetOrigin = getAppBaseUrl(request);
+  const message = JSON.stringify({ type: "undangan:google-oauth", ...payload }).replace(/</g, "\\u003c");
+  const origin = JSON.stringify(targetOrigin);
+  const fallbackUrl = JSON.stringify(payload.returnTo);
+  return new NextResponse(
+    `<!doctype html><html lang="id"><head><title>Masuk berhasil</title></head><body><script>const message=${message};if(window.opener&&!window.opener.closed){window.opener.postMessage(message,${origin});window.close();}window.setTimeout(()=>window.location.replace(${fallbackUrl}),600);</script>Anda dapat menutup jendela ini.</body></html>`,
+    { headers: { "Cache-Control": "no-store", "Content-Type": "text/html; charset=utf-8" } },
+  );
+}
+
+function oauthError(request: NextRequest, code: string) {
+  if (request.cookies.get(OAUTH_POPUP_COOKIE_NAME)?.value === "1") {
+    return clearOAuthCookies(popupResponse(request, { success: false, error: code, returnTo: "/login" }));
+  }
   return clearOAuthCookies(NextResponse.redirect(new URL(`/login?error=${code}`, getAppBaseUrl(request))));
 }
 
@@ -75,7 +91,9 @@ export async function GET(request: NextRequest) {
     });
 
     // 4. Set Session Cookie
-    const response = NextResponse.redirect(new URL(returnTo, baseUrl));
+    const response = request.cookies.get(OAUTH_POPUP_COOKIE_NAME)?.value === "1"
+      ? popupResponse(request, { success: true, returnTo })
+      : NextResponse.redirect(new URL(returnTo, baseUrl));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

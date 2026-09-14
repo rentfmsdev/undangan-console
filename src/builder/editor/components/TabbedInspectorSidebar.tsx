@@ -1,9 +1,9 @@
 "use client";
 
-import { Palette, SlidersHorizontal } from "lucide-react";
+import { ImageIcon, Palette, SlidersHorizontal } from "lucide-react";
 import { useId, useRef, useState, type ReactNode, type KeyboardEvent } from "react";
 
-export type InspectorSidebarTab = "section" | "global";
+export type InspectorSidebarTab = "section" | "global" | "card";
 
 type Props = {
   /** Existing action controls, e.g. undo, redo, assets, version history, and save. */
@@ -12,6 +12,8 @@ type Props = {
   sectionContent: ReactNode;
   /** Existing invitation-wide settings such as theme, colours, and music. */
   globalContent: ReactNode;
+  /** Share-card styling controls for WhatsApp and Open Graph. */
+  cardContent?: ReactNode;
   /** Use this when the parent needs to coordinate the active tab with another UI event. */
   activeTab?: InspectorSidebarTab;
   defaultTab?: InspectorSidebarTab;
@@ -23,6 +25,7 @@ export function TabbedInspectorSidebar({
   toolbar,
   sectionContent,
   globalContent,
+  cardContent,
   activeTab,
   defaultTab = "section",
   onTabChange,
@@ -32,6 +35,7 @@ export function TabbedInspectorSidebar({
   const selectedTab = activeTab ?? uncontrolledTab;
   const sectionPanelId = useId();
   const globalPanelId = useId();
+  const cardPanelId = useId();
   const tablistRef = useRef<HTMLDivElement>(null);
 
   function selectTab(tab: InspectorSidebarTab) {
@@ -42,10 +46,12 @@ export function TabbedInspectorSidebar({
   function handleKeyDown(e: KeyboardEvent<HTMLButtonElement>, currentTab: InspectorSidebarTab) {
     if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
       e.preventDefault();
-      const nextTab: InspectorSidebarTab = currentTab === "section" ? "global" : "section";
+      const currentIndex = tabs.findIndex((tab) => tab.id === currentTab);
+      const direction = e.key === "ArrowRight" ? 1 : -1;
+      const nextTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].id;
       selectTab(nextTab);
       const nextBtn = tablistRef.current?.querySelector<HTMLButtonElement>(
-        nextTab === "section" ? `#${sectionPanelId}-tab` : `#${globalPanelId}-tab`
+        `#${tabs.find((tab) => tab.id === nextTab)?.panelId}-tab`
       );
       nextBtn?.focus();
     }
@@ -54,6 +60,7 @@ export function TabbedInspectorSidebar({
   const tabs: Array<{ id: InspectorSidebarTab; label: string; icon: ReactNode; panelId: string }> = [
     { id: "section", label: "Section", icon: <SlidersHorizontal size={13} />, panelId: sectionPanelId },
     { id: "global", label: "Global", icon: <Palette size={13} />, panelId: globalPanelId },
+    { id: "card", label: "Card Style", icon: <ImageIcon size={13} />, panelId: cardPanelId },
   ];
 
   return (
@@ -66,7 +73,7 @@ export function TabbedInspectorSidebar({
           ref={tablistRef}
           role="tablist"
           aria-label="Mode pengaturan editor"
-          className="grid grid-cols-2 rounded-xl border border-slate-200/80 bg-slate-100/90 p-1 shadow-xs"
+          className="grid grid-cols-3 rounded-xl border border-slate-200/80 bg-slate-100/90 p-1 shadow-xs"
         >
           {tabs.map((tab) => {
             const isActive = selectedTab === tab.id;
@@ -88,7 +95,7 @@ export function TabbedInspectorSidebar({
                 }`}
               >
                 <span className={`shrink-0 ${isActive ? "text-emerald-600" : "text-slate-400"}`}>{tab.icon}</span>
-                <span className="truncate">{tab.label}</span>
+                <span className="whitespace-nowrap">{tab.label}</span>
               </button>
             );
           })}
@@ -112,6 +119,9 @@ export function TabbedInspectorSidebar({
         className={`min-w-0 ${selectedTab === "global" ? "block" : "hidden"}`}
       >
         {globalContent}
+      </div>
+      <div id={cardPanelId} role="tabpanel" aria-labelledby={`${cardPanelId}-tab`} className={`min-w-0 ${selectedTab === "card" ? "block" : "hidden"}`}>
+        {cardContent}
       </div>
     </div>
   );

@@ -29,6 +29,10 @@ import EternalOrbitSource from "./wedding-eternal-orbit/source/EternalOrbitSourc
 import { EternalOrbitNavigationAdapter } from "./wedding-eternal-orbit/navigation-adapter";
 import { normalizeEternalOrbitSectionState } from "./wedding-eternal-orbit/normalize-section-state";
 import { applyEternalOrbitTemplateState, watchEternalOrbitTemplateState, type EternalOrbitPreviewSection, type EternalOrbitSettings } from "./wedding-eternal-orbit/source/template-bridge";
+import AvantVowsSource from "./wedding-avant-vows/source/AvantVowsSource";
+import { AvantVowsNavigationAdapter } from "./wedding-avant-vows/navigation-adapter";
+import { normalizeAvantVowsSectionState } from "./wedding-avant-vows/normalize-section-state";
+import { applyAvantVowsTemplateState, watchAvantVowsTemplateState, type AvantVowsPreviewSection, type AvantVowsSettings } from "./wedding-avant-vows/source/template-bridge";
 
 export type RuntimeState = { sections: unknown[]; themeId: string; settings: Record<string, unknown> };
 export type StoredTemplateSection = { id: string; type: string; enabled: boolean; data: Record<string, unknown> };
@@ -114,6 +118,16 @@ const eternalOrbitRuntime: TemplateRuntime = {
   watchState: ({ sections, themeId, settings }) => watchEternalOrbitTemplateState(sections as EternalOrbitPreviewSection[], themeId, settings as EternalOrbitSettings),
 };
 
+const avantVowsRuntime: TemplateRuntime = {
+  templateId: "wedding-avant-vows",
+  code: "folio",
+  Renderer: AvantVowsSource,
+  createNavigationAdapter: () => new AvantVowsNavigationAdapter(),
+  normalizeSections: normalizeAvantVowsSectionState,
+  applyState: ({ sections, themeId, settings }) => applyAvantVowsTemplateState(sections as AvantVowsPreviewSection[], themeId, settings as AvantVowsSettings),
+  watchState: ({ sections, themeId, settings }) => watchAvantVowsTemplateState(sections as AvantVowsPreviewSection[], themeId, settings as AvantVowsSettings),
+};
+
 export const templateRuntimeRegistry: TemplateRuntime[] = [
   weddingLampungRuntime,
   birthdayCelestialRuntime,
@@ -122,6 +136,7 @@ export const templateRuntimeRegistry: TemplateRuntime[] = [
   wisudaEleganceRuntime,
   verdantVowsRuntime,
   eternalOrbitRuntime,
+  avantVowsRuntime,
 ];
 
 export function getTemplateRuntime(code: string) {

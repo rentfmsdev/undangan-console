@@ -24,7 +24,7 @@ export function getAppBaseUrl(): string {
 
 /**
  * Builds the canonical invitation URL for a given slug/identifier and optional guest name.
- * Format: {baseUrl}/i/{slug}?for={encodedGuestName}
+ * Format: {baseUrl}/i/{slug}/to/{encodedGuestName}
  */
 export function buildInvitationUrl(slug: string, guestName?: string): string {
   const baseUrl = getAppBaseUrl();
@@ -33,7 +33,7 @@ export function buildInvitationUrl(slug: string, guestName?: string): string {
 
   if (guestName && guestName.trim()) {
     const encoded = encodeURIComponent(guestName.trim().replace(/\s+/g, " "));
-    return `${baseUrl}${path}?for=${encoded}`;
+    return `${baseUrl}${path}/to/${encoded}`;
   }
 
   return `${baseUrl}${path}`;
@@ -73,7 +73,7 @@ export function getRootDomain(): string {
 
 /**
  * Builds a subdomain invitation URL.
- * Example: https://budi.undang.site or https://budi.undang.site?for=Tamu
+ * Example: https://budi.undang.site or https://budi.undang.site/to/Tamu
  */
 export function buildSubdomainUrl(subdomain: string, guestName?: string): string {
   const cleanSub = (subdomain || "").replace(/^\/+|\/+$/g, "");
@@ -90,7 +90,7 @@ export function buildSubdomainUrl(subdomain: string, guestName?: string): string
 
   if (guestName && guestName.trim()) {
     const encoded = encodeURIComponent(guestName.trim().replace(/\s+/g, " "));
-    return `${base}?for=${encoded}`;
+    return `${base}/to/${encoded}`;
   }
 
   return base;

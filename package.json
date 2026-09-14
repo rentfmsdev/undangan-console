@@ -11,10 +11,15 @@
     "prod:start": "pm2 start ecosystem.config.cjs",
     "prod:reload": "pm2 reload ecosystem.config.cjs",
     "prod:logs": "pm2 logs",
+    "predeploy:check": "node scripts/check-production-env.mjs",
     "lint": "eslint .",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node scripts/ensure-db.js && drizzle-kit migrate",
+    "db:migrate": "node scripts/run-all-migrations.mjs",
+    "db:migrate:drizzle": "node scripts/ensure-db.js && drizzle-kit migrate",
     "db:migrate:payments": "node scripts/migrate-payments.js",
+    "db:migrate:roots": "node scripts/migrate-roots-admin.js",
+    "db:bootstrap:roots": "node scripts/bootstrap-roots-admin.mjs",
+    "db:seed": "node scripts/bootstrap-roots-admin.mjs",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

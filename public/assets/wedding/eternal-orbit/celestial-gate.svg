@@ -2,6 +2,6 @@
   <ellipse cx="240" cy="360" rx="190" ry="286" stroke="white" stroke-width="1.4"/>
   <ellipse cx="240" cy="360" rx="154" ry="244" stroke="white" stroke-width=".8" stroke-dasharray="5 9"/>
   <path d="M66 242c70-132 278-132 348 0M66 478c70 132 278 132 348 0" stroke="white" stroke-width=".6" opacity=".55"/>
-  <path d="M250 27a20 20 0 1 0 0 31 15 15 0 1 1 0-31Z" fill="white"/>
+  <path d="M240 56C237 53 222 41 222 31C222 23.5 228 17.5 235.5 17.5C239.5 17.5 240 20 240 22C240 20 240.5 17.5 244.5 17.5C252 17.5 258 23.5 258 31C258 41 243 53 240 56Z" fill="white"/>
   <circle cx="68" cy="246" r="5" fill="white"/><circle cx="418" cy="472" r="4" fill="white"/>
 </svg>

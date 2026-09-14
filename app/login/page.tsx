@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import type { Route } from "next";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, Suspense } from "react";
+import { openGoogleOAuthPopup } from "@/components/auth/google-oauth-popup";
 import {
   Sparkles,
   ArrowRight,
@@ -47,10 +49,23 @@ function LoginForm() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [customEmail, setCustomEmail] = useState("");
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
-  const handleGoogleOAuth = () => {
+  const handleGoogleOAuth = async () => {
     setIsLoading(true);
-    router.push(`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`);
+    setOauthError(null);
+    const result = await openGoogleOAuthPopup(returnTo);
+    if (result.success) {
+      router.replace(result.returnTo as Route);
+      router.refresh();
+      return;
+    }
+    setOauthError(
+      result.error === "popup_blocked"
+        ? "Popup Google diblokir browser. Izinkan popup lalu coba kembali."
+        : "Login Google dibatalkan atau belum berhasil. Silakan coba kembali.",
+    );
+    setIsLoading(false);
   };
 
   const handleQuickLogin = async (e: React.FormEvent) => {
@@ -124,10 +139,10 @@ function LoginForm() {
               </p>
             </div>
 
-            {errorParam && (
+            {(errorParam || oauthError) && (
               <div className="mt-5 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-700">
                 <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                <span>Terjadi kendala autentikasi. Silakan coba masuk kembali dengan Google.</span>
+                <span>{oauthError || "Terjadi kendala autentikasi. Silakan coba masuk kembali dengan Google."}</span>
               </div>
             )}
 

@@ -1,36 +1,14 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { and, asc, eq, or } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { db } from "@/db/client";
-import { invitationGuests, invitationSections, invitations } from "@/db/schema";
-import { getTemplateById } from "@/templates/registry";
-import { getTemplateRuntime } from "@/templates/runtime-registry";
+import { invitationGuests } from "@/db/schema";
 import { buildInvitationSeo, serializeJsonLd } from "@/templates/invitation-seo";
 import { PublishedWedding } from "./PublishedWedding";
-import { isPublicationExpired } from "@/modules/publishing/retention-policy";
+import { loadPublishedInvitation } from "@/modules/publishing/published-invitation";
 
 export const dynamic = "force-dynamic";
-
-async function loadPublishedInvitation(slug: string) {
-  const [invitation] = await db
-    .select()
-    .from(invitations)
-    .where(or(eq(invitations.slug, slug), eq(invitations.subdomain, slug)))
-    .limit(1);
-  if (
-    !invitation ||
-    !invitation.userId ||
-    invitation.status !== "published" ||
-    isPublicationExpired(invitation)
-  ) return null;
-  const template = getTemplateById(invitation.templateId);
-  if (!template) return null;
-  const records = await db.select().from(invitationSections).where(eq(invitationSections.invitationId, invitation.id)).orderBy(asc(invitationSections.sectionOrder));
-  const runtime = getTemplateRuntime(template.code);
-  const sections = runtime.normalizeSections(template, records.map((section) => ({ id: section.id, type: section.type, enabled: Boolean(section.enabled), data: section.data as Record<string, unknown> })), (type) => `virtual-${type}`);
-  return { invitation, template, sections };
-}
 
 async function getPublicOrigin() {
   const requestHeaders = await headers();
@@ -62,14 +40,24 @@ export async function generateMetadata({
   if (!published) return { title: "Undangan tidak ditemukan | Undangan Studio", robots: { index: false, follow: false } };
   const origin = await getPublicOrigin();
   const canonical = `${origin}/i/${published.invitation.slug ?? slug}`;
-  const seo = buildInvitationSeo(published.template, published.sections, canonical, cleanGuest);
+  const seo = buildInvitationSeo(
+    published.template,
+    published.sections,
+    canonical,
+    cleanGuest,
+    published.invitation.themeId,
+    published.invitation.styleOverrides as Record<string, unknown>
+  );
+  const shareImage = new URL(`/api/share-card/${encodeURIComponent(published.invitation.slug ?? slug)}`, origin);
+  if (cleanGuest) shareImage.searchParams.set("for", cleanGuest);
+  shareImage.searchParams.set("v", String(published.invitation.updatedAt.getTime()));
   return {
     title: seo.title,
     description: seo.description,
     alternates: { canonical },
     robots: { index: true, follow: true },
-    openGraph: { type: "website", locale: "id_ID", url: canonical, title: seo.title, description: seo.description, siteName: "Undangan Studio", images: [{ url: seo.image, width: 1200, height: 630, alt: seo.title }] },
-    twitter: { card: "summary_large_image", title: seo.title, description: seo.description, images: [seo.image] },
+    openGraph: { type: "website", locale: "id_ID", url: canonical, title: seo.title, description: seo.description, siteName: "Undangan Studio", images: [{ url: shareImage.toString(), width: 1200, height: 630, alt: seo.title }] },
+    twitter: { card: "summary_large_image", title: seo.title, description: seo.description, images: [shareImage.toString()] },
   };
 }
 
@@ -135,7 +123,14 @@ export default async function PublishedInvitationPage({
   }
 
   const origin = await getPublicOrigin();
-  const seo = buildInvitationSeo(template, sections, `${origin}/i/${invitation.slug ?? slug}`, verifiedGuestName);
+  const seo = buildInvitationSeo(
+    template,
+    sections,
+    `${origin}/i/${invitation.slug ?? slug}`,
+    verifiedGuestName,
+    invitation.themeId,
+    invitation.styleOverrides as Record<string, unknown>
+  );
 
   return (
     <>

@@ -4,17 +4,29 @@ import { db } from "@/db/client";
 import { users, invitations, payments } from "@/db/schema";
 import { getAdminSession } from "@/modules/admin/auth";
 import { getTemplateById, getTemplateCatalogItem } from "@/templates/registry";
+import { isDateInRange } from "@/modules/admin/date-filter";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const { user, isAuthorized } = await getAdminSession();
+export async function GET(request: Request) {
+  const { user, isAuthorized, mustChangePassword } = await getAdminSession();
   if (!user || !isAuthorized) {
     return NextResponse.json(
-      { error: "Akses ditolak. Endpoint ini khusus super administrator." },
+      { error: "Akses ditolak. Endpoint ini khusus administrator Roots." },
       { status: 403 }
     );
   }
+
+  if (mustChangePassword) {
+    return NextResponse.json(
+      { error: "Harap ganti kata sandi Anda terlebih dahulu sebelum mengakses dashboard.", mustChangePassword: true },
+      { status: 403 }
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
 
   // 1. Fetch Users
   const allUsers = await db
@@ -146,14 +158,27 @@ export async function GET() {
     };
   });
 
-  // Calculate metrics
-  const totalUsers = allUsers.length;
-  const totalInvitations = allInvitations.length;
-  const publishedInvitations = allInvitations.filter((i) => i.status === "published").length;
-  const draftInvitations = allInvitations.filter((i) => i.status === "draft").length;
-  const totalPayments = allPayments.length;
-  const paidPayments = allPayments.filter((p) => p.status === "paid");
-  const pendingPayments = allPayments.filter((p) => p.status === "pending");
+  // Apply date range filter if provided
+  const filteredUsers = (startDate || endDate)
+    ? enhancedUsers.filter((u) => isDateInRange(u.createdAt, startDate, endDate))
+    : enhancedUsers;
+
+  const filteredInvitations = (startDate || endDate)
+    ? enhancedInvitations.filter((i) => isDateInRange(i.createdAt, startDate, endDate))
+    : enhancedInvitations;
+
+  const filteredPayments = (startDate || endDate)
+    ? allPayments.filter((p) => isDateInRange(p.paidAt || p.createdAt, startDate, endDate))
+    : allPayments;
+
+  // Calculate metrics (based on filtered data if date range is applied, or all data)
+  const totalUsers = filteredUsers.length;
+  const totalInvitations = filteredInvitations.length;
+  const publishedInvitations = filteredInvitations.filter((i) => i.status === "published").length;
+  const draftInvitations = filteredInvitations.filter((i) => i.status === "draft").length;
+  const totalPayments = filteredPayments.length;
+  const paidPayments = filteredPayments.filter((p) => p.status === "paid");
+  const pendingPayments = filteredPayments.filter((p) => p.status === "pending");
   const totalRevenue = paidPayments.reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
   return NextResponse.json({
@@ -167,8 +192,12 @@ export async function GET() {
       pendingPaymentsCount: pendingPayments.length,
       totalRevenue,
     },
-    users: enhancedUsers,
-    invitations: enhancedInvitations,
-    payments: allPayments,
+    filter: {
+      startDate: startDate || null,
+      endDate: endDate || null,
+    },
+    users: filteredUsers,
+    invitations: filteredInvitations,
+    payments: filteredPayments,
   });
 }

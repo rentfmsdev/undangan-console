@@ -4,6 +4,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 
 export const OAUTH_STATE_COOKIE_NAME = "undangan_oauth_state";
 export const OAUTH_RETURN_TO_COOKIE_NAME = "undangan_oauth_return_to";
+export const OAUTH_POPUP_COOKIE_NAME = "undangan_oauth_popup";
 export const OAUTH_COOKIE_PATH = "/api/auth/google/callback";
 
 export function createOAuthState() {

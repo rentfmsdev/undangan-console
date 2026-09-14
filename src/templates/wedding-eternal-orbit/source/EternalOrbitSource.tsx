@@ -1,8 +1,11 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { TouchParticleTrail } from "@/components/effects/TouchParticleTrail";
+import type { TouchParticleConfig } from "@/components/effects/presets";
 import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNavigationRuntime";
 import { EternalOrbitNavigationAdapter } from "../navigation-adapter";
+import { trackMetaPixel } from "@/lib/meta-pixel";
 import "./eternal-orbit.css";
 
 type Props = { invitationId?: string; verifiedGuestName?: string };
@@ -15,8 +18,13 @@ const rail = [
 
 const createNavigationAdapter = () => new EternalOrbitNavigationAdapter();
 
+const ORBIT_TOUCH_PARTICLES: TouchParticleConfig = {
+  preset: "stardust",
+  colors: ["var(--eo-accent)", "var(--eo-primary)", "#ffffff"],
+};
+
 function OrbitMark({ className = "" }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 260 260" fill="none" aria-hidden="true"><ellipse cx="130" cy="130" rx="118" ry="53" stroke="var(--eo-primary)" strokeWidth="1" opacity=".58"/><ellipse cx="130" cy="130" rx="84" ry="128" stroke="var(--eo-mid)" strokeWidth="1" opacity=".45" transform="rotate(34 130 130)"/><circle cx="130" cy="130" r="6" fill="var(--eo-accent)"/><circle cx="236" cy="117" r="3" fill="var(--eo-primary)"/><path d="M139 14a13 13 0 1 0 0 20 10 10 0 1 1 0-20Z" fill="var(--eo-accent)"/></svg>;
+  return <svg className={className} viewBox="0 0 260 260" fill="none" aria-hidden="true"><ellipse cx="130" cy="130" rx="118" ry="53" stroke="var(--eo-primary)" strokeWidth="1" opacity=".58"/><ellipse cx="130" cy="130" rx="84" ry="128" stroke="var(--eo-mid)" strokeWidth="1" opacity=".45" transform="rotate(34 130 130)"/><circle cx="130" cy="130" r="6" fill="var(--eo-accent)"/><circle cx="236" cy="117" r="3" fill="var(--eo-primary)"/><path d="M130 36C128 34 118 25.5 118 19C118 14 122 10 127 10C129.5 10 130 11.8 130 13C130 11.8 130.5 10 133 10C138 10 142 14 142 19C142 25.5 132 34 130 36Z" fill="var(--eo-accent)"/></svg>;
 }
 
 function CelestialShower() {
@@ -176,6 +184,7 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error ?? "Ucapan belum dapat dikirim.");
         setWishes((items) => [payload.wish ?? nextWish, ...items]);
+        trackMetaPixel("Lead", { content_category: "invitation_rsvp", content_id: invitationId, content_name: "wedding-eternal-orbit" });
       } else setWishes((items) => [nextWish, ...items]);
       setWishMessage(""); setFeedback("Terima kasih, ucapan Anda telah terkirim.");
     } catch (error) { setFeedback(error instanceof Error ? error.message : "Ucapan belum dapat dikirim."); }
@@ -203,6 +212,7 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
 
       <section className="eo-section eo-closing" data-template-section="closing" data-orbit-reveal><img className="eo-closing-dove" src="/assets/wedding/merpati.png" alt=""/><OrbitMark className="eo-orbit eo-orbit-closing"/><p className="eo-kicker" data-field="eyebrow">Until we meet</p><h2 data-field="title">Terima kasih</h2><p data-field="copy">Terima kasih telah meluangkan waktu, doa, dan kehangatan untuk merayakan awal kisah kami.</p><strong data-field="subtitle">Nara &amp; Elang</strong></section>
     </main>
+    <TouchParticleTrail rootRef={rootRef} config={ORBIT_TOUCH_PARTICLES} enabled={opened} />
     <aside className="eo-rail" data-visible={railVisible ? "true" : "false"} aria-label="Navigasi undangan" onPointerEnter={revealRail} onFocusCapture={revealRail}>{rail.filter(([id]) => visibleSections.has(id)).map(([id, label, icon]) => <button key={id} type="button" className={activeSection === id ? "is-active" : ""} onClick={() => navigate(id)} aria-label={label}><span>{icon}</span><i>{label}</i></button>)}</aside>
     <section className="eo-envelope" data-template-section="opening-envelope" aria-hidden={opened}><div className="eo-envelope-card"><OrbitMark/><p data-field="eyebrow">The wedding of</p><h1 data-field="title">Nara &amp; Elang</h1><span data-field="date">Sabtu, 14 November 2026</span><small data-field="guestLabel">Kepada Yth.</small><strong>{verifiedGuestName || "Tamu Undangan"}</strong><button type="button" onClick={openEnvelope} data-field="sealLabel">Buka undangan</button></div></section>
     {lightboxIndex !== null && gallery[lightboxIndex] && <div className="eo-lightbox" role="dialog" aria-modal="true" onClick={() => setLightboxIndex(null)}><button type="button" aria-label="Tutup galeri">×</button><img src={gallery[lightboxIndex]} alt={`Galeri ${lightboxIndex + 1}`} onClick={(event) => event.stopPropagation()}/></div>}
