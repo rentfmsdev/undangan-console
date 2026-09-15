@@ -2,6 +2,7 @@ name: undangan-console
 
 x-app: &app
   image: undangan-console:local
+  pull_policy: build
   build:
     context: .
     dockerfile: Dockerfile
