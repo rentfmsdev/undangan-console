@@ -36,7 +36,7 @@ x-app: &app
   networks:
     - undangan
     - nginx-proxy-manager_default
-    - sso_users_internal_network
+    - user_service_internal_network
 
 services:
   web:
@@ -103,5 +103,5 @@ networks:
     driver: bridge
   nginx-proxy-manager_default:
     external: true
-  sso_users_internal_network:
+  user_service_internal_network:
     external: true
