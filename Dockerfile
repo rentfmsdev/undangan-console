@@ -30,7 +30,7 @@ WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
-    PORT=3000
+    PORT=2000
 
 COPY --from=dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/.next ./.next
@@ -50,6 +50,6 @@ RUN mkdir -p /app/public/uploads /app/data \
 
 USER node
 
-EXPOSE 3000
+EXPOSE 2000 2001
 
 CMD ["npm", "run", "start"]
