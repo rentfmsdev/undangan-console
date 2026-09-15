@@ -9,28 +9,58 @@ async function run() {
     const conn = await mysql.createConnection(url);
     console.log("Connected to MySQL. Migrating Phase 1 schema...");
 
-    // Update invitation_collaborators table
-    await conn.query(`
-      ALTER TABLE invitation_collaborators
-        MODIFY COLUMN status ENUM('pending', 'accepted', 'declined', 'expired', 'revoked') NOT NULL DEFAULT 'pending',
-        MODIFY COLUMN invite_token VARCHAR(64) NULL,
-        ADD COLUMN IF NOT EXISTS invite_token_hash VARCHAR(64) NULL AFTER role,
-        ADD COLUMN IF NOT EXISTS expires_at DATETIME NULL AFTER invited_by,
-        ADD COLUMN IF NOT EXISTS accepted_at DATETIME NULL AFTER expires_at,
-        ADD COLUMN IF NOT EXISTS declined_at DATETIME NULL AFTER accepted_at,
-        ADD COLUMN IF NOT EXISTS revoked_at DATETIME NULL AFTER declined_at,
-        ADD COLUMN IF NOT EXISTS last_seen_at DATETIME NULL AFTER revoked_at;
+    // Check existing columns in invitation_collaborators
+    const [cols] = await conn.query(`
+      SELECT COLUMN_NAME
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'invitation_collaborators'
     `);
+    const existingCols = new Set(cols.map((c) => c.COLUMN_NAME));
 
-    // Backfill token hash if old invite_token column exists
-    try {
-      await conn.query(`
-        UPDATE invitation_collaborators
-        SET invite_token_hash = SHA2(invite_token, 256)
-        WHERE invite_token_hash IS NULL AND invite_token IS NOT NULL;
-      `);
-    } catch {
-      // Ignored if invite_token column not present
+    if (existingCols.size > 0) {
+      // Update status enum
+      try {
+        await conn.query(`
+          ALTER TABLE invitation_collaborators
+            MODIFY COLUMN status ENUM('pending', 'accepted', 'declined', 'expired', 'revoked') NOT NULL DEFAULT 'pending'
+        `);
+      } catch (err) {
+        console.warn("[migrate-phase1] status column warning:", err.message);
+      }
+
+      // If legacy invite_token column exists, make it nullable and backfill
+      if (existingCols.has("invite_token")) {
+        try {
+          await conn.query(`ALTER TABLE invitation_collaborators MODIFY COLUMN invite_token VARCHAR(64) NULL`);
+        } catch {}
+      }
+
+      // Add missing columns if not present
+      if (!existingCols.has("invite_token_hash")) {
+        try {
+          await conn.query(`ALTER TABLE invitation_collaborators ADD COLUMN invite_token_hash VARCHAR(64) NULL AFTER role`);
+        } catch {}
+      }
+
+      const dateCols = ["expires_at", "accepted_at", "declined_at", "revoked_at", "last_seen_at"];
+      for (const col of dateCols) {
+        if (!existingCols.has(col)) {
+          try {
+            await conn.query(`ALTER TABLE invitation_collaborators ADD COLUMN ${col} DATETIME NULL`);
+          } catch {}
+        }
+      }
+
+      // Backfill token hash if old invite_token column exists
+      if (existingCols.has("invite_token")) {
+        try {
+          await conn.query(`
+            UPDATE invitation_collaborators
+            SET invite_token_hash = SHA2(invite_token, 256)
+            WHERE invite_token_hash IS NULL AND invite_token IS NOT NULL
+          `);
+        } catch {}
+      }
     }
 
     // Ensure index on status and token_hash
