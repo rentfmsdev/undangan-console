@@ -16,7 +16,7 @@ export async function getDraftAccess(draftId: string) {
   const user = await getSessionUser();
   const isAdmin = Boolean(user && (user.role === "admin" || isSuperAdminEmail(user.email)));
   const isDirectOwner = Boolean(user && draft.userId === user.id);
-  const ownedByUser = isDirectOwner || isAdmin;
+  const ownedByUser = isDirectOwner;
 
   let isCollaborator = false;
   let collaboratorRole: "editor" | "viewer" = "editor";
@@ -55,18 +55,20 @@ export async function getDraftAccess(draftId: string) {
   const editToken = (await cookies()).get(editCookieName(draftId))?.value;
   const authorizedByToken = !draft.userId && isMatchingSecret(editToken, draft.editTokenHash);
 
-  const role: DraftAccessRole = ownedByUser
+  const role: DraftAccessRole = isDirectOwner
     ? "owner"
     : isCollaborator
     ? collaboratorRole
     : authorizedByToken
     ? "anonymous"
+    : isAdmin
+    ? "viewer"
     : "viewer";
 
   return {
     draft,
     user,
-    authorized: ownedByUser || isCollaborator || authorizedByToken || isAdmin,
+    authorized: isDirectOwner || isCollaborator || authorizedByToken || isAdmin,
     ownedByUser,
     isCollaborator,
     isAdmin,

@@ -161,7 +161,8 @@ async function resolvePrincipal(cookieHeader, draftId) {
   if (!draft) return null;
   const adminEmails = ["ardiandra45@gmail.com", "ardiandra53@gmail.com", "santaiscale@gmail.com"];
   const isAdmin = user.role === "admin" || (user.email && adminEmails.includes(user.email.toLowerCase()));
-  if (draft.userId === user.id || isAdmin) return { ...user, role: "owner" };
+  if (draft.userId === user.id) return { ...user, role: "owner" };
+  if (isAdmin) return { ...user, role: "viewer" };
 
   const [membershipRows] = await dbPool.query(
     `SELECT role FROM invitation_collaborators

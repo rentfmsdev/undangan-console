@@ -2694,6 +2694,14 @@ export function ConsoleWorkspace({
                       : "Publish"}
                 </span>
               </button>
+            ) : isViewer ? (
+              <span
+                title="Anda membuka draft ini dalam mode hanya lihat (Viewer)."
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 shadow-xs"
+              >
+                <Eye size={13} className="text-amber-600" />
+                <span>Hanya Lihat</span>
+              </span>
             ) : (
               <span
                 title="Hanya pemilik undangan yang dapat mempublikasikan undangan ke domain live."

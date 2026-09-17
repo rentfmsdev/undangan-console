@@ -60,6 +60,15 @@ export function CollaborativeSectionInspector({
 
   return (
     <div className="w-full min-w-0 max-w-full">
+      {isViewer && (
+        <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-amber-300 bg-amber-50/90 px-3.5 py-2.5 text-xs text-amber-900 shadow-xs">
+          <span className="text-base leading-none">👁️</span>
+          <div className="min-w-0">
+            <strong className="block text-[11px] font-bold">Mode Viewer (Hanya Lihat)</strong>
+            <span className="text-[10px] text-amber-700">Anda membuka draft ini sebagai Admin. Perubahan tidak dapat disimpan untuk melindungi data user.</span>
+          </div>
+        </div>
+      )}
       {/* Section Header & Visibility Badge */}
       <div className="mb-4 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5">
         <div className="min-w-0">
@@ -122,6 +131,7 @@ export function CollaborativeSectionInspector({
                 key={field.key}
                 field={field}
                 value={value}
+                disabled={isViewer}
                 textStyle={style}
                 textStyleOpen={activeTextStyleField === textStyleFieldId}
                 activeCollaborator={collaborator}
