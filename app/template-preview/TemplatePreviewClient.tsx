@@ -26,10 +26,16 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
       if (event.source !== window.parent || !isEditorMessage(event.data)) return;
       if (event.data.type === "preview-state") {
         currentState = { sections: event.data.sections, themeId: event.data.themeId || "maroon-gold", settings: event.data.settings };
-        runtime.applyState(currentState);
-        stopWatching();
-        stopWatching = runtime.watchState(currentState);
-        postToEditor({ type: "state-applied" });
+        try {
+          stopWatching();
+          stopWatching = () => {};
+          runtime.applyState(currentState);
+          stopWatching = runtime.watchState(currentState);
+        } catch {
+          stopWatching = () => {};
+        } finally {
+          postToEditor({ type: "state-applied" });
+        }
       }
       if (event.data.type === "navigate-section") {
         window.dispatchEvent(new CustomEvent(TEMPLATE_NAVIGATE_EVENT, { detail: { sectionId: event.data.sectionType, requestId: event.data.requestId, source: event.data.navigationSource } }));
@@ -77,15 +83,24 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
     document.addEventListener("click", handleTemplateClick, true);
 
     let readyFrame = 0;
+    let readyTimer = 0;
+    let readyAnnounced = false;
+    const postReady = () => {
+      if (readyAnnounced) return;
+      readyAnnounced = true;
+      postToEditor({ type: "ready" });
+    };
     const announceReady = () => {
+      if (readyAnnounced) return;
       const hydratedRoot = document.querySelector<HTMLElement>("[data-template-scroll-root][data-template-hydrated='true']");
       if (!hydratedRoot) {
         readyFrame = window.requestAnimationFrame(announceReady);
         return;
       }
-      readyFrame = window.requestAnimationFrame(() => postToEditor({ type: "ready" }));
+      readyFrame = window.requestAnimationFrame(postReady);
     };
     readyFrame = window.requestAnimationFrame(announceReady);
+    readyTimer = window.setTimeout(postReady, 4000);
 
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
@@ -95,6 +110,7 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
       document.removeEventListener("click", handleTemplateClick, true);
       window.cancelAnimationFrame(debugFrame);
       window.cancelAnimationFrame(readyFrame);
+      window.clearTimeout(readyTimer);
       stopWatching();
     };
   }, [runtime]);

@@ -24,6 +24,7 @@
 .khitan-shell {
   width: 100%;
   max-width: 480px;
+  height: 100vh;
   height: 100dvh;
   margin: 0 auto;
   overflow-y: auto;
@@ -74,7 +75,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
+  height: 100vh;
   height: 100dvh;
+  max-height: 100vh;
   max-height: 100dvh;
   box-sizing: border-box;
   padding: clamp(44px, 5.8vh, 56px) clamp(16px, 4vw, 20px) 72px;

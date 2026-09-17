@@ -106,6 +106,7 @@ import { stockMusicLibrary, getDefaultStockMusic } from "@/config/stock-music";
 import { makeAdminWhatsAppUrl } from "@/config/contact";
 import { PublishModal, type PublishResult } from "./components/PublishModal";
 import { buildInvitationUrl, getAppBaseUrl } from "@/lib/app-url";
+import { createClientId } from "@/lib/browser-compat";
 import { useAutoSave } from "./hooks/useAutoSave";
 import { AutoSaveStatusBadge } from "./components/AutoSaveStatusBadge";
 import { BulkGuestManager } from "./components/BulkGuestManager";
@@ -238,7 +239,7 @@ function hydrateSections(
   const normalized = getTemplateRuntime(template.code).normalizeSections(
     template,
     records,
-    () => crypto.randomUUID(),
+    () => createClientId(),
   );
   return canonicalizeSectionRecords(template, normalized).flatMap((record) => {
     const section = template.sections.find((item) => item.type === record.type);
@@ -698,7 +699,7 @@ export function ConsoleWorkspace({
           (section) => section.type === type,
         );
         return definition && !existingTypes.has(type)
-          ? [{ id: crypto.randomUUID(), definition }]
+          ? [{ id: createClientId(), definition }]
           : [];
       });
       additions.forEach(({ id, definition }) => {
@@ -925,10 +926,35 @@ export function ConsoleWorkspace({
   const inspectorWidthRef = useRef(400);
   const inspectorResizeRef = useRef(false);
   const pendingNavigationRef = useRef<PendingNavigation | null>(null);
+  const previewLoadingTimeoutRef = useRef<number | null>(null);
   const draftInitializationRef = useRef("");
   const musicInputRef = useRef<HTMLInputElement>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 7 } }),
+  );
+  const clearPreviewLoading = useCallback((requestId?: string) => {
+    if (
+      requestId &&
+      pendingNavigationRef.current?.requestId !== requestId
+    )
+      return;
+    if (previewLoadingTimeoutRef.current !== null) {
+      window.clearTimeout(previewLoadingTimeoutRef.current);
+      previewLoadingTimeoutRef.current = null;
+    }
+    pendingNavigationRef.current = null;
+    setIsPreviewLoading(false);
+    setIsRefreshing(false);
+  }, []);
+  const armPreviewLoadingRecovery = useCallback(
+    (requestId?: string, delay = 6500) => {
+      if (previewLoadingTimeoutRef.current !== null)
+        window.clearTimeout(previewLoadingTimeoutRef.current);
+      previewLoadingTimeoutRef.current = window.setTimeout(() => {
+        clearPreviewLoading(requestId);
+      }, delay);
+    },
+    [clearPreviewLoading],
   );
   const selected =
     sections.find((section) => section.id === selectedId) ?? sections[0];
@@ -1273,7 +1299,7 @@ export function ConsoleWorkspace({
         const createdPayload = await created.json();
         const migratedSections = localSnapshot.sections.map((section) => ({
           ...section,
-          id: crypto.randomUUID(),
+          id: createClientId(),
         }));
         await fetch(`/api/drafts/${createdPayload.draftId}`, {
           method: "PATCH",
@@ -1632,14 +1658,13 @@ export function ConsoleWorkspace({
         }
       }
       if (event.data.type === "state-applied" && !pendingNavigationRef.current)
-        setIsPreviewLoading(false);
+        clearPreviewLoading();
       if (
         (event.data.type === "navigation-complete" ||
           event.data.type === "navigation-cancelled") &&
         pendingNavigationRef.current?.requestId === event.data.requestId
       ) {
-        pendingNavigationRef.current = null;
-        setIsPreviewLoading(false);
+        clearPreviewLoading(event.data.requestId);
       }
       if (event.data.type === "section-selected") {
         const section = sections.find(
@@ -1686,7 +1711,16 @@ export function ConsoleWorkspace({
     themeId,
     presence.broadcastCursor,
     selectedId,
+    clearPreviewLoading,
   ]);
+
+  useEffect(() => {
+    armPreviewLoadingRecovery(undefined, 10000);
+    return () => {
+      if (previewLoadingTimeoutRef.current !== null)
+        window.clearTimeout(previewLoadingTimeoutRef.current);
+    };
+  }, [armPreviewLoadingRecovery]);
 
   useEffect(() => {
     if (view !== "wishes" || !draftId) return;
@@ -1938,11 +1972,12 @@ export function ConsoleWorkspace({
     if (!section.enabled) return;
     const navigation: PendingNavigation = {
       sectionType: section.type,
-      requestId: crypto.randomUUID(),
+      requestId: createClientId(),
       navigationSource: "editor-sidebar",
     };
     pendingNavigationRef.current = navigation;
     setIsPreviewLoading(true);
+    armPreviewLoadingRecovery(navigation.requestId);
     previewFrameRef.current?.contentWindow?.postMessage(
       {
         source: EDITOR_MESSAGE_SOURCE,
@@ -2291,7 +2326,9 @@ export function ConsoleWorkspace({
   function refreshPreview() {
     setIsRefreshing(true);
     setIsPreviewLoading(true);
+    pendingNavigationRef.current = null;
     previewReadyRef.current = false;
+    armPreviewLoadingRecovery(undefined, 8000);
     if (previewFrameRef.current) {
       try {
         previewFrameRef.current.contentWindow?.location.reload();

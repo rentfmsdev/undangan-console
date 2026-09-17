@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { writeClipboardText } from "@/lib/browser-compat";
 import {
   Users,
   CreditCard,
@@ -220,7 +221,7 @@ export function AdminDashboardClient({
   };
 
   const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
+    void writeClipboardText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };

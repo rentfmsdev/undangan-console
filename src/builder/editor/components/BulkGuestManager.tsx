@@ -28,6 +28,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { buildPersonalInvitationUrl } from "@/modules/generator/build-personal-invitation-url";
 import type { WhatsAppPreset } from "@/modules/generator/build-whatsapp-message";
 import { trackMetaPixel } from "@/lib/meta-pixel";
+import { createClientId, writeClipboardText } from "@/lib/browser-compat";
 
 export type GuestContact = {
   id: string;
@@ -342,7 +343,7 @@ export function BulkGuestManager({
         const blob = await writeXlsxFile(rows, { columns: [{ width: 30 }, { width: 20 }, { width: 20 }] }).toBlob();
         downloadBlob(blob, "template-daftar-tamu-undangan.xlsx");
       } else {
-        const csv = `\uFEFF${rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")).join("\r\n")}`;
+        const csv = `\uFEFF${rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\r\n")}`;
         downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "template-daftar-tamu-undangan.csv");
       }
       showToast(`Template ${type.toUpperCase()} berhasil diunduh!`);
@@ -444,7 +445,7 @@ export function BulkGuestManager({
 
           if (nameVal) {
             newGuests.push({
-              id: crypto.randomUUID(),
+              id: createClientId(),
               name: nameVal,
               phone: normalizePhoneNumber(phoneVal),
               group: groupVal || "Umum",
@@ -492,7 +493,7 @@ export function BulkGuestManager({
 
       if (name) {
         newGuests.push({
-          id: crypto.randomUUID(),
+          id: createClientId(),
           name,
           phone: normalizePhoneNumber(phone),
           group: group || "Umum",
@@ -517,7 +518,7 @@ export function BulkGuestManager({
     if (!formName.trim()) return;
 
     const newGuest: GuestContact = {
-      id: crypto.randomUUID(),
+      id: createClientId(),
       name: formName.trim(),
       phone: normalizePhoneNumber(formPhone),
       group: formGroup.trim() || "Umum",
@@ -683,7 +684,7 @@ export function BulkGuestManager({
       return;
     }
     const message = getMessageForGuest(guest.name);
-    await navigator.clipboard.writeText(message);
+    await writeClipboardText(message);
     showToast(`Pesan untuk "${guest.name}" disalin!`);
   }
 
@@ -704,7 +705,7 @@ export function BulkGuestManager({
       guestName: guest.name,
       fallbackCode: templateCode,
     });
-    await navigator.clipboard.writeText(link);
+    await writeClipboardText(link);
     showToast(`Tautan personal "${guest.name}" disalin!`);
   }
 

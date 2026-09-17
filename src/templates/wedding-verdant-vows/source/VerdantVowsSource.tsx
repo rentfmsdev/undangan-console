@@ -6,6 +6,7 @@ import type { TouchParticleConfig } from "@/components/effects/presets";
 import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNavigationRuntime";
 import { VerdantVowsNavigationAdapter } from "../navigation-adapter";
 import { trackMetaPixel } from "@/lib/meta-pixel";
+import { createClientId, writeClipboardText } from "@/lib/browser-compat";
 import "./verdant-vows.css";
 
 type Props = { invitationId?: string; verifiedGuestName?: string };
@@ -311,19 +312,22 @@ export default function VerdantVowsSource({
     const sections = Array.from(
       root.querySelectorAll<HTMLElement>("[data-template-section]"),
     );
-    const observer = new IntersectionObserver(
-      (entries) =>
-        entries.forEach((entry) => {
-          entry.target.classList.toggle("vv-page-open", entry.isIntersecting);
-        }),
-      { root, rootMargin: "0px 0px -12%", threshold: 0.1 },
-    );
+    const observer = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver(
+          (entries) =>
+            entries.forEach((entry) => {
+              entry.target.classList.toggle("vv-page-open", entry.isIntersecting);
+            }),
+          { root, rootMargin: "0px 0px -12%", threshold: 0.1 },
+        )
+      : null;
     sections.forEach((section) => {
       if (section.dataset.templateSection === "hero")
         section.classList.add("vv-page-open");
-      else observer.observe(section);
+      else if (observer) observer.observe(section);
+      else section.classList.add("vv-page-open");
     });
-    return () => observer.disconnect();
+    return () => observer?.disconnect();
   }, [opened]);
 
   const openEnvelope = () => {
@@ -355,7 +359,7 @@ export default function VerdantVowsSource({
       document.querySelector<HTMLElement>(
         `[data-template-section='gift'] [data-field='${field}']`,
       )?.textContent ?? "";
-    navigator.clipboard?.writeText(account).catch(() => {});
+    void writeClipboardText(account).catch(() => {});
   };
   const saveToCalendar = () => {
     const event = rootRef.current?.querySelector<HTMLElement>(
@@ -390,7 +394,7 @@ export default function VerdantVowsSource({
     const receptionTimes = Array.from(
       getField("receptionTime").matchAll(/(\d{1,2})[.:](\d{2})/g),
     );
-    const endTime = receptionTimes.at(-1) ?? time;
+    const endTime = receptionTimes[receptionTimes.length - 1] ?? time;
     const start = `${year}${month}${day}T${(time?.[1] ?? "08").padStart(2, "0")}${time?.[2] ?? "00"}00`;
     const end = `${year}${month}${day}T${(endTime?.[1] ?? "14").padStart(2, "0")}${endTime?.[2] ?? "00"}00`;
     const escapeIcs = (value: string) =>
@@ -431,7 +435,7 @@ export default function VerdantVowsSource({
     setIsSubmittingWish(true);
     setWishFeedback("");
     const nextWish: Wish = {
-      id: crypto.randomUUID(),
+      id: createClientId(),
       name: wishName.trim(),
       message: wishMessage.trim(),
       attendance: wishAttendance,

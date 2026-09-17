@@ -27,7 +27,7 @@ export function WeddingLampungPreview({ sections, selectedId, onSelect, themeId,
   const closing = dataFor(sections, "closing");
   const select = (section?: EditablePreviewSection) => section && onSelect(section.id);
 
-  return <div className={`${styles.invitation} ${styles[`theme${themeId.replaceAll("-", "")}`] ?? ""}`} style={{ "--custom-background": backgroundColor } as React.CSSProperties}>
+  return <div className={`${styles.invitation} ${styles[`theme${themeId.replace(/-/g, "")}`] ?? ""}`} style={{ "--custom-background": backgroundColor } as React.CSSProperties}>
     {hero && <button id={`preview-${hero.id}`} type="button" onClick={() => select(hero)} className={`${styles.hero} ${selectedId === hero.id ? styles.selected : ""}`}>
       <img src="/assets/my/DSC_0680%20(2).jpg.jpeg" alt="" /><span className={styles.heroShade} /><span className={styles.heroFrame} />
       <span className={styles.monogram}>A <i>&</i> A</span><span className={styles.heroBody}><small>The Wedding of</small><b>{hero.data.title}</b><em>{hero.data.subtitle}</em><span>♡ &nbsp; 🕊 &nbsp; ♡</span><strong>Kepada Yth.<i>Bapak/Ibu/Saudara/i</i></strong></span>

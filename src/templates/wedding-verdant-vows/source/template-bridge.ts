@@ -1,3 +1,5 @@
+import { findTemplateSection } from "@/templates/navigation/dom";
+
 export type VerdantPreviewSection = {
   type: string;
   enabled: boolean;
@@ -145,9 +147,7 @@ export function applyVerdantVowsTemplateState(
     audio.volume = Math.max(0, Math.min(1, settings.musicVolume));
 
   sections.forEach((section) => {
-    const node = shell.querySelector<HTMLElement>(
-      `[data-template-section="${CSS.escape(section.type)}"]`,
-    );
+    const node = findTemplateSection(shell, section.type);
     if (!node) return;
     if (!section.enabled) {
       node.style.setProperty("display", "none", "important");

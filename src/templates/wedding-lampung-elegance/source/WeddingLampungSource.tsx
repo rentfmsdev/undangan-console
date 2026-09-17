@@ -34,6 +34,7 @@ import { WeddingLampungNavigationAdapter } from "../navigation-adapter";
 import { wedding } from "./wedding-data";
 import { WEDDING_GALLERY_UPDATE_EVENT } from "./template-bridge";
 import { trackMetaPixel } from "@/lib/meta-pixel";
+import { writeClipboardText } from "@/lib/browser-compat";
 
 type Attendance = "Hadir" | "Belum pasti" | "Berhalangan hadir";
 type StoredWish = { id: string; name: string; attendance: Attendance; message: string; createdAt: string };
@@ -327,7 +328,7 @@ function GiftSection() {
 
   const copyAccount = async (number: string, index: number) => {
     try {
-      await navigator.clipboard.writeText(number.replaceAll(" ", ""));
+      await writeClipboardText(number.replace(/\s/g, ""));
       setCopied(index);
       window.setTimeout(() => setCopied(null), 1600);
     } catch {
@@ -659,6 +660,10 @@ function WeddingInvitation({
 
   useEffect(() => {
     if (!opened) return;
+    if (typeof IntersectionObserver === "undefined") {
+      document.querySelectorAll<HTMLElement>(".invitation-page .reveal").forEach((element) => element.classList.add("is-visible"));
+      return;
+    }
     const observer = new IntersectionObserver(
       (entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add("is-visible")),
       { threshold: 0.13 }
@@ -732,7 +737,7 @@ function WeddingInvitation({
     <main className={mainClass}>
       <TemplateNavigationRuntime createAdapter={createWeddingNavigationAdapter} />
       <audio ref={musicRef} loop preload="auto" playsInline>
-        <source src="/assets/audio/easy-on-me.webm" type="audio/webm" />
+        <source src="/assets/audio/a-thousand-years.mp3" type="audio/mpeg" />
       </audio>
       {!opened && <OpeningEnvelope guestName={guestName} onOpen={openInvitation} stage={stage} />}
       {opened && (

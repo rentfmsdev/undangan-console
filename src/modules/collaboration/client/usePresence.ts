@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CollaborationPresence, RemoteCursor, getDeterministicUserColor } from "../domain/presence";
+import { createClientId } from "@/lib/browser-compat";
 
 export type CollaboratorItem = {
   id: string;
@@ -98,7 +99,7 @@ export function usePresence({
   if (connectionIdRef.current == null && typeof window !== "undefined") {
     let saved = window.sessionStorage.getItem(`collab_conn_${draftId || "default"}`);
     if (!saved) {
-      saved = crypto.randomUUID();
+      saved = createClientId();
       window.sessionStorage.setItem(`collab_conn_${draftId || "default"}`, saved);
     }
     connectionIdRef.current = saved;
@@ -433,7 +434,7 @@ export function usePresence({
       }
 
       return new Promise((resolve) => {
-        const reqId = crypto.randomUUID();
+        const reqId = createClientId();
         const timeout = setTimeout(() => {
           ackResolversRef.current.delete(reqId);
           resolve({ success: false, error: "Permintaan invite timeout." });
@@ -472,7 +473,7 @@ export function usePresence({
       }
 
       return new Promise((resolve) => {
-        const reqId = crypto.randomUUID();
+        const reqId = createClientId();
         const timeout = setTimeout(() => {
           ackResolversRef.current.delete(reqId);
           resolve(false);
@@ -509,7 +510,7 @@ export function usePresence({
       }
 
       return new Promise((resolve) => {
-        const reqId = crypto.randomUUID();
+        const reqId = createClientId();
         const timeout = setTimeout(() => {
           ackResolversRef.current.delete(reqId);
           resolve(false);

@@ -2,6 +2,7 @@
 
 import { Check, Copy, Crown, LoaderCircle, Mail, MessageCircle, Shield, Trash2, UserCheck, UserPlus, Users, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { writeClipboardText } from "@/lib/browser-compat";
 
 export type CollaboratorItem = {
   id: string;
@@ -220,7 +221,7 @@ export function InviteCollaboratorModal({
       if (res.ok) {
         setSuccess(`Undangan untuk ${email} diperbarui! Link: ${data.inviteUrl}`);
         if (data.inviteUrl) {
-          await navigator.clipboard.writeText(data.inviteUrl);
+          await writeClipboardText(data.inviteUrl);
         }
       } else {
         setError(data.error || "Gagal mengirim ulang undangan.");
@@ -266,7 +267,7 @@ export function InviteCollaboratorModal({
   async function handleCopyShareLink() {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const shareLink = `${origin}/editor/${templateCode}/${draftId}`;
-    await navigator.clipboard.writeText(shareLink);
+    await writeClipboardText(shareLink);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   }

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Check, Copy, Pipette, RotateCcw, X } from "lucide-react";
+import { writeClipboardText } from "@/lib/browser-compat";
 
 type Props = {
   label: string;
@@ -126,7 +127,7 @@ export function FigmaColorPicker({
 
   const handleCopyHex = async () => {
     try {
-      await navigator.clipboard.writeText(currentColor);
+      await writeClipboardText(currentColor);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {}

@@ -43,44 +43,57 @@ export class PreviewNavigationManager {
     this.programmatic = true;
     this.currentRequest = { sectionId, requestId };
     this.options.onNavigationEvent("navigation-start", sectionId, requestId);
-    await this.options.adapter.prepareSection(sectionId);
+    try {
+      await this.options.adapter.prepareSection(sectionId);
 
-    for (let attempt = 0; attempt < 30; attempt += 1) {
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        if (token !== this.navigationToken) return;
+        if (this.options.adapter.getSectionElement(sectionId) && this.options.adapter.isSectionReady(sectionId)) break;
+        await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+      }
+
       if (token !== this.navigationToken) return;
-      if (this.options.adapter.getSectionElement(sectionId) && this.options.adapter.isSectionReady(sectionId)) break;
-      await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-    }
+      const root = this.options.adapter.getScrollRoot();
+      const destination = this.options.adapter.getSectionElement(sectionId);
+      if (!root || !destination) {
+        this.cancelNavigation(sectionId, requestId, token);
+        return;
+      }
 
-    if (token !== this.navigationToken) return;
-    const root = this.options.adapter.getScrollRoot();
-    const destination = this.options.adapter.getSectionElement(sectionId);
-    if (!root || !destination) {
+      const openingId = this.options.adapter.getOpeningSectionId();
+      let targetTop = 0;
+      if (sectionId !== openingId) {
+        if (destination.parentElement === root && typeof destination.offsetTop === "number") {
+          targetTop = destination.offsetTop;
+        } else {
+          targetTop = destination.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop;
+        }
+      }
+      const behavior = root.style.scrollBehavior;
+      root.style.scrollBehavior = "auto";
+      let completed = false;
+      try {
+        completed = await this.animateScroll(root, Math.max(0, targetTop), token);
+      } finally {
+        root.style.scrollBehavior = behavior;
+      }
+
+      if (!completed || token !== this.navigationToken) return;
+      this.activeSection = sectionId;
       this.programmatic = false;
       this.currentRequest = null;
-      this.options.onNavigationEvent("navigation-cancelled", sectionId, requestId);
-      return;
+      this.options.onActiveSection(sectionId);
+      this.options.onNavigationEvent("navigation-complete", sectionId, requestId);
+    } catch {
+      this.cancelNavigation(sectionId, requestId, token);
     }
+  }
 
-    const openingId = this.options.adapter.getOpeningSectionId();
-    let targetTop = 0;
-    if (sectionId !== openingId) {
-      if (destination.parentElement === root && typeof destination.offsetTop === "number") {
-        targetTop = destination.offsetTop;
-      } else {
-        targetTop = destination.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop;
-      }
-    }
-    const behavior = root.style.scrollBehavior;
-    root.style.scrollBehavior = "auto";
-    const completed = await this.animateScroll(root, Math.max(0, targetTop), token);
-    root.style.scrollBehavior = behavior;
-
-    if (!completed || token !== this.navigationToken) return;
-    this.activeSection = sectionId;
+  private cancelNavigation(sectionId: string, requestId: string, token: number) {
+    if (token !== this.navigationToken) return;
     this.programmatic = false;
     this.currentRequest = null;
-    this.options.onActiveSection(sectionId);
-    this.options.onNavigationEvent("navigation-complete", sectionId, requestId);
+    this.options.onNavigationEvent("navigation-cancelled", sectionId, requestId);
   }
 
   private cancelOnUserInput = () => {
@@ -103,17 +116,33 @@ export class PreviewNavigationManager {
 
     const duration = Math.min(520, Math.max(280, Math.abs(distance) * 0.09));
     return new Promise<boolean>((resolve) => {
-      const startedAt = performance.now();
-      const tick = (now: number) => {
+      let startedAt: number | null = null;
+      let settled = false;
+      const finish = (completed: boolean) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(watchdog);
+        resolve(completed);
+      };
+      const watchdog = window.setTimeout(() => {
         if (token !== this.navigationToken) {
-          resolve(false);
+          finish(false);
           return;
         }
-        const progress = Math.min(1, (now - startedAt) / duration);
+        root.scrollTop = target;
+        finish(true);
+      }, duration + 350);
+      const tick = (now: number) => {
+        if (token !== this.navigationToken) {
+          finish(false);
+          return;
+        }
+        startedAt ??= now;
+        const progress = Math.min(1, Math.max(0, (now - startedAt) / duration));
         const eased = 1 - Math.pow(1 - progress, 3);
         root.scrollTop = start + distance * eased;
         if (progress < 1) window.requestAnimationFrame(tick);
-        else resolve(true);
+        else finish(true);
       };
       window.requestAnimationFrame(tick);
     });
@@ -143,15 +172,19 @@ export class PreviewNavigationManager {
     this.root.addEventListener("scroll", this.scheduleActiveSection, { passive: true });
     this.root.addEventListener("wheel", this.cancelOnUserInput, { passive: true });
     this.root.addEventListener("touchstart", this.cancelOnUserInput, { passive: true });
-    this.rootObserver = new ResizeObserver(this.scheduleActiveSection);
-    this.rootObserver.observe(this.root);
-    this.domObserver = new MutationObserver(this.scheduleActiveSection);
-    this.domObserver.observe(this.root, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["hidden", "class", "style", "data-template-section"],
-    });
+    if (typeof ResizeObserver !== "undefined") {
+      this.rootObserver = new ResizeObserver(this.scheduleActiveSection);
+      this.rootObserver.observe(this.root);
+    }
+    if (typeof MutationObserver !== "undefined") {
+      this.domObserver = new MutationObserver(this.scheduleActiveSection);
+      this.domObserver.observe(this.root, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["hidden", "class", "style", "data-template-section"],
+      });
+    }
   }
 
   private detachScrollRoot() {

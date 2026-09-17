@@ -1,5 +1,6 @@
 import type { TemplateNavigationAdapter, TemplateSectionEntry } from "@/templates/navigation/contracts";
 import { weddingSectionSelectors } from "./source/template-bridge";
+import { findTemplateSection } from "@/templates/navigation/dom";
 
 export class WeddingLampungNavigationAdapter implements TemplateNavigationAdapter {
   getScrollRoot() {
@@ -7,7 +8,7 @@ export class WeddingLampungNavigationAdapter implements TemplateNavigationAdapte
   }
 
   getSectionElement(sectionId: string) {
-    return document.querySelector<HTMLElement>(`[data-template-section="${CSS.escape(sectionId)}"]`) ?? this.getByLegacySelector(sectionId);
+    return findTemplateSection(document, sectionId) ?? this.getByLegacySelector(sectionId);
   }
 
   getSectionEntries(): TemplateSectionEntry[] {

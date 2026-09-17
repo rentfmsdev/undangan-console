@@ -6,6 +6,7 @@ import type { TouchParticleConfig } from "@/components/effects/presets";
 import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNavigationRuntime";
 import { EternalOrbitNavigationAdapter } from "../navigation-adapter";
 import { trackMetaPixel } from "@/lib/meta-pixel";
+import { createClientId, writeClipboardText } from "@/lib/browser-compat";
 import "./eternal-orbit.css";
 
 type Props = { invitationId?: string; verifiedGuestName?: string };
@@ -89,8 +90,10 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
     const root = rootRef.current;
     if (!root || !opened) return;
     const items = Array.from(root.querySelectorAll<HTMLElement>("[data-orbit-reveal]"));
-    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.target.classList.toggle("is-revealed", entry.isIntersecting)), { root, threshold: 0.18 });
-    items.forEach((item) => observer.observe(item));
+    const observer = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver((entries) => entries.forEach((entry) => entry.target.classList.toggle("is-revealed", entry.isIntersecting)), { root, threshold: 0.18 })
+      : null;
+    items.forEach((item) => observer ? observer.observe(item) : item.classList.add("is-revealed"));
     const onScroll = () => {
       revealRail();
       const rootRect = root.getBoundingClientRect();
@@ -110,7 +113,7 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
       setActiveSection(current);
     };
     onScroll(); root.addEventListener("scroll", onScroll, { passive: true });
-    return () => { observer.disconnect(); root.removeEventListener("scroll", onScroll); };
+    return () => { observer?.disconnect(); root.removeEventListener("scroll", onScroll); };
   }, [opened, revealRail]);
 
   useEffect(() => () => {
@@ -148,7 +151,7 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
   const copyAccount = async (field: string) => {
     const value = rootRef.current?.querySelector<HTMLElement>(`[data-template-section="gift"] [data-field="${field}"]`)?.textContent?.replace(/\s/g, "") ?? "";
     if (!value) return;
-    try { await navigator.clipboard.writeText(value); setFeedback("Nomor rekening tersalin."); }
+    try { await writeClipboardText(value); setFeedback("Nomor rekening tersalin."); }
     catch { setFeedback("Nomor rekening belum dapat disalin."); }
     window.setTimeout(() => setFeedback(""), 2200);
   };
@@ -176,7 +179,7 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
   const submitWish = async (event: FormEvent) => {
     event.preventDefault();
     if (!wishName.trim() || !wishMessage.trim()) { setFeedback("Tulis nama dan ucapan terlebih dahulu."); return; }
-    const nextWish: Wish = { id: crypto.randomUUID(), name: wishName.trim(), message: wishMessage.trim(), attendance };
+    const nextWish: Wish = { id: createClientId(), name: wishName.trim(), message: wishMessage.trim(), attendance };
     setSubmitting(true); setFeedback("");
     try {
       if (invitationId) {

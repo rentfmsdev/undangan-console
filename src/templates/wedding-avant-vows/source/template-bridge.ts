@@ -1,3 +1,5 @@
+import { findTemplateSection } from "@/templates/navigation/dom";
+
 export type AvantVowsPreviewSection = {
   type: string;
   enabled: boolean;
@@ -107,7 +109,7 @@ export function applyAvantVowsTemplateState(
 
   let galleryUrls: string[] | null = null;
   sections.forEach((section) => {
-    const node = shell.querySelector<HTMLElement>(`[data-template-section="${CSS.escape(section.type)}"]`);
+    const node = findTemplateSection(shell, section.type);
     if (!node) return;
     if (!section.enabled) {
       node.hidden = true;

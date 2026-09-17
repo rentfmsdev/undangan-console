@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import type { TemplateNavigationAdapter } from "./contracts";
 import { PreviewNavigationManager } from "./preview-navigation-manager";
 import type { NavigationSource } from "./protocol";
+import { createClientId } from "@/lib/browser-compat";
 
 export const TEMPLATE_NAVIGATE_EVENT = "template:navigate";
 export const TEMPLATE_ACTIVE_EVENT = "template:active-section";
@@ -21,11 +22,13 @@ export function TemplateNavigationRuntime({ createAdapter }: { createAdapter: ()
     const handleNavigate = (event: Event) => {
       const detail = (event as CustomEvent<{ sectionId?: string; requestId?: string; source?: NavigationSource }>).detail;
       if (!detail?.sectionId) return;
-      void manager.navigate(detail.sectionId, detail.requestId ?? crypto.randomUUID(), detail.source ?? "preview-navbar");
+      void manager.navigate(detail.sectionId, detail.requestId ?? createClientId(), detail.source ?? "preview-navbar");
     };
 
-    manager.start();
     window.addEventListener(TEMPLATE_NAVIGATE_EVENT, handleNavigate);
+    try {
+      manager.start();
+    } catch {}
     return () => {
       manager.destroy();
       window.removeEventListener(TEMPLATE_NAVIGATE_EVENT, handleNavigate);

@@ -6,6 +6,7 @@ import type { TouchParticleConfig } from "@/components/effects/presets";
 import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNavigationRuntime";
 import { AvantVowsNavigationAdapter } from "../navigation-adapter";
 import { trackMetaPixel } from "@/lib/meta-pixel";
+import { createClientId, writeClipboardText } from "@/lib/browser-compat";
 import "./avant-vows.css";
 
 type Props = { invitationId?: string; verifiedGuestName?: string };
@@ -88,8 +89,10 @@ function AvantVowsSource({ invitationId, verifiedGuestName }: Props) {
     const root = rootRef.current;
     if (!root || !opened) return;
     const sections = Array.from(root.querySelectorAll<HTMLElement>("[data-template-section]"));
-    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.target.classList.toggle("is-visible", entry.isIntersecting)), { root, threshold: 0.08 });
-    sections.forEach((section) => observer.observe(section));
+    const observer = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver((entries) => entries.forEach((entry) => entry.target.classList.toggle("is-visible", entry.isIntersecting)), { root, threshold: 0.08 })
+      : null;
+    sections.forEach((section) => observer ? observer.observe(section) : section.classList.add("is-visible"));
     const onScroll = () => {
       const marker = root.getBoundingClientRect().top + root.clientHeight * .44;
       const enabled = sections.filter((section) => !section.hidden && getComputedStyle(section).display !== "none");
@@ -98,7 +101,7 @@ function AvantVowsSource({ invitationId, verifiedGuestName }: Props) {
     };
     onScroll();
     root.addEventListener("scroll", onScroll, { passive: true });
-    return () => { observer.disconnect(); root.removeEventListener("scroll", onScroll); };
+    return () => { observer?.disconnect(); root.removeEventListener("scroll", onScroll); };
   }, [opened]);
 
   useEffect(() => {
@@ -140,7 +143,7 @@ function AvantVowsSource({ invitationId, verifiedGuestName }: Props) {
   const copyAccount = async (field: string) => {
     const value = rootRef.current?.querySelector<HTMLElement>(`[data-template-section="gift"] [data-field="${field}"]`)?.textContent?.replace(/\s/g, "") ?? "";
     if (!value) return;
-    try { await navigator.clipboard.writeText(value); setCopyFeedback("Nomor rekening berhasil disalin."); }
+    try { await writeClipboardText(value); setCopyFeedback("Nomor rekening berhasil disalin."); }
     catch { setCopyFeedback("Nomor rekening belum dapat disalin."); }
     window.setTimeout(() => setCopyFeedback(""), 2200);
   };
@@ -166,7 +169,7 @@ function AvantVowsSource({ invitationId, verifiedGuestName }: Props) {
   const submitWish = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!wishName.trim() || !wishMessage.trim()) { setWishFeedback("Lengkapi nama dan ucapan terlebih dahulu."); return; }
-    const next: Wish = { id: crypto.randomUUID(), name: wishName.trim(), attendance, message: wishMessage.trim() };
+    const next: Wish = { id: createClientId(), name: wishName.trim(), attendance, message: wishMessage.trim() };
     setSubmitting(true); setWishFeedback("");
     try {
       if (!invitationId) setWishes((current) => [next, ...current]);

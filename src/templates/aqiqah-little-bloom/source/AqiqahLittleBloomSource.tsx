@@ -18,6 +18,7 @@ import {
   TEMPLATE_NAVIGATE_EVENT,
 } from "@/templates/navigation/TemplateNavigationRuntime";
 import { AqiqahLittleBloomNavigationAdapter } from "../navigation-adapter";
+import { createClientId, writeClipboardText } from "@/lib/browser-compat";
 import {
   Volume2,
   VolumeX,
@@ -288,9 +289,10 @@ export function AqiqahLittleBloomSource() {
   };
 
   const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2500);
+    void writeClipboardText(text).then(() => {
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2500);
+    }).catch(() => setCopiedKey(null));
   };
 
   const handleNavClick = (sectionType: string) => {
@@ -299,7 +301,7 @@ export function AqiqahLittleBloomSource() {
       new CustomEvent(TEMPLATE_NAVIGATE_EVENT, {
         detail: {
           sectionId: sectionType,
-          requestId: crypto.randomUUID(),
+          requestId: createClientId(),
           source: "preview-navbar",
         },
       })

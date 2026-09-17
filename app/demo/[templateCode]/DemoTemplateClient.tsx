@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { makeAdminWhatsAppUrl } from "@/config/contact";
 import { getPrimaryDemoAd } from "@/config/ads";
 import type { TemplateKit } from "@/templates/contracts";
+import { writeClipboardText } from "@/lib/browser-compat";
 
 function WhatsAppIcon({ size = 22, className }: { size?: number; className?: string }) {
   return (
@@ -63,7 +64,7 @@ export function DemoTemplateClient({
   const handleCopyLink = async () => {
     const url = currentUrl || (typeof window !== "undefined" ? window.location.href : "");
     try {
-      await navigator.clipboard.writeText(url);
+      await writeClipboardText(url);
       setCopiedToast(true);
       setTimeout(() => setCopiedToast(false), 2400);
     } catch {

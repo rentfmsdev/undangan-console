@@ -23,6 +23,7 @@ import {
   isDateInRange,
   formatDateLabel,
 } from "@/modules/admin/date-filter";
+import { writeClipboardText } from "@/lib/browser-compat";
 
 export type RootAdminItem = {
   id: string;
@@ -123,7 +124,7 @@ export function RootsAdminManagement({
   }, []);
 
   const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
+    void writeClipboardText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
   };

@@ -41,6 +41,7 @@
 .aqiqah-shell {
   width: 100%;
   max-width: 480px;
+  height: 100vh;
   height: 100dvh;
   margin: 0 auto;
   position: relative;
@@ -84,6 +85,7 @@
   position: absolute;
   inset: 0;
   width: 100%;
+  height: 100vh;
   height: 100dvh;
   z-index: 45;
   background: radial-gradient(circle at 50% 20%, #ffffff 0%, #fdf5f7 50%, var(--aqiqah-bg) 100%);

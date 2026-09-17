@@ -26,6 +26,7 @@ import {
 import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNavigationRuntime";
 import { WisudaNavigationAdapter } from "../navigation-adapter";
 import confetti from "canvas-confetti";
+import { createClientId } from "@/lib/browser-compat";
 import "./wisuda.css";
 
 type Props = {
@@ -240,7 +241,7 @@ export default function WisudaEleganceSource({ invitationId, verifiedGuestName }
     }
     window.dispatchEvent(
       new CustomEvent("template:navigate", {
-        detail: { sectionId: "hero", requestId: crypto.randomUUID(), source: "opening-envelope" },
+        detail: { sectionId: "hero", requestId: createClientId(), source: "opening-envelope" },
       })
     );
   };
@@ -260,7 +261,7 @@ export default function WisudaEleganceSource({ invitationId, verifiedGuestName }
   const navigateTo = (sectionId: string) => {
     window.dispatchEvent(
       new CustomEvent("template:navigate", {
-        detail: { sectionId, requestId: crypto.randomUUID(), source: "preview-navbar" },
+        detail: { sectionId, requestId: createClientId(), source: "preview-navbar" },
       })
     );
   };
@@ -272,7 +273,7 @@ export default function WisudaEleganceSource({ invitationId, verifiedGuestName }
 
     setIsSubmittingWish(true);
     const newWish: Wish = {
-      id: crypto.randomUUID(),
+      id: createClientId(),
       name: wishName.trim(),
       message: wishMessage.trim(),
       createdAt: "Baru saja",

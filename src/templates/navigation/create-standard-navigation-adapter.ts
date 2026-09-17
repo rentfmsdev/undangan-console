@@ -1,4 +1,5 @@
 import type { TemplateNavigationAdapter, TemplateSectionEntry } from "./contracts";
+import { findTemplateSection } from "./dom";
 
 export type StandardNavigationAdapterOptions = {
   /** Ordered manifest section types. Keep this equal to defaultSections. */
@@ -30,7 +31,7 @@ export class StandardTemplateNavigationAdapter implements TemplateNavigationAdap
     // A fixed envelope can still have client rects while translated away. Do
     // not let it claim the active state after the invitation has been opened.
     if (sectionId === this.options.openingSectionId && root?.dataset.opened === "true") return null;
-    return document.querySelector<HTMLElement>(`[data-template-section="${CSS.escape(sectionId)}"]`);
+    return findTemplateSection(document, sectionId);
   }
 
   getSectionEntries(): TemplateSectionEntry[] {

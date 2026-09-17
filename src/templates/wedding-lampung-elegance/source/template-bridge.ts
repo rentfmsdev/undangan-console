@@ -251,10 +251,10 @@ function applySectionBackground(section: WeddingPreviewSection, element: HTMLEle
     else if (!section.data.imageUrl) restoreImage(element, targetSelector);
   } else if (target) {
     if (imageUrl && imageUrl !== nativeBackgroundImages[section.type]) {
-      target.style.backgroundImage = `url("${imageUrl.replaceAll('"', '%22')}")`;
+      target.style.backgroundImage = `url("${imageUrl.replace(/"/g, "%22")}")`;
       target.style.backgroundSize = "cover";
       target.style.backgroundPosition = "center";
-    } else if (!imageUrl && Object.hasOwn(section.data, "backgroundImageUrl") && nativeBackgroundImages[section.type]) {
+    } else if (!imageUrl && Object.prototype.hasOwnProperty.call(section.data, "backgroundImageUrl") && nativeBackgroundImages[section.type]) {
       target.style.backgroundImage = "none";
       target.style.removeProperty("background-size");
       target.style.removeProperty("background-position");
@@ -265,7 +265,7 @@ function applySectionBackground(section: WeddingPreviewSection, element: HTMLEle
     }
   } else {
     if (imageUrl) {
-      element.style.backgroundImage = `url("${imageUrl.replaceAll('"', '%22')}")`;
+      element.style.backgroundImage = `url("${imageUrl.replace(/"/g, "%22")}")`;
       element.style.backgroundSize = "cover";
       element.style.backgroundPosition = "center";
     } else {
@@ -573,11 +573,20 @@ export function applyWeddingTemplateState(sections: WeddingPreviewSection[], the
       audioSource.removeAttribute("src");
       audioSource.src = "";
       audio.load();
-    } else if (audioSource.getAttribute("src") !== targetUrl) {
-      audioSource.setAttribute("src", targetUrl);
-      audio.load();
-      if (document.querySelector<HTMLElement>("[data-template-scroll-root]")?.dataset.opened === "true") {
-        void audio.play().catch(() => undefined);
+    } else {
+      const supportsWebm = Boolean(
+        audio.canPlayType('audio/webm; codecs="opus"') || audio.canPlayType("audio/webm"),
+      );
+      const playableUrl = /\.webm(?:$|[?#])/i.test(targetUrl) && !supportsWebm
+        ? "/assets/audio/a-thousand-years.mp3"
+        : targetUrl;
+      if (audioSource.getAttribute("src") !== playableUrl) {
+        audioSource.setAttribute("src", playableUrl);
+        audioSource.type = /\.mp3(?:$|[?#])/i.test(playableUrl) ? "audio/mpeg" : "audio/webm";
+        audio.load();
+        if (document.querySelector<HTMLElement>("[data-template-scroll-root]")?.dataset.opened === "true") {
+          void audio.play().catch(() => undefined);
+        }
       }
     }
   }

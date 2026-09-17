@@ -8,6 +8,7 @@ import "./birthday-gallery-redesign.css";
 import "./birthday-gift.css";
 import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNavigationRuntime";
 import { BirthdayCelestialNavigationAdapter } from "../navigation-adapter";
+import { writeClipboardText } from "@/lib/browser-compat";
 import confetti from "canvas-confetti";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -395,10 +396,10 @@ export default function BirthdayCelestialSource({ invitationId, verifiedGuestNam
 
   const copyGiftAccount = async (index: 1 | 2) => {
     const field = index === 1 ? "account" : "account2";
-    const account = document.querySelector<HTMLElement>(`[data-template-section="gift"] [data-field="${field}"]`)?.textContent?.replaceAll(" ", "") ?? "";
+    const account = document.querySelector<HTMLElement>(`[data-template-section="gift"] [data-field="${field}"]`)?.textContent?.replace(/\s/g, "") ?? "";
     if (!account) return;
     try {
-      await navigator.clipboard.writeText(account);
+      await writeClipboardText(account);
       setGiftCopied(index);
       window.setTimeout(() => setGiftCopied(null), 1600);
     } catch {

@@ -9,6 +9,7 @@ import { Khitan3DGallery } from "./Khitan3DGallery";
 import { KhitanCountdown } from "./KhitanCountdown";
 import { TemplateNavigationRuntime, TEMPLATE_ACTIVE_EVENT, TEMPLATE_NAVIGATE_EVENT } from "@/templates/navigation/TemplateNavigationRuntime";
 import { KhitanKsatriaNavigationAdapter } from "../navigation-adapter";
+import { createClientId, writeClipboardText } from "@/lib/browser-compat";
 
 function createKhitanNavigationAdapter() {
   return new KhitanKsatriaNavigationAdapter();
@@ -133,11 +134,10 @@ export function KhitanKsatriaSource() {
   }
 
   function handleCopyAccount(acc: string, bankName: string) {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(acc);
+    void writeClipboardText(acc).then(() => {
       setCopiedBank(bankName);
       setTimeout(() => setCopiedBank(null), 2500);
-    }
+    }).catch(() => setCopiedBank(null));
   }
 
   function handleWishSubmit(e: React.FormEvent) {
@@ -155,7 +155,7 @@ export function KhitanKsatriaSource() {
   function scrollToSection(sectionType: string) {
     window.dispatchEvent(
       new CustomEvent(TEMPLATE_NAVIGATE_EVENT, {
-        detail: { sectionId: sectionType, requestId: crypto.randomUUID(), source: "preview-navbar" },
+        detail: { sectionId: sectionType, requestId: createClientId(), source: "preview-navbar" },
       })
     );
   }

@@ -26,6 +26,7 @@ import jsQR from "jsqr";
 import { makeAdminWhatsAppUrl } from "@/config/contact";
 import { buildSubdomainUrl, getAppBaseUrl, getRootDomain } from "@/lib/app-url";
 import { trackMetaPixel } from "@/lib/meta-pixel";
+import { writeClipboardText } from "@/lib/browser-compat";
 
 type PublishMode = "path" | "subdomain" | "custom_domain";
 type Availability = "idle" | "checking" | "available" | "unavailable" | "invalid";
@@ -531,7 +532,7 @@ export function PublishModal({
   }
 
   function copyText(val: string, key: string) {
-    navigator.clipboard.writeText(val);
+    void writeClipboardText(val);
     setPaymentCopied(key);
     window.setTimeout(() => setPaymentCopied(null), 1800);
   }
@@ -953,7 +954,7 @@ function PublishStatusModal({
   const copyUrl = async () => {
     if (!liveUrl) return;
     try {
-      await navigator.clipboard.writeText(liveUrl);
+      await writeClipboardText(liveUrl);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
