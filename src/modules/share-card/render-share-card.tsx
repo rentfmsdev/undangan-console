@@ -13,18 +13,20 @@ function resolveDisplayFont(font: string | undefined): string {
 }
 
 export function renderShareCard(data: InvitationShareData) {
-  const { cardStyle } = data;
+  const cardStyle = data.cardStyle || {};
   const accent = getShareCardVisual(data);
   const details = [
     cardStyle.showDate ? [data.eventDate, data.primaryTime].filter(Boolean).join("  •  ") : "",
     cardStyle.showVenue ? data.venue || data.address : "",
   ].filter(Boolean).join("  •  ");
-  const background = cardStyle.backgroundMode === "solid"
-    ? cardStyle.colors?.background || accent.background
-    : accent.background;
-  const textColor = cardStyle.colors?.text || data.colors.cream;
-  const ornament = cardStyle.colors?.accent || accent.ornament;
+  const background = (cardStyle.backgroundMode === "solid"
+    ? cardStyle.colors?.background || accent?.background
+    : accent?.background) || "#163b31";
+  const textColor = cardStyle.colors?.text || data.colors?.cream || "#f7faf6";
+  const ornament = cardStyle.colors?.accent || accent?.ornament || "#c3a66a";
   const displayFont = resolveDisplayFont(data.displayFont);
+  const textAlign = cardStyle.textAlign || "center";
+  const overlayOpacity = typeof cardStyle.overlayOpacity === "number" ? cardStyle.overlayOpacity : 0.58;
 
   return (
     <div
@@ -60,8 +62,8 @@ export function renderShareCard(data: InvitationShareData) {
           style={{
             position: "absolute",
             inset: 0,
-            background: accent.background,
-            opacity: cardStyle.overlayOpacity,
+            background,
+            opacity: overlayOpacity,
             display: "flex",
           }}
         />
@@ -116,8 +118,8 @@ export function renderShareCard(data: InvitationShareData) {
           padding: "118px 104px 96px",
           display: "flex",
           flexDirection: "column",
-          alignItems: cardStyle.textAlign === "left" ? "flex-start" : "center",
-          textAlign: cardStyle.textAlign,
+          alignItems: textAlign === "left" ? "flex-start" : "center",
+          textAlign,
         }}
       >
         <div
@@ -142,7 +144,7 @@ export function renderShareCard(data: InvitationShareData) {
             fontWeight: 400,
             lineHeight: 1.08,
             color: textColor,
-            textAlign: cardStyle.textAlign,
+            textAlign,
             wordBreak: "break-word",
           }}
         >
@@ -163,7 +165,7 @@ export function renderShareCard(data: InvitationShareData) {
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: cardStyle.textAlign === "left" ? "flex-start" : "center",
+              alignItems: textAlign === "left" ? "flex-start" : "center",
             }}
           >
             <div
@@ -188,7 +190,7 @@ export function renderShareCard(data: InvitationShareData) {
                 fontWeight: 700,
                 color: textColor,
                 marginBottom: 24,
-                textAlign: cardStyle.textAlign,
+                textAlign,
                 wordBreak: "break-word",
               }}
             >

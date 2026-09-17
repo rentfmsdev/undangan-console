@@ -17,21 +17,26 @@ function isShareData(value: unknown): value is InvitationShareData {
 }
 
 export async function POST(request: Request) {
-  const payload = await request.json().catch(() => null) as { data?: unknown } | null;
-  if (!isShareData(payload?.data)) {
-    return new Response("Invalid share card data", { status: 400 });
+  try {
+    const payload = await request.json().catch(() => null) as { data?: unknown } | null;
+    if (!isShareData(payload?.data)) {
+      return new Response("Invalid share card data", { status: 400 });
+    }
+
+    const data = payload.data;
+    if (data.cardStyle.imageUrl) {
+      data.cardStyle.imageUrl = await resolveShareCardImage(data.cardStyle.imageUrl);
+    }
+
+    const fonts = await getShareCardFonts();
+
+    return new ImageResponse(renderShareCard(data), {
+      width: 1200,
+      height: 630,
+      fonts,
+    });
+  } catch (err) {
+    console.error("[share-card/render] Render error:", err);
+    return new Response("Failed to render card preview", { status: 500 });
   }
-
-  const data = payload.data;
-  if (data.cardStyle.imageUrl) {
-    data.cardStyle.imageUrl = await resolveShareCardImage(data.cardStyle.imageUrl);
-  }
-
-  const fonts = await getShareCardFonts();
-
-  return new ImageResponse(renderShareCard(data), {
-    width: 1200,
-    height: 630,
-    fonts,
-  });
 }
