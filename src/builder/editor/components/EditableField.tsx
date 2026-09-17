@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Bold, ChevronDown, Italic, RotateCcw, Type } from "lucide-react";
 import type { TemplateEditorField } from "@/templates/contracts";
 import { FigmaColorPicker } from "./FigmaColorPicker";
@@ -65,6 +66,14 @@ export function EditableField({
       : "border-slate-300 focus:border-emerald-600 focus:ring-3 focus:ring-emerald-100"
   }`;
   const primitiveControl = field.control === "select" || field.control === "toggle" || field.control === "range";
+  const [fontSizeInput, setFontSizeInput] = useState<string>(
+    textStyle.fontSize != null ? String(textStyle.fontSize) : ""
+  );
+
+  useEffect(() => {
+    setFontSizeInput(textStyle.fontSize != null ? String(textStyle.fontSize) : "");
+  }, [textStyle.fontSize]);
+
   const updateStyle = <Key extends keyof EditableTextStyle>(key: Key, next: EditableTextStyle[Key]) =>
     onTextStyleChange({ [key]: next });
   const handleFocus = () => {
@@ -188,8 +197,40 @@ export function EditableField({
                     type="number"
                     min={8}
                     max={120}
-                    value={textStyle.fontSize ?? ""}
-                    onChange={(event) => updateStyle("fontSize", event.target.value ? Math.min(120, Math.max(8, Number(event.target.value))) : undefined)}
+                    value={fontSizeInput}
+                    onChange={(event) => {
+                      const raw = event.target.value;
+                      setFontSizeInput(raw);
+                      if (!raw.trim()) {
+                        updateStyle("fontSize", undefined);
+                        return;
+                      }
+                      const val = parseInt(raw, 10);
+                      if (!isNaN(val)) {
+                        if (val >= 8 && val <= 120) {
+                          updateStyle("fontSize", val);
+                        } else if (val > 120) {
+                          setFontSizeInput("120");
+                          updateStyle("fontSize", 120);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      if (!fontSizeInput.trim()) {
+                        setFontSizeInput("");
+                        updateStyle("fontSize", undefined);
+                        return;
+                      }
+                      const val = parseInt(fontSizeInput, 10);
+                      if (isNaN(val)) {
+                        setFontSizeInput("");
+                        updateStyle("fontSize", undefined);
+                      } else {
+                        const clamped = Math.min(120, Math.max(8, val));
+                        setFontSizeInput(String(clamped));
+                        updateStyle("fontSize", clamped);
+                      }
+                    }}
                     placeholder="Auto"
                     className="w-full bg-transparent text-center text-[11px] font-bold text-slate-800 outline-none"
                     aria-label={`Ukuran ${field.label}`}
