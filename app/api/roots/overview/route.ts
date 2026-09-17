@@ -58,6 +58,7 @@ export async function GET(request: Request) {
       updatedAt: invitations.updatedAt,
       userName: users.name,
       userEmail: users.email,
+      userPhone: users.phone,
       userAvatar: users.avatarUrl,
     })
     .from(invitations)
@@ -87,6 +88,7 @@ export async function GET(request: Request) {
       invitationSlug: invitations.slug,
       userName: users.name,
       userEmail: users.email,
+      userPhone: users.phone,
     })
     .from(payments)
     .leftJoin(invitations, eq(payments.invitationId, invitations.id))
@@ -157,6 +159,7 @@ export async function GET(request: Request) {
             status: payment.status,
             mode: payment.mode,
             identifier: payment.identifier,
+            phone: payment.customerPhone,
             method: payment.paymentMethod,
             channel: payment.paymentChannel,
             paidAt: payment.paidAt,
@@ -178,6 +181,7 @@ export async function GET(request: Request) {
         inv.status !== "published" &&
         inv.status !== "archived" &&
         paymentIdentifierMatches,
+      followUpPhone: payment?.customerPhone || inv.userPhone || null,
     };
   });
 

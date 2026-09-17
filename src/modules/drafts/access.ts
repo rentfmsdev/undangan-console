@@ -6,14 +6,17 @@ import { db } from "@/db/client";
 import { invitationCollaborators, invitations } from "@/db/schema";
 import { getSessionUser } from "@/modules/auth/service";
 import { editCookieName, isMatchingSecret } from "@/modules/anonymous-access/token";
+import { isSuperAdminEmail } from "@/modules/admin/auth";
 
 export type DraftAccessRole = "owner" | "editor" | "viewer" | "anonymous";
 
 export async function getDraftAccess(draftId: string) {
   const [draft] = await db.select().from(invitations).where(eq(invitations.id, draftId)).limit(1);
-  if (!draft) return { draft: null, user: await getSessionUser(), authorized: false, role: null, ownedByUser: false };
+  if (!draft) return { draft: null, user: await getSessionUser(), authorized: false, role: null, ownedByUser: false, isAdmin: false };
   const user = await getSessionUser();
-  const ownedByUser = Boolean(user && draft.userId === user.id);
+  const isAdmin = Boolean(user && (user.role === "admin" || isSuperAdminEmail(user.email)));
+  const isDirectOwner = Boolean(user && draft.userId === user.id);
+  const ownedByUser = isDirectOwner || isAdmin;
 
   let isCollaborator = false;
   let collaboratorRole: "editor" | "viewer" = "editor";
@@ -63,9 +66,10 @@ export async function getDraftAccess(draftId: string) {
   return {
     draft,
     user,
-    authorized: ownedByUser || isCollaborator || authorizedByToken,
+    authorized: ownedByUser || isCollaborator || authorizedByToken || isAdmin,
     ownedByUser,
     isCollaborator,
+    isAdmin,
     role,
   };
 }

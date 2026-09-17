@@ -444,6 +444,10 @@ export function PublishModal({
   // Step 2: Create payment session via Payment Gateway
   async function handleCreatePayment() {
     if (!draftId) return;
+    if (!customerPhone.trim()) {
+      setError("Masukkan nomor Handphone/WhatsApp terlebih dahulu.");
+      return;
+    }
     setSubmitting(true);
     setError("");
 
@@ -485,6 +489,7 @@ export function PublishModal({
         );
       }
 
+      setCustomerPhone(payload.phone || customerPhone);
       setPaymentData(payload.payment);
       setStep("waiting_payment");
     } catch (reason) {
@@ -818,6 +823,10 @@ export function PublishModal({
                   <Smartphone size={16} className="text-slate-400 mr-2 shrink-0" />
                   <input
                     type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    maxLength={30}
+                    required
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="081234567890"
@@ -825,7 +834,7 @@ export function PublishModal({
                   />
                 </div>
                 <p className="mt-1 text-[10px] text-slate-500">
-                  Nomor ini otomatis terisi dari akun Anda untuk penerbitan resi pembayaran.
+                  Nomor ini disimpan ke akun Anda dan otomatis terisi pada pembayaran berikutnya. Anda tetap dapat mengubahnya.
                 </p>
               </div>
 

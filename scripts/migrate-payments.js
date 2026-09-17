@@ -46,6 +46,28 @@ async function run() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
 
+    console.log("[migrate-payments] Backfilling missing user phone numbers from payments...");
+    await conn.query(`
+      UPDATE users AS user_account
+      SET phone = (
+        SELECT payment.customer_phone
+        FROM payments AS payment
+        WHERE payment.user_id = user_account.id
+          AND payment.customer_phone IS NOT NULL
+          AND TRIM(payment.customer_phone) <> ''
+        ORDER BY payment.created_at DESC
+        LIMIT 1
+      )
+      WHERE (user_account.phone IS NULL OR TRIM(user_account.phone) = '')
+        AND EXISTS (
+          SELECT 1
+          FROM payments AS payment_exists
+          WHERE payment_exists.user_id = user_account.id
+            AND payment_exists.customer_phone IS NOT NULL
+            AND TRIM(payment_exists.customer_phone) <> ''
+        )
+    `);
+
     console.log("[migrate-payments] ✅ Payments migration completed successfully!");
     await conn.end();
   } catch (err) {

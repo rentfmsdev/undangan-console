@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { invitations, payments } from "@/db/schema";
+import { invitations, payments, users } from "@/db/schema";
 import { getDraftAccess } from "@/modules/drafts/access";
 import { getTemplateById, getTemplateCatalogItem } from "@/templates/registry";
 
@@ -14,8 +14,16 @@ const createPaymentSchema = z.object({
   identifier: z.string().trim().toLowerCase().min(3).max(253),
   method: z.enum(["QR", "VIRTUAL_ACCOUNT"]),
   channel: z.string().min(1),
-  phone: z.string().optional(),
+  phone: z.string().trim().max(30).optional(),
 });
+
+function normalizeIndonesianPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.startsWith("62")) return digits;
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
+}
 
 export async function POST(request: Request) {
   const parsed = createPaymentSchema.safeParse(await request.json());
@@ -26,12 +34,21 @@ export async function POST(request: Request) {
   const { draftId, mode, identifier, method, channel, phone } = parsed.data;
   const access = await getDraftAccess(draftId);
   const draft = access.draft;
+  const user = access.user;
 
-  if (!access.user) {
+  if (!user) {
     return NextResponse.json({ error: "Silakan masuk sebelum melakukan pembayaran." }, { status: 401 });
   }
   if (!draft || !access.ownedByUser) {
     return NextResponse.json({ error: "Draft tidak ditemukan atau tidak dapat diakses." }, { status: 403 });
+  }
+
+  const customerPhone = normalizeIndonesianPhone(phone || user.phone || "");
+  if (!/^628\d{8,11}$/.test(customerPhone)) {
+    return NextResponse.json(
+      { error: "Masukkan nomor Handphone/WhatsApp Indonesia yang valid." },
+      { status: 400 }
+    );
   }
 
   const template = getTemplateById(draft.templateId);
@@ -52,14 +69,14 @@ export async function POST(request: Request) {
   const pgsUrl = process.env.PAYMENT_GATEWAY_SERVICE_URL || "http://localhost:3003";
 
   const topupPayload = {
-    user_id: access.user.id,
+    user_id: user.id,
     amount: totalAmount,
     currency: "IDR",
     method,
     channel,
-    name: access.user.name,
-    email: access.user.email,
-    phone: phone || access.user.phone || "081234567890",
+    name: user.name,
+    email: user.email,
+    phone: customerPhone,
     description: `Publish Undangan: ${identifier}`,
     client_app: "undangan",
     metadata: {
@@ -67,7 +84,7 @@ export async function POST(request: Request) {
       invitationId: draftId,
       mode,
       identifier,
-      userId: access.user.id,
+      userId: user.id,
     },
   };
 
@@ -141,36 +158,44 @@ export async function POST(request: Request) {
       null;
 
     const paymentRecordId = crypto.randomUUID();
-    await db.insert(payments).values({
-      id: paymentRecordId,
-      invitationId: draftId,
-      userId: access.user.id,
-      referenceId: referenceId ? String(referenceId) : null,
-      amount: totalAmount,
-      currency: "IDR",
-      mode,
-      identifier,
-      paymentMethod: method,
-      paymentChannel: channel,
-      status: "pending",
-      customerName: access.user.name,
-      customerEmail: access.user.email,
-      customerPhone: phone || access.user.phone || null,
-      rawResponse: pgsData,
-    });
+    await db.transaction(async (tx) => {
+      await tx.insert(payments).values({
+        id: paymentRecordId,
+        invitationId: draftId,
+        userId: user.id,
+        referenceId: referenceId ? String(referenceId) : null,
+        amount: totalAmount,
+        currency: "IDR",
+        mode,
+        identifier,
+        paymentMethod: method,
+        paymentChannel: channel,
+        status: "pending",
+        customerName: user.name,
+        customerEmail: user.email,
+        customerPhone,
+        rawResponse: pgsData,
+      });
 
-    // Also persist publishMode & target identifier on draft so callback knows user intention
-    await db
-      .update(invitations)
-      .set({
-        publishMode: mode,
-        slug: mode === "path" ? identifier : null,
-        subdomain: mode === "subdomain" ? identifier : null,
-      })
-      .where(eq(invitations.id, draftId));
+      await tx
+        .update(users)
+        .set({ phone: customerPhone })
+        .where(eq(users.id, user.id));
+
+      // Persist the target address so the callback and admin activation use the same identifier.
+      await tx
+        .update(invitations)
+        .set({
+          publishMode: mode,
+          slug: mode === "path" ? identifier : null,
+          subdomain: mode === "subdomain" ? identifier : null,
+        })
+        .where(eq(invitations.id, draftId));
+    });
 
     return NextResponse.json({
       ok: true,
+      phone: customerPhone,
       payment: {
         ...paymentResult,
         qr_content: qrContent || null,

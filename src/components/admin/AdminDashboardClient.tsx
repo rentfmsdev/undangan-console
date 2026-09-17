@@ -28,6 +28,7 @@ import {
   Shield,
   Calendar,
   Power,
+  MessageCircle,
 } from "lucide-react";
 import type { AuthUser } from "@/modules/auth/service";
 import { RootsAdminManagement } from "./RootsAdminManagement";
@@ -80,6 +81,7 @@ type AdminInvitation = {
   updatedAt: string;
   userName?: string | null;
   userEmail?: string | null;
+  userPhone?: string | null;
   userAvatar?: string | null;
   payment?: {
     id: string;
@@ -87,6 +89,7 @@ type AdminInvitation = {
     status: "pending" | "paid" | "expired" | "failed";
     mode: "path" | "subdomain" | "custom_domain";
     identifier: string;
+    phone?: string | null;
     method: string;
     channel: string;
     paidAt?: string | null;
@@ -94,6 +97,7 @@ type AdminInvitation = {
   } | null;
   paymentStatus: "paid" | "bypassed" | "pending" | "unpaid";
   canActivateWithoutPayment: boolean;
+  followUpPhone?: string | null;
 };
 
 type AdminPayment = {
@@ -117,7 +121,33 @@ type AdminPayment = {
   invitationSlug?: string | null;
   userName?: string | null;
   userEmail?: string | null;
+  userPhone?: string | null;
 };
+
+function normalizeWhatsAppPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
+}
+
+function buildPaymentFollowUpUrl(
+  phone: string,
+  customerName: string,
+  invitationTitle: string,
+  status?: string
+): string {
+  const cleanName = customerName && customerName !== "User" ? customerName : "Kak";
+  const message =
+    status === "pending"
+      ? `Halo ${cleanName}, kami dari tim Undangan Studio. Kami melihat pembayaran untuk undangan "${invitationTitle}" masih berstatus menunggu. Apakah ada kendala saat pembayaran yang dapat kami bantu?`
+      : `Halo ${cleanName}, kami dari tim Undangan Studio. Kami melihat undangan "${invitationTitle}" Anda belum aktif/dipublish. Apakah ada yang dapat kami bantu untuk persiapan undangan Anda?`;
+  return `https://wa.me/${normalizeWhatsAppPhone(phone)}?text=${encodeURIComponent(message)}`;
+}
+
+function getPaymentPhone(payment: AdminPayment): string {
+  return payment.customerPhone || payment.userPhone || "";
+}
 
 function formatRupiah(amount: number): string {
   return new Intl.NumberFormat("id-ID", {
@@ -336,6 +366,7 @@ export function AdminDashboardClient({
         (p.referenceId && p.referenceId.toLowerCase().includes(q)) ||
         (p.customerName && p.customerName.toLowerCase().includes(q)) ||
         (p.customerEmail && p.customerEmail.toLowerCase().includes(q)) ||
+        getPaymentPhone(p).includes(q) ||
         (p.invitationTitle && p.invitationTitle.toLowerCase().includes(q)) ||
         (p.identifier && p.identifier.toLowerCase().includes(q));
 
@@ -854,7 +885,13 @@ export function AdminDashboardClient({
                             {inv.userName || inv.userEmail ? (
                               <div>
                                 <span className="font-semibold text-slate-300 block">{inv.userName || "User"}</span>
-                                <span className="text-[11px] text-slate-500 font-mono">{inv.userEmail}</span>
+                                <span className="text-[11px] text-slate-500 font-mono block">{inv.userEmail}</span>
+                                {(inv.followUpPhone || inv.payment?.phone || inv.userPhone) && (
+                                  <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 mt-0.5">
+                                    <MessageCircle size={10} />
+                                    <span>{inv.followUpPhone || inv.payment?.phone || inv.userPhone}</span>
+                                  </span>
+                                )}
                               </div>
                             ) : (
                               <span className="text-slate-500 italic">Anonim / Tanpa Akun</span>
@@ -923,6 +960,23 @@ export function AdminDashboardClient({
                           {/* Actions */}
                           <td className="py-3.5 px-4 text-right">
                             <div className="inline-flex items-center gap-1.5">
+                              {(inv.followUpPhone || inv.payment?.phone || inv.userPhone) && (
+                                <a
+                                  href={buildPaymentFollowUpUrl(
+                                    inv.followUpPhone || inv.payment?.phone || inv.userPhone || "",
+                                    inv.userName || "Kak",
+                                    inv.title,
+                                    inv.paymentStatus
+                                  )}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-400 transition hover:bg-emerald-500/20 hover:text-emerald-300"
+                                  title={`Follow Up via WhatsApp (${inv.followUpPhone || inv.payment?.phone || inv.userPhone})`}
+                                >
+                                  <MessageCircle size={11} />
+                                  <span>Follow Up</span>
+                                </a>
+                              )}
                               {isSuperAdmin &&
                                 inv.canActivateWithoutPayment && (
                                   <button
@@ -988,6 +1042,7 @@ export function AdminDashboardClient({
                     <tr>
                       <th className="py-3.5 px-4">Pengguna</th>
                       <th className="py-3.5 px-4">Email</th>
+                      <th className="py-3.5 px-4">No. HP</th>
                       <th className="py-3.5 px-4">Role</th>
                       <th className="py-3.5 px-4">Jumlah Undangan</th>
                       <th className="py-3.5 px-4">Undangan Lunas</th>
@@ -997,7 +1052,7 @@ export function AdminDashboardClient({
                   <tbody className="divide-y divide-slate-800/60">
                     {filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-slate-500">
+                        <td colSpan={7} className="py-12 text-center text-slate-500">
                           <p>
                             {searchQuery || isDateFilterActive
                               ? "Tidak ada pengguna yang cocok dengan pencarian atau periode tanggal yang dipilih."
@@ -1024,7 +1079,6 @@ export function AdminDashboardClient({
                               </div>
                               <div>
                                 <span className="font-bold text-white block">{u.name}</span>
-                                {u.phone && <span className="text-[10px] text-slate-500">{u.phone}</span>}
                               </div>
                             </div>
                           </td>
@@ -1032,6 +1086,11 @@ export function AdminDashboardClient({
                           {/* Email */}
                           <td className="py-3.5 px-4 font-mono text-slate-300">
                             {u.email}
+                          </td>
+
+                          {/* Phone */}
+                          <td className="py-3.5 px-4 font-mono text-slate-300">
+                            {u.phone || <span className="text-slate-600">-</span>}
                           </td>
 
                           {/* Role */}
@@ -1088,17 +1147,19 @@ export function AdminDashboardClient({
                     <tr>
                       <th className="py-3.5 px-4">ID Transaksi / Ref</th>
                       <th className="py-3.5 px-4">Customer</th>
+                      <th className="py-3.5 px-4">No. HP</th>
                       <th className="py-3.5 px-4">Undangan</th>
                       <th className="py-3.5 px-4">Nominal</th>
                       <th className="py-3.5 px-4">Metode / Channel</th>
                       <th className="py-3.5 px-4">Status</th>
                       <th className="py-3.5 px-4">Waktu Bayar / Dibuat</th>
+                      <th className="py-3.5 px-4 text-right">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
                     {filteredPayments.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-slate-500">
+                        <td colSpan={9} className="py-12 text-center text-slate-500">
                           <p>
                             {searchQuery || paymentFilter !== "all" || isDateFilterActive
                               ? "Tidak ada transaksi yang cocok dengan filter pencarian atau periode tanggal yang dipilih."
@@ -1135,6 +1196,11 @@ export function AdminDashboardClient({
                             <span className="text-[11px] text-slate-500 font-mono">
                               {p.customerEmail || p.userEmail || "-"}
                             </span>
+                          </td>
+
+                          {/* Phone */}
+                          <td className="py-3.5 px-4 font-mono text-slate-300">
+                            {getPaymentPhone(p) || <span className="text-slate-600">-</span>}
                           </td>
 
                           {/* Invitation */}
@@ -1192,6 +1258,29 @@ export function AdminDashboardClient({
                               </div>
                             ) : (
                               <div>{formatDate(p.createdAt)}</div>
+                            )}
+                          </td>
+
+                          {/* Aksi */}
+                          <td className="py-3.5 px-4 text-right">
+                            {getPaymentPhone(p) ? (
+                              <a
+                                href={buildPaymentFollowUpUrl(
+                                  getPaymentPhone(p),
+                                  p.customerName || p.userName || "Kak",
+                                  p.invitationTitle || "Undangan",
+                                  p.status
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-400 transition hover:bg-emerald-500/20 hover:text-emerald-300"
+                                title={`Hubungi via WhatsApp (${getPaymentPhone(p)})`}
+                              >
+                                <MessageCircle size={11} />
+                                <span>Follow Up</span>
+                              </a>
+                            ) : (
+                              <span className="text-slate-600 text-[11px]">-</span>
                             )}
                           </td>
                         </tr>
