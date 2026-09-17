@@ -608,21 +608,33 @@ export function applyWeddingTemplateState(sections: WeddingPreviewSection[], the
 
 export function watchWeddingTemplateState(sections: WeddingPreviewSection[], themeId: string, settings: WeddingGlobalSettings = {}) {
   let animationFrame = 0;
-  const observer = new MutationObserver((mutations) => {
-    const hasDynamicWeddingElement = mutations.some((mutation) => {
-      const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
-      if (target?.closest(".gallery-lightbox, .gift-section, .wishes-section")) return true;
-      return Array.from(mutation.addedNodes).some((node) => node instanceof Element && (node.matches(".gallery-lightbox, .celebration, .empty-wishes, .wish-bubble") || node.querySelector(".gallery-lightbox, .celebration, .empty-wishes, .wish-bubble")));
-    });
-    if (!hasDynamicWeddingElement || animationFrame) return;
+  const scheduleApply = () => {
+    if (animationFrame) window.cancelAnimationFrame(animationFrame);
     animationFrame = window.requestAnimationFrame(() => {
       animationFrame = 0;
       applyWeddingTemplateState(sections, themeId, settings);
     });
+  };
+
+  const observer = new MutationObserver((mutations) => {
+    const hasDynamicWeddingElement = mutations.some((mutation) => {
+      const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
+      if (target?.closest(".gallery-lightbox, .gift-section, .wishes-section, .opening-screen, [data-template-section]")) return true;
+      return Array.from(mutation.addedNodes).some((node) => node instanceof Element && (node.matches(".gallery-lightbox, .celebration, .empty-wishes, .wish-bubble, .opening-screen, [data-template-section]") || node.querySelector(".gallery-lightbox, .celebration, .empty-wishes, .wish-bubble, .opening-screen, [data-template-section]")));
+    });
+    if (!hasDynamicWeddingElement) return;
+    scheduleApply();
   });
   observer.observe(document.body, { childList: true, subtree: true });
+
+  const handleCustomNavigate = () => {
+    scheduleApply();
+  };
+  window.addEventListener("wedding-preview-navigate", handleCustomNavigate);
+
   return () => {
     observer.disconnect();
+    window.removeEventListener("wedding-preview-navigate", handleCustomNavigate);
     if (animationFrame) window.cancelAnimationFrame(animationFrame);
   };
 }

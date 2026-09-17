@@ -39,6 +39,11 @@ export default function TemplatePreviewClient({ templateCode }: { templateCode: 
       }
       if (event.data.type === "navigate-section") {
         window.dispatchEvent(new CustomEvent(TEMPLATE_NAVIGATE_EVENT, { detail: { sectionId: event.data.sectionType, requestId: event.data.requestId, source: event.data.navigationSource } }));
+        window.requestAnimationFrame(() => {
+          try {
+            runtime.applyState(currentState);
+          } catch {}
+        });
       }
     };
 

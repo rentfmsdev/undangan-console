@@ -739,7 +739,9 @@ function WeddingInvitation({
       <audio ref={musicRef} loop preload="auto" playsInline>
         <source src="/assets/audio/a-thousand-years.mp3" type="audio/mpeg" />
       </audio>
-      {!opened && <OpeningEnvelope guestName={guestName} onOpen={openInvitation} stage={stage} />}
+      <div style={{ display: opened ? "none" : undefined }} aria-hidden={opened}>
+        <OpeningEnvelope guestName={guestName} onOpen={openInvitation} stage={stage} />
+      </div>
       {opened && (
         <button
           type="button"

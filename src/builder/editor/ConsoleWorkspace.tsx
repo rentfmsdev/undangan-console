@@ -2051,6 +2051,16 @@ export function ConsoleWorkspace({
     previewFrameRef.current?.contentWindow?.postMessage(
       {
         source: EDITOR_MESSAGE_SOURCE,
+        type: "preview-state",
+        sections: previewSections,
+        themeId,
+        settings: previewSettings,
+      },
+      "*",
+    );
+    previewFrameRef.current?.contentWindow?.postMessage(
+      {
+        source: EDITOR_MESSAGE_SOURCE,
         type: "navigate-section",
         ...navigation,
       },
