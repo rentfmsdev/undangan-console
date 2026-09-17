@@ -41,7 +41,7 @@
   height: 100dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
   background: var(--vv-bg);
 }
 .verdant-scroll::-webkit-scrollbar {
@@ -712,37 +712,15 @@
 /* Each section opens like a light paper leaf as it enters the invitation. */
 @media (prefers-reduced-motion: no-preference) {
   .vv-section:not(.vv-hero) {
-    transform: perspective(1300px) rotateX(-7deg) translateY(30px);
-    transform-origin: 50% 0;
-    opacity: 0.01;
-    filter: saturate(0.88);
+    transform: translateY(18px);
+    opacity: 0.05;
     transition:
-      transform 0.82s cubic-bezier(0.22, 0.8, 0.25, 1),
-      opacity 0.48s ease,
-      filter 0.7s ease;
-    will-change: transform, opacity;
-  }
-  .vv-section:not(.vv-hero)::after {
-    position: absolute;
-    z-index: 4;
-    inset: 0;
-    background: linear-gradient(
-      180deg,
-       color-mix(in srgb, var(--vv-surface) 30%, transparent),
-      transparent 28%
-    );
-    content: "";
-    opacity: 0.55;
-    pointer-events: none;
-    transition: opacity 0.62s ease;
+      transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.42s ease;
   }
   .vv-section.vv-page-open {
-    transform: perspective(1300px) rotateX(0) translateY(0);
+    transform: none;
     opacity: 1;
-    filter: saturate(1);
-  }
-  .vv-section.vv-page-open::after {
-    opacity: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {

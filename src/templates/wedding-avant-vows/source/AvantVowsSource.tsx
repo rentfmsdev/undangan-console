@@ -90,18 +90,49 @@ function AvantVowsSource({ invitationId, verifiedGuestName }: Props) {
     if (!root || !opened) return;
     const sections = Array.from(root.querySelectorAll<HTMLElement>("[data-template-section]"));
     const observer = typeof IntersectionObserver !== "undefined"
-      ? new IntersectionObserver((entries) => entries.forEach((entry) => entry.target.classList.toggle("is-visible", entry.isIntersecting)), { root, threshold: 0.08 })
+      ? new IntersectionObserver(
+          (entries) =>
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                observer?.unobserve(entry.target);
+              }
+            }),
+          { root, rootMargin: "60px 0px 60px 0px", threshold: 0.02 },
+        )
       : null;
-    sections.forEach((section) => observer ? observer.observe(section) : section.classList.add("is-visible"));
+    sections.forEach((section) => {
+      const rect = section.getBoundingClientRect();
+      const rootRect = root.getBoundingClientRect();
+      if (rect.top < rootRect.bottom + 60 && rect.bottom > rootRect.top - 60) {
+        section.classList.add("is-visible");
+      } else if (observer) {
+        observer.observe(section);
+      } else {
+        section.classList.add("is-visible");
+      }
+    });
     const onScroll = () => {
       const marker = root.getBoundingClientRect().top + root.clientHeight * .44;
       const enabled = sections.filter((section) => !section.hidden && getComputedStyle(section).display !== "none");
       const current = enabled.reduce((active, section) => section.getBoundingClientRect().top <= marker ? section.dataset.templateSection ?? active : active, enabled[0]?.dataset.templateSection ?? "hero");
       setActiveSection(current);
     };
+    let frameId = 0;
+    const handleScroll = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        onScroll();
+      });
+    };
     onScroll();
-    root.addEventListener("scroll", onScroll, { passive: true });
-    return () => { observer?.disconnect(); root.removeEventListener("scroll", onScroll); };
+    root.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      observer?.disconnect();
+      if (frameId) window.cancelAnimationFrame(frameId);
+      root.removeEventListener("scroll", handleScroll);
+    };
   }, [opened]);
 
   useEffect(() => {

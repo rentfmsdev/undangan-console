@@ -91,9 +91,28 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
     if (!root || !opened) return;
     const items = Array.from(root.querySelectorAll<HTMLElement>("[data-orbit-reveal]"));
     const observer = typeof IntersectionObserver !== "undefined"
-      ? new IntersectionObserver((entries) => entries.forEach((entry) => entry.target.classList.toggle("is-revealed", entry.isIntersecting)), { root, threshold: 0.18 })
+      ? new IntersectionObserver(
+          (entries) =>
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-revealed");
+                observer?.unobserve(entry.target);
+              }
+            }),
+          { root, rootMargin: "60px 0px 60px 0px", threshold: 0.02 },
+        )
       : null;
-    items.forEach((item) => observer ? observer.observe(item) : item.classList.add("is-revealed"));
+    items.forEach((item) => {
+      const rect = item.getBoundingClientRect();
+      const rootRect = root.getBoundingClientRect();
+      if (rect.top < rootRect.bottom + 60 && rect.bottom > rootRect.top - 60) {
+        item.classList.add("is-revealed");
+      } else if (observer) {
+        observer.observe(item);
+      } else {
+        item.classList.add("is-revealed");
+      }
+    });
     const onScroll = () => {
       revealRail();
       const rootRect = root.getBoundingClientRect();
@@ -112,8 +131,21 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
       root.parentElement?.style.setProperty("--eo-shower-intensity", currentSection?.style.getPropertyValue("--eo-decor-intensity") || ".65");
       setActiveSection(current);
     };
-    onScroll(); root.addEventListener("scroll", onScroll, { passive: true });
-    return () => { observer?.disconnect(); root.removeEventListener("scroll", onScroll); };
+    let frameId = 0;
+    const handleScroll = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        onScroll();
+      });
+    };
+    onScroll();
+    root.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      observer?.disconnect();
+      if (frameId) window.cancelAnimationFrame(frameId);
+      root.removeEventListener("scroll", handleScroll);
+    };
   }, [opened, revealRail]);
 
   useEffect(() => () => {

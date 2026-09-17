@@ -665,8 +665,14 @@ function WeddingInvitation({
       return;
     }
     const observer = new IntersectionObserver(
-      (entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add("is-visible")),
-      { threshold: 0.13 }
+      (entries) =>
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        }),
+      { rootMargin: "60px 0px 60px 0px", threshold: 0.02 }
     );
     const observeRevealElements = (root: ParentNode) => {
       if (root instanceof HTMLElement && root.matches(".reveal")) observer.observe(root);

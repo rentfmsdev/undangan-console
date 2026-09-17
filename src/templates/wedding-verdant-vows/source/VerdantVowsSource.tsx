@@ -316,16 +316,27 @@ export default function VerdantVowsSource({
       ? new IntersectionObserver(
           (entries) =>
             entries.forEach((entry) => {
-              entry.target.classList.toggle("vv-page-open", entry.isIntersecting);
+              if (entry.isIntersecting) {
+                entry.target.classList.add("vv-page-open");
+                observer?.unobserve(entry.target);
+              }
             }),
-          { root, rootMargin: "0px 0px -12%", threshold: 0.1 },
+          { root, rootMargin: "60px 0px 60px 0px", threshold: 0.01 },
         )
       : null;
     sections.forEach((section) => {
-      if (section.dataset.templateSection === "hero")
+      const rect = section.getBoundingClientRect();
+      const rootRect = root.getBoundingClientRect();
+      if (
+        section.dataset.templateSection === "hero" ||
+        (rect.top < rootRect.bottom + 60 && rect.bottom > rootRect.top - 60)
+      ) {
         section.classList.add("vv-page-open");
-      else if (observer) observer.observe(section);
-      else section.classList.add("vv-page-open");
+      } else if (observer) {
+        observer.observe(section);
+      } else {
+        section.classList.add("vv-page-open");
+      }
     });
     return () => observer?.disconnect();
   }, [opened]);
