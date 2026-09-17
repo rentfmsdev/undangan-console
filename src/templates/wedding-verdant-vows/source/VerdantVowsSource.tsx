@@ -912,7 +912,7 @@ export default function VerdantVowsSource({
       >
         {musicOn ? "♫" : "♪"}
       </button>
-      {!opened && (
+      <div style={{ display: opened ? "none" : undefined }} aria-hidden={opened}>
         <section
           className="vv-envelope"
           data-template-section="opening-envelope"
@@ -933,7 +933,7 @@ export default function VerdantVowsSource({
             </i>
           </div>
         </section>
-      )}
+      </div>
     </div>
   );
 }

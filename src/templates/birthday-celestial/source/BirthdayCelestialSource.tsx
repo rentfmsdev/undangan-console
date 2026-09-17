@@ -659,7 +659,7 @@ export default function BirthdayCelestialSource({ invitationId, verifiedGuestNam
         </button>
       )}
 
-      {!opened && (
+      <div style={{ display: opened ? "none" : undefined }} aria-hidden={opened}>
         <section className="birthday-envelope-screen" data-template-section="opening-envelope" aria-label="Amplop undangan ulang tahun">
           <div className="birthday-envelope-stars">✦ ✧ ✦</div>
           <p>YOU&apos;RE INVITED TO</p>
@@ -680,7 +680,7 @@ export default function BirthdayCelestialSource({ invitationId, verifiedGuestNam
           </div>
           <aside>{stage === "opening" ? "Sebentar, undangan sedang dibuka..." : "Ketuk segel bintang untuk membuka"}</aside>
         </section>
-      )}
+      </div>
 
       <section ref={heroRef} className="birthday-hero birthday-hero-full" data-template-section="hero">
         <div className="birthday-stars" />
