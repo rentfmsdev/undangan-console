@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 import type { InvitationShareData } from "@/modules/share-card/invitation-share-data";
 import { renderShareCard } from "@/modules/share-card/render-share-card";
+import { getShareCardFonts } from "@/modules/share-card/fonts";
+import { resolveShareCardImage } from "@/modules/share-card/image-resolver";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +23,15 @@ export async function POST(request: Request) {
   }
 
   const data = payload.data;
-  if (data.cardStyle.imageUrl?.startsWith("/")) {
-    data.cardStyle.imageUrl = new URL(data.cardStyle.imageUrl, new URL(request.url).origin).toString();
+  if (data.cardStyle.imageUrl) {
+    data.cardStyle.imageUrl = await resolveShareCardImage(data.cardStyle.imageUrl);
   }
-  return new ImageResponse(renderShareCard(data), { width: 1200, height: 630 });
+
+  const fonts = await getShareCardFonts();
+
+  return new ImageResponse(renderShareCard(data), {
+    width: 1200,
+    height: 630,
+    fonts,
+  });
 }

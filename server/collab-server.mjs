@@ -40,6 +40,52 @@ function parsePositiveInteger(value, fallback, maximum) {
   return Number.isInteger(parsed) && parsed >= 1 && parsed <= maximum ? parsed : fallback;
 }
 
+function normalizeCardStyle(value) {
+  const candidate = value && typeof value === "object" ? value : {};
+  const colorsSource = candidate.colors && typeof candidate.colors === "object" ? candidate.colors : {};
+  const styleId = candidate.styleId;
+  const backgroundMode = candidate.backgroundMode;
+  const textAlign = candidate.textAlign;
+  const overlayOpacity = Number(candidate.overlayOpacity);
+  const version = Number(candidate.version);
+
+  const cleanColor = (c) => typeof c === "string" && /^#[0-9a-f]{3,8}$/i.test(c.trim()) ? c.trim() : undefined;
+
+  return {
+    styleId: styleId === "elegant" || styleId === "minimal" ? styleId : "template",
+    imageUrl: typeof candidate.imageUrl === "string" && candidate.imageUrl.trim() ? candidate.imageUrl.trim() : undefined,
+    backgroundMode: backgroundMode === "photo" || backgroundMode === "solid" ? backgroundMode : "template",
+    overlayOpacity: Number.isFinite(overlayOpacity)
+      ? Math.min(0.9, Math.max(0.2, overlayOpacity))
+      : 0.58,
+    textAlign: textAlign === "left" ? "left" : "center",
+    colors: {
+      background: cleanColor(colorsSource.background),
+      primary: cleanColor(colorsSource.primary),
+      accent: cleanColor(colorsSource.accent),
+      text: cleanColor(colorsSource.text),
+    },
+    showGuestName: candidate.showGuestName !== false,
+    showDate: candidate.showDate === true,
+    showVenue: candidate.showVenue === true,
+    showSubject: candidate.showSubject !== false,
+    version: Number.isFinite(version) && version > 0 ? Math.floor(version) : 1,
+  };
+}
+
+function applyCardStyleSettings(globals, overrides) {
+  const existingCard = globals.get("cardStyle");
+  if (existingCard instanceof Y.Map && existingCard.size > 0) {
+    return;
+  }
+  const card = normalizeCardStyle(overrides?.cardStyle);
+  const cardMap = new Y.Map();
+  Object.entries(card).forEach(([key, value]) => {
+    cardMap.set(key, value);
+  });
+  globals.set("cardStyle", cardMap);
+}
+
 function applyWhatsAppSettings(globals, overrides) {
   globals.set(
     "whatsAppPreset",
@@ -273,6 +319,7 @@ async function loadRoomSnapshot(draftId, ydoc) {
     let overrides = {};
     try { overrides = typeof invRows[0]?.styleOverrides === "string" ? JSON.parse(invRows[0].styleOverrides || "{}") : (invRows[0]?.styleOverrides || {}); } catch {}
     applyWhatsAppSettings(ydoc.getMap("globalSettings"), overrides);
+    applyCardStyleSettings(ydoc.getMap("globalSettings"), overrides);
     return Number(snapRows[0].revision) + 1;
   }
 
@@ -308,6 +355,7 @@ async function loadRoomSnapshot(draftId, ydoc) {
     globals.set("musicUrl", initialMusicUrl);
     globals.set("musicVolume", typeof overrides.musicVolume === "number" ? overrides.musicVolume : 0.6);
     applyWhatsAppSettings(globals, overrides);
+    applyCardStyleSettings(globals, overrides);
     const colors = new Y.Map();
     if (overrides.customColors && typeof overrides.customColors === "object") {
       Object.entries(overrides.customColors).forEach(([key, value]) => { if (typeof value === "string") colors.set(key, value); });
@@ -456,11 +504,14 @@ async function flushRoomSnapshot(room, draftId, createdBy = null) {
         .filter(([key, value]) => WHATSAPP_PRESETS.has(key) && typeof value === "string")
         .map(([key, value]) => [key, value.slice(0, 12_000)])
     );
+    const storedCardStyle = jsonFromY(globals.get("cardStyle"));
+    const cardStyle = normalizeCardStyle(storedCardStyle || styleOverrides.cardStyle);
     styleOverrides = {
       ...styleOverrides,
       musicUrl: typeof globals.get("musicUrl") === "string" ? globals.get("musicUrl") : "",
       musicVolume: Number(globals.get("musicVolume") ?? 0.6),
       customColors: jsonFromY(globals.get("customColors")) || {},
+      cardStyle,
       whatsAppPreset: WHATSAPP_PRESETS.has(storedWhatsAppPreset) ? storedWhatsAppPreset : "formal",
       whatsAppMessageTemplates,
     };
