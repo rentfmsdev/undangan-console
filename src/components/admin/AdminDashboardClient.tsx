@@ -27,11 +27,13 @@ import {
   Check,
   Shield,
   Calendar,
+  Power,
 } from "lucide-react";
 import type { AuthUser } from "@/modules/auth/service";
 import { RootsAdminManagement } from "./RootsAdminManagement";
 import { RootsPlatformSettings } from "./RootsPlatformSettings";
 import { RootsAvatar } from "./RootsAvatar";
+import { RootsConfirmDialog, type RootsDialogState } from "./RootsConfirmDialog";
 import {
   isDateInRange,
   getPresetDateRange,
@@ -83,12 +85,15 @@ type AdminInvitation = {
     id: string;
     amount: number;
     status: "pending" | "paid" | "expired" | "failed";
+    mode: "path" | "subdomain" | "custom_domain";
+    identifier: string;
     method: string;
     channel: string;
     paidAt?: string | null;
     createdAt: string;
   } | null;
-  paymentStatus: "paid" | "pending" | "unpaid";
+  paymentStatus: "paid" | "bypassed" | "pending" | "unpaid";
+  canActivateWithoutPayment: boolean;
 };
 
 type AdminPayment = {
@@ -152,6 +157,8 @@ export function AdminDashboardClient({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activatingInvitationId, setActivatingInvitationId] = useState<string | null>(null);
+  const [modalDialog, setModalDialog] = useState<RootsDialogState | null>(null);
 
   // Date Range Filter States
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
@@ -224,6 +231,60 @@ export function AdminDashboardClient({
     void writeClipboardText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const activateInvitation = (invitation: AdminInvitation) => {
+    setModalDialog({
+      isOpen: true,
+      type: "confirm",
+      variant: "warning",
+      title: "Aktifkan Undangan",
+      message: `Aktifkan undangan "${invitation.title}" tanpa menunggu pembayaran selesai?`,
+      note: "Alamat dari transaksi pembayaran yang sedang diproses akan digunakan dan aksi ini dicatat di audit log.",
+      confirmText: "Ya, Aktifkan",
+      cancelText: "Batal",
+      onConfirm: async () => {
+        setActivatingInvitationId(invitation.id);
+        setModalDialog((prev) => (prev ? { ...prev, isLoading: true } : null));
+
+        try {
+          const response = await fetch(
+            `/api/roots/invitations/${invitation.id}/activate`,
+            { method: "POST" }
+          );
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.error || "Gagal mengaktifkan undangan.");
+          }
+
+          await fetchData();
+          setModalDialog({
+            isOpen: true,
+            type: "alert",
+            variant: "success",
+            title: "Berhasil Diaktifkan",
+            message:
+              payload.message ||
+              `Undangan "${invitation.title}" berhasil diaktifkan.`,
+            confirmText: "Mengerti",
+          });
+        } catch (error) {
+          setModalDialog({
+            isOpen: true,
+            type: "alert",
+            variant: "danger",
+            title: "Gagal Mengaktifkan",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Gagal mengaktifkan undangan.",
+            confirmText: "Tutup",
+          });
+        } finally {
+          setActivatingInvitationId(null);
+        }
+      },
+    });
   };
 
   // Filtered Invitations (Search + Status + Date Range)
@@ -682,6 +743,7 @@ export function AdminDashboardClient({
                   className="rounded-xl border border-slate-800 bg-slate-950 py-2.5 px-3 text-xs font-medium text-slate-200 focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="all">Semua Status Bayar</option>
+                  <option value="bypassed">Aktif Tanpa Pembayaran</option>
                   <option value="paid">✅ Lunas (Paid / Published)</option>
                   <option value="pending">⏳ Menunggu Bayar (Pending)</option>
                   <option value="unpaid">⚪ Draft / Belum Bayar</option>
@@ -830,6 +892,10 @@ export function AdminDashboardClient({
                                   </span>
                                 )}
                               </div>
+                            ) : inv.paymentStatus === "bypassed" ? (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-sky-500/10 px-2.5 py-0.5 text-[11px] font-extrabold text-sky-400 border border-sky-500/30">
+                                <ShieldCheck size={12} /> AKTIF TANPA BAYAR
+                              </span>
                             ) : inv.paymentStatus === "pending" ? (
                               <div>
                                 <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-400 border border-amber-500/30">
@@ -857,6 +923,30 @@ export function AdminDashboardClient({
                           {/* Actions */}
                           <td className="py-3.5 px-4 text-right">
                             <div className="inline-flex items-center gap-1.5">
+                              {isSuperAdmin &&
+                                inv.canActivateWithoutPayment && (
+                                  <button
+                                    type="button"
+                                    onClick={() => void activateInvitation(inv)}
+                                    disabled={activatingInvitationId === inv.id}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-400 transition hover:bg-emerald-500/20 hover:text-emerald-300 disabled:cursor-wait disabled:opacity-60"
+                                    title="Aktifkan tanpa pembayaran"
+                                  >
+                                    <Power
+                                      size={11}
+                                      className={
+                                        activatingInvitationId === inv.id
+                                          ? "animate-pulse"
+                                          : undefined
+                                      }
+                                    />
+                                    <span>
+                                      {activatingInvitationId === inv.id
+                                        ? "Mengaktifkan..."
+                                        : "Aktifkan"}
+                                    </span>
+                                  </button>
+                                )}
                               {inv.slug && (
                                 <Link
                                   href={`/i/${inv.slug}`}
@@ -1128,6 +1218,11 @@ export function AdminDashboardClient({
           </>
         )}
       </main>
+
+      <RootsConfirmDialog
+        dialog={modalDialog}
+        onClose={() => setModalDialog(null)}
+      />
     </div>
   );
 }

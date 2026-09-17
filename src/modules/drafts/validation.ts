@@ -20,6 +20,15 @@ const cardStyleSchema = z.object({
   version: z.number().int().positive().optional(),
 }).optional();
 
+const whatsAppPresetSchema = z.enum(["formal", "islami", "non-muslim", "casual", "english"]);
+const whatsAppMessageTemplatesSchema = z.object({
+  formal: z.string().max(12_000).optional(),
+  islami: z.string().max(12_000).optional(),
+  "non-muslim": z.string().max(12_000).optional(),
+  casual: z.string().max(12_000).optional(),
+  english: z.string().max(12_000).optional(),
+}).optional();
+
 export const createDraftSchema = z.object({
   templateCode: z.string().regex(/^[a-z0-9]{5}$/),
   title: z.string().trim().min(1).max(120).optional(),
@@ -37,6 +46,8 @@ export const updateDraftSchema = z.object({
     }).optional(),
     useContainer: z.boolean().optional(),
     cardStyle: cardStyleSchema,
+    whatsAppPreset: whatsAppPresetSchema.optional(),
+    whatsAppMessageTemplates: whatsAppMessageTemplatesSchema,
   }).optional(),
   sections: z.array(z.object({
     id: z.string().min(1).max(64),

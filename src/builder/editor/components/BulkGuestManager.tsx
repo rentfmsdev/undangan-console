@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { buildPersonalInvitationUrl } from "@/modules/generator/build-personal-invitation-url";
-import type { WhatsAppPreset } from "@/modules/generator/build-whatsapp-message";
 import { trackMetaPixel } from "@/lib/meta-pixel";
 import { createClientId, writeClipboardText } from "@/lib/browser-compat";
 
@@ -47,7 +46,6 @@ type Props = {
   publishUrl: string;
   publishMode: "path" | "subdomain";
   publishIdentifier: string;
-  waPreset: WhatsAppPreset;
   onRequirePublish: () => void;
   getMessageForGuest: (guestName: string) => string;
 };
@@ -134,7 +132,6 @@ export function BulkGuestManager({
   publishUrl,
   publishMode,
   publishIdentifier,
-  waPreset,
   onRequirePublish,
   getMessageForGuest,
 }: Props) {

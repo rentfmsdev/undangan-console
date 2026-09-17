@@ -12,6 +12,7 @@ export type AuditAction =
   | "reset_password"
   | "lock_account"
   | "unlock_account"
+  | "activate_invitation_without_payment"
   | "platform_setting_updated";
 
 export async function logAdminAudit(params: {

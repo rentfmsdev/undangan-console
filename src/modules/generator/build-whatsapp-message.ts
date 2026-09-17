@@ -3,6 +3,10 @@ import type { InvitationShareData } from "@/modules/share-card/invitation-share-
 import { buildEventDetailLines, type EventDetailPreset } from "./build-event-detail-lines";
 
 export type WhatsAppPreset = EventDetailPreset;
+export type WhatsAppMessageTemplates = Partial<Record<WhatsAppPreset, string>>;
+
+export const WHATSAPP_GUEST_NAME_TOKEN = "{{nama_tamu}}";
+export const WHATSAPP_INVITATION_URL_TOKEN = "{{tautan_undangan}}";
 
 export type WhatsAppInvitationInput = {
   preset: WhatsAppPreset;
@@ -17,6 +21,18 @@ function normalizeWhitespace(text: string): string {
     .replace(/\r\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+export function renderWhatsAppMessageTemplate(
+  template: string,
+  values: { guestName: string; invitationUrl: string },
+): string {
+  const guestName = values.guestName.trim().replace(/\s+/g, " ") || "Bapak/Ibu/Saudara/i";
+  return template
+    .split(WHATSAPP_GUEST_NAME_TOKEN)
+    .join(guestName)
+    .split(WHATSAPP_INVITATION_URL_TOKEN)
+    .join(values.invitationUrl.trim());
 }
 
 /**

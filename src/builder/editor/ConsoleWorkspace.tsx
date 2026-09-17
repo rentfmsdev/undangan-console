@@ -37,6 +37,7 @@ import {
   LoaderCircle,
   Mail,
   Maximize2,
+  MessageCircle,
   MessageCircleHeart,
   MessageSquare,
   Monitor,
@@ -114,6 +115,10 @@ import { buildInvitationShareData } from "@/modules/share-card/invitation-share-
 import { DEFAULT_CARD_STYLE, normalizeCardStyle, type CardStyleSettings } from "@/modules/share-card/contracts";
 import {
   buildWhatsAppMessage,
+  renderWhatsAppMessageTemplate,
+  WHATSAPP_GUEST_NAME_TOKEN,
+  WHATSAPP_INVITATION_URL_TOKEN,
+  type WhatsAppMessageTemplates,
   type WhatsAppPreset,
 } from "@/modules/generator/build-whatsapp-message";
 import { buildPersonalInvitationUrl } from "@/modules/generator/build-personal-invitation-url";
@@ -146,7 +151,7 @@ type View = "editor" | "generator" | "wishes";
 export type EditableSection = TemplateSection & { id: string; enabled: boolean };
 type WishRecord = { id: string; name: string; attendance: string; message: string; createdAt: string };
 type ClientUser = { id: string; email: string; name: string; phone?: string | null; avatarUrl: string | null; role: "user" | "admin" };
-type LocalDraftSnapshot = { version: 1; themeId: string; musicUrl: string; musicVolume?: number; customColors?: { primary?: string; accent?: string; background?: string }; useContainer?: boolean; cardStyle?: CardStyleSettings; sections: Array<{ id: string; type: string; enabled: boolean; data: Record<string, unknown> }> };
+type LocalDraftSnapshot = { version: 1; themeId: string; musicUrl: string; musicVolume?: number; customColors?: { primary?: string; accent?: string; background?: string }; useContainer?: boolean; cardStyle?: CardStyleSettings; whatsAppPreset?: WhatsAppPreset; whatsAppMessageTemplates?: WhatsAppMessageTemplates; sections: Array<{ id: string; type: string; enabled: boolean; data: Record<string, unknown> }> };
 type PendingNavigation = { sectionType: string; requestId: string; navigationSource: NavigationSource };
 type AssetTarget = { kind: "image" | "audio"; target: "content" | "background" | "music" | "card" | "manager"; sectionId: string | null };
 type StoredSectionRecord = { id: string; type: string; enabled: boolean; data: Record<string, unknown> };
@@ -588,6 +593,9 @@ export function ConsoleWorkspace({
   const isIslamicOnlyTradition =
     templateCategory.includes("khitan") || templateCategory.includes("aqiqah");
   const [waPreset, setWaPreset] = useState<WhatsAppPreset>("formal");
+  const [whatsAppMessageTemplates, setWhatsAppMessageTemplates] =
+    useState<WhatsAppMessageTemplates>({});
+  const whatsAppMessageTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Safeguard: Reset to formal if switching to an Islamic-only tradition template
   useEffect(() => {
@@ -629,6 +637,14 @@ export function ConsoleWorkspace({
       }
       if (remoteState.globalSettings?.cardStyle) {
         setCardStyle(normalizeCardStyle(remoteState.globalSettings.cardStyle));
+      }
+      if (remoteState.globalSettings?.whatsAppPreset) {
+        setWaPreset(remoteState.globalSettings.whatsAppPreset);
+      }
+      if (remoteState.globalSettings?.whatsAppMessageTemplates) {
+        setWhatsAppMessageTemplates(
+          remoteState.globalSettings.whatsAppMessageTemplates,
+        );
       }
 
       if (
@@ -792,7 +808,9 @@ export function ConsoleWorkspace({
         | "musicVolume"
         | "customColors"
         | "useContainer"
-        | "cardStyle",
+        | "cardStyle"
+        | "whatsAppPreset"
+        | "whatsAppMessageTemplates",
       value: unknown,
     ) => {
       if (isViewer) return;
@@ -809,6 +827,10 @@ export function ConsoleWorkspace({
         setUseContainer(Boolean(value));
       } else if (key === "cardStyle") {
         setCardStyle(normalizeCardStyle(value));
+      } else if (key === "whatsAppPreset") {
+        setWaPreset(value as WhatsAppPreset);
+      } else if (key === "whatsAppMessageTemplates") {
+        setWhatsAppMessageTemplates(value as WhatsAppMessageTemplates);
       }
 
       collabDoc.updateLocalState((doc) => {
@@ -847,6 +869,22 @@ export function ConsoleWorkspace({
           Object.entries(normalizeCardStyle(value)).forEach(([entry, item]) => {
             (cardStyleMap as Y.Map<unknown>).set(entry, item);
           });
+        } else if (key === "whatsAppMessageTemplates") {
+          let templatesMap = globalSettings.get("whatsAppMessageTemplates");
+          if (!(templatesMap instanceof Y.Map)) {
+            templatesMap = new Y.Map();
+            globalSettings.set("whatsAppMessageTemplates", templatesMap);
+          }
+          Array.from((templatesMap as Y.Map<string>).keys()).forEach((entry) =>
+            (templatesMap as Y.Map<string>).delete(entry),
+          );
+          Object.entries((value as WhatsAppMessageTemplates) || {}).forEach(
+            ([entry, templateValue]) => {
+              if (typeof templateValue === "string") {
+                (templatesMap as Y.Map<string>).set(entry, templateValue);
+              }
+            },
+          );
         } else {
           globalSettings.set(key, value);
         }
@@ -1218,6 +1256,26 @@ export function ConsoleWorkspace({
         typeof payload.draft.styleOverrides?.musicUrl === "string"
           ? payload.draft.styleOverrides.musicUrl
           : defaultMusic;
+      const savedWhatsAppPreset = payload.draft.styleOverrides?.whatsAppPreset;
+      setWaPreset(
+        savedWhatsAppPreset === "islami" ||
+          savedWhatsAppPreset === "non-muslim" ||
+          savedWhatsAppPreset === "casual" ||
+          savedWhatsAppPreset === "english"
+          ? savedWhatsAppPreset
+          : "formal",
+      );
+      const savedWhatsAppTemplates =
+        payload.draft.styleOverrides?.whatsAppMessageTemplates;
+      setWhatsAppMessageTemplates(
+        savedWhatsAppTemplates && typeof savedWhatsAppTemplates === "object"
+          ? Object.fromEntries(
+              Object.entries(savedWhatsAppTemplates).filter(
+                ([, value]) => typeof value === "string",
+              ),
+            )
+          : {},
+      );
       applyState(
         payload.draft.themeId,
         savedMusicUrl,
@@ -1234,6 +1292,12 @@ export function ConsoleWorkspace({
       const defaultMusic =
         template.defaultMusicUrl || getDefaultStockMusic(template.category).url;
       const localSnapshot = readLocalSnapshot();
+      if (localSnapshot?.whatsAppPreset) {
+        setWaPreset(localSnapshot.whatsAppPreset);
+      }
+      if (localSnapshot?.whatsAppMessageTemplates) {
+        setWhatsAppMessageTemplates(localSnapshot.whatsAppMessageTemplates);
+      }
       if (!currentUser) {
         setDraftId(null);
         if (requestedDraftId) {
@@ -1381,6 +1445,8 @@ export function ConsoleWorkspace({
       customColors: customThemeColors,
       useContainer,
       cardStyle,
+      whatsAppPreset: waPreset,
+      whatsAppMessageTemplates,
       sections: sections.map((section) => ({
         id: section.id,
         type: section.type,
@@ -1388,7 +1454,7 @@ export function ConsoleWorkspace({
         data: section.defaultData,
       })),
     }),
-    [themeId, musicUrl, musicVolume, customThemeColors, useContainer, cardStyle, sections],
+    [themeId, musicUrl, musicVolume, customThemeColors, useContainer, cardStyle, waPreset, whatsAppMessageTemplates, sections],
   );
 
   const presence = usePresence({
@@ -1450,6 +1516,8 @@ export function ConsoleWorkspace({
         customColors: dataToSave.customColors,
         useContainer: dataToSave.useContainer,
         cardStyle: dataToSave.cardStyle,
+        whatsAppPreset: dataToSave.whatsAppPreset,
+        whatsAppMessageTemplates: dataToSave.whatsAppMessageTemplates,
         sections: dataToSave.sections,
       };
 
@@ -1471,6 +1539,8 @@ export function ConsoleWorkspace({
               customColors: dataToSave.customColors,
               useContainer: dataToSave.useContainer,
               cardStyle: dataToSave.cardStyle,
+              whatsAppPreset: dataToSave.whatsAppPreset,
+              whatsAppMessageTemplates: dataToSave.whatsAppMessageTemplates,
             },
             sections: dataToSave.sections.map((section, order) => ({
               ...section,
@@ -2263,7 +2333,11 @@ export function ConsoleWorkspace({
     );
   }
 
-  function getWhatsAppMessage(preset: WhatsAppPreset, name: string) {
+  function buildDefaultWhatsAppMessage(
+    preset: WhatsAppPreset,
+    name: string,
+    invitationUrl: string,
+  ) {
     const shareSections = sections.map((s) => ({
       type: s.type,
       enabled: s.enabled,
@@ -2278,6 +2352,27 @@ export function ConsoleWorkspace({
       guestName: name,
     });
 
+    return buildWhatsAppMessage({
+      preset,
+      category: template.category,
+      guestName: name,
+      invitationUrl,
+      share,
+    });
+  }
+
+  function getEditableWhatsAppTemplate(preset: WhatsAppPreset) {
+    const customTemplate = whatsAppMessageTemplates[preset];
+    if (typeof customTemplate === "string") return customTemplate;
+
+    return buildDefaultWhatsAppMessage(
+      preset,
+      WHATSAPP_GUEST_NAME_TOKEN,
+      WHATSAPP_INVITATION_URL_TOKEN,
+    );
+  }
+
+  function getWhatsAppMessage(preset: WhatsAppPreset, name: string) {
     const invitationUrl = buildPersonalInvitationUrl({
       identifier: publishIdentifier || defaultPublishIdentifier || template.code,
       publishMode,
@@ -2285,13 +2380,51 @@ export function ConsoleWorkspace({
       guestName: name,
       fallbackCode: template.code,
     });
+    const customTemplate = whatsAppMessageTemplates[preset];
 
-    return buildWhatsAppMessage({
-      preset,
-      category: template.category,
-      guestName: name,
-      invitationUrl,
-      share,
+    if (typeof customTemplate === "string") {
+      return renderWhatsAppMessageTemplate(customTemplate, {
+        guestName: name,
+        invitationUrl,
+      });
+    }
+
+    return buildDefaultWhatsAppMessage(preset, name, invitationUrl);
+  }
+
+  function handleWhatsAppPresetChange(preset: WhatsAppPreset) {
+    updateGlobalSetting("whatsAppPreset", preset);
+  }
+
+  function handleWhatsAppTemplateChange(value: string) {
+    updateGlobalSetting("whatsAppMessageTemplates", {
+      ...whatsAppMessageTemplates,
+      [waPreset]: value,
+    });
+  }
+
+  function resetWhatsAppTemplate() {
+    const nextTemplates = { ...whatsAppMessageTemplates };
+    delete nextTemplates[waPreset];
+    updateGlobalSetting("whatsAppMessageTemplates", nextTemplates);
+  }
+
+  function insertWhatsAppTemplateToken(token: string) {
+    if (isViewer) return;
+    const textarea = whatsAppMessageTextareaRef.current;
+    const currentValue = getEditableWhatsAppTemplate(waPreset);
+    const selectionStart = textarea?.selectionStart ?? currentValue.length;
+    const selectionEnd = textarea?.selectionEnd ?? selectionStart;
+    const nextValue = `${currentValue.slice(0, selectionStart)}${token}${currentValue.slice(selectionEnd)}`;
+    handleWhatsAppTemplateChange(nextValue);
+
+    window.requestAnimationFrame(() => {
+      const cursorPosition = selectionStart + token.length;
+      whatsAppMessageTextareaRef.current?.focus();
+      whatsAppMessageTextareaRef.current?.setSelectionRange(
+        cursorPosition,
+        cursorPosition,
+      );
     });
   }
 
@@ -2864,7 +2997,19 @@ export function ConsoleWorkspace({
                     </div>
                   </div>
                   <CardPreviewCanvas data={cardPreviewData} />
-                  <p className="mt-3 text-center text-[11px] text-slate-500">Nama tamu contoh hanya untuk preview dan tidak disimpan.</p>
+                  <div className="mt-4 flex w-full items-start gap-3 rounded-2xl border border-emerald-200/80 bg-white/95 p-4 text-left shadow-[0_10px_30px_rgba(15,23,42,.06)]">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
+                      <MessageCircle size={17} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <strong className="block text-xs font-extrabold text-slate-900">
+                        Preview kartu saat dibagikan ke WhatsApp
+                      </strong>
+                      <p className="mt-1 text-[11px] leading-5 text-slate-600">
+                        Kartu di atas akan tampil sebagai preview ketika tautan undangan dibagikan melalui WhatsApp. Nama penerima akan menyesuaikan tamu yang dipilih pada Generator; nama Bpk. Budi Santoso di atas hanya contoh dan tidak disimpan.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -3099,14 +3244,14 @@ export function ConsoleWorkspace({
             {!isInspectorCollapsed && (
               <div
                 onClick={toggleInspectorCollapse}
-                className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs lg:hidden transition-opacity"
+                className="fixed inset-0 z-[70] bg-slate-900/40 backdrop-blur-xs lg:hidden transition-opacity"
                 aria-label="Tutup editor"
               />
             )}
 
             <aside
               ref={inspectorPanelRef}
-              className={`editor-inspector-panel console-scrollbar fixed inset-y-0 right-0 z-50 w-[min(420px,88vw)] max-h-none min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-slate-200 bg-slate-50 p-3 shadow-2xl transition-transform duration-300 ease-out lg:relative lg:inset-auto lg:z-auto lg:w-auto lg:h-full lg:min-h-0 lg:max-h-none lg:shadow-none lg:transition-all lg:duration-200 ${
+              className={`editor-inspector-panel console-scrollbar fixed inset-y-0 right-0 z-[80] w-[min(420px,88vw)] max-h-none min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-slate-200 bg-slate-50 p-3 shadow-2xl transition-transform duration-300 ease-out lg:relative lg:inset-auto lg:z-40 lg:w-auto lg:h-full lg:min-h-0 lg:max-h-none lg:shadow-none lg:transition-all lg:duration-200 ${
                 isInspectorCollapsed
                   ? "translate-x-full pointer-events-none lg:translate-x-0 lg:overflow-hidden lg:p-0 lg:border-0 lg:opacity-0"
                   : "translate-x-0 pointer-events-auto lg:opacity-100"
@@ -3418,6 +3563,24 @@ export function ConsoleWorkspace({
           </div>
         )}
 
+        {view === "editor" && (
+          <a
+            href={makeAdminWhatsAppUrl(
+              `Halo Admin Undangan Studio, saya membutuhkan bantuan di editor template ${template.name}${draftId ? ` untuk draft ${draftId}` : ""}.`,
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Hubungi Admin melalui WhatsApp"
+            title="Hubungi Admin melalui WhatsApp"
+            className="fixed bottom-[calc(.75rem+env(safe-area-inset-bottom))] left-3 z-30 inline-flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-white/70 bg-[#25D366] text-white shadow-[0_12px_32px_rgba(15,23,42,.24)] transition hover:-translate-y-0.5 hover:bg-[#20bd5a] hover:shadow-[0_16px_38px_rgba(37,211,102,.38)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 active:translate-y-0 lg:bottom-5 lg:left-5 lg:h-auto lg:w-auto lg:px-4 lg:py-2.5"
+          >
+            <MessageCircle size={19} aria-hidden="true" />
+            <span className="hidden text-xs font-extrabold lg:inline">
+              Hubungi Admin
+            </span>
+          </a>
+        )}
+
         {view === "generator" && (
           <section className="mx-auto max-w-5xl px-4 py-8 md:py-12 transition-all duration-200">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
@@ -3489,7 +3652,8 @@ export function ConsoleWorkspace({
                     <button
                       key={presetKey}
                       type="button"
-                      onClick={() => setWaPreset(presetKey)}
+                      onClick={() => handleWhatsAppPresetChange(presetKey)}
+                      disabled={isViewer}
                       className={`rounded-2xl border p-3 text-left transition ${
                         waPreset === presetKey
                           ? "border-emerald-600 bg-emerald-50/70 shadow-xs ring-1 ring-emerald-500"
@@ -3513,19 +3677,69 @@ export function ConsoleWorkspace({
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-bold text-slate-800">
-                    2. Pratinjau Pesan WhatsApp ({waPreset.toUpperCase()})
+                    2. Edit Pesan WhatsApp ({waPreset.toUpperCase()})
                   </p>
                   <span className="text-[10px] font-semibold text-slate-400">
-                    Contoh tampilan di chat tamu
+                    {isSavingActive ? "Menyimpan perubahan..." : "Tersimpan otomatis"}
                   </span>
+                </div>
+
+                <div className="mb-2.5 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <span className="text-[10px] font-bold text-slate-500">
+                    Sisipkan data personal:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      insertWhatsAppTemplateToken(WHATSAPP_GUEST_NAME_TOKEN)
+                    }
+                    disabled={isViewer}
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 font-mono text-[10px] font-bold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50 disabled:opacity-50"
+                  >
+                    {WHATSAPP_GUEST_NAME_TOKEN}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      insertWhatsAppTemplateToken(WHATSAPP_INVITATION_URL_TOKEN)
+                    }
+                    disabled={isViewer}
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 font-mono text-[10px] font-bold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50 disabled:opacity-50"
+                  >
+                    {WHATSAPP_INVITATION_URL_TOKEN}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetWhatsAppTemplate}
+                    disabled={
+                      isViewer ||
+                      typeof whatsAppMessageTemplates[waPreset] !== "string"
+                    }
+                    className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-500 transition hover:bg-white hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <RotateCw size={11} />
+                    Reset bawaan
+                  </button>
                 </div>
 
                 <div className="overflow-hidden rounded-2xl border border-emerald-900/10 bg-[#e5ddd5] p-4 sm:p-5 shadow-inner">
                   <div className="relative ml-auto max-w-lg rounded-2xl bg-white p-4 shadow-sm text-xs leading-relaxed text-slate-800">
-                    <div className="whitespace-pre-wrap font-sans text-xs text-slate-800">
-                      {getWhatsAppMessage(waPreset, "Bpk. Budi Santoso, S.Kom")}
-                    </div>
+                    <textarea
+                      ref={whatsAppMessageTextareaRef}
+                      value={getEditableWhatsAppTemplate(waPreset)}
+                      onChange={(event) =>
+                        handleWhatsAppTemplateChange(event.target.value)
+                      }
+                      readOnly={isViewer}
+                      maxLength={12_000}
+                      spellCheck
+                      aria-label={`Edit pesan WhatsApp ${waPreset}`}
+                      className="min-h-[390px] w-full resize-y bg-transparent font-sans text-xs leading-relaxed text-slate-800 outline-none placeholder:text-slate-400 read-only:cursor-default"
+                    />
                     <div className="mt-2 flex items-center justify-end gap-1 text-[10px] text-slate-400">
+                      <span className="mr-auto">
+                        {getEditableWhatsAppTemplate(waPreset).length.toLocaleString("id-ID")} karakter
+                      </span>
                       <span>
                         {new Date().toLocaleTimeString("id-ID", {
                           hour: "2-digit",
@@ -3536,6 +3750,20 @@ export function ConsoleWorkspace({
                     </div>
                   </div>
                 </div>
+
+                {(!getEditableWhatsAppTemplate(waPreset).includes(
+                  WHATSAPP_GUEST_NAME_TOKEN,
+                ) ||
+                  !getEditableWhatsAppTemplate(waPreset).includes(
+                    WHATSAPP_INVITATION_URL_TOKEN,
+                  )) && (
+                  <div className="mt-2.5 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[11px] text-amber-800">
+                    <Info size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                    <span>
+                      Tambahkan token nama tamu dan tautan undangan agar setiap pesan tetap personal serta dapat dibuka penerima.
+                    </span>
+                  </div>
+                )}
 
                 {isEventDetailsIncomplete && (
                   <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[11px] text-amber-800">
@@ -3662,7 +3890,6 @@ export function ConsoleWorkspace({
                   publishUrl={publishUrl}
                   publishMode={publishMode}
                   publishIdentifier={publishIdentifier}
-                  waPreset={waPreset}
                   onRequirePublish={() => {
                     if (!currentUser)
                       requestLogin(

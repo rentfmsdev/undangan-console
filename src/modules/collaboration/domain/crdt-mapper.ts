@@ -1,5 +1,9 @@
 import * as Y from "yjs";
 import { normalizeCardStyle, type CardStyleSettings } from "@/modules/share-card/contracts";
+import type {
+  WhatsAppMessageTemplates,
+  WhatsAppPreset,
+} from "@/modules/generator/build-whatsapp-message";
 
 export type SharedGlobalSettings = {
   themeId: string;
@@ -8,6 +12,8 @@ export type SharedGlobalSettings = {
   customColors: { primary?: string; accent?: string; background?: string };
   useContainer?: boolean;
   cardStyle: CardStyleSettings;
+  whatsAppPreset?: WhatsAppPreset;
+  whatsAppMessageTemplates?: WhatsAppMessageTemplates;
 };
 
 export type SharedSectionRecord = {
@@ -68,6 +74,13 @@ export function initYDocFromState(state: SharedDraftState, doc: Y.Doc = new Y.Do
       cardStyleMap.set(key, value);
     });
     globalSettingsMap.set("cardStyle", cardStyleMap);
+
+    globalSettingsMap.set("whatsAppPreset", state.globalSettings?.whatsAppPreset ?? "formal");
+    const whatsAppTemplatesMap = new Y.Map<string>();
+    Object.entries(state.globalSettings?.whatsAppMessageTemplates ?? {}).forEach(([key, value]) => {
+      if (typeof value === "string") whatsAppTemplatesMap.set(key, value);
+    });
+    globalSettingsMap.set("whatsAppMessageTemplates", whatsAppTemplatesMap);
 
     const customColorsMap = new Y.Map();
     if (state.globalSettings?.customColors) {
@@ -149,6 +162,22 @@ export function extractStateFromYDoc(doc: Y.Doc): SharedDraftState {
   const cardStyleValue = storedCardStyle instanceof Y.Map
     ? Object.fromEntries(Array.from(storedCardStyle.entries()))
     : storedCardStyle;
+  const storedWhatsAppTemplates = globalSettingsMap.get("whatsAppMessageTemplates");
+  const whatsAppMessageTemplates = storedWhatsAppTemplates instanceof Y.Map
+    ? Object.fromEntries(
+        Array.from(storedWhatsAppTemplates.entries()).filter(
+          (entry): entry is [string, string] => typeof entry[1] === "string",
+        ),
+      ) as WhatsAppMessageTemplates
+    : {};
+  const storedWhatsAppPreset = globalSettingsMap.get("whatsAppPreset");
+  const whatsAppPreset =
+    storedWhatsAppPreset === "islami" ||
+    storedWhatsAppPreset === "non-muslim" ||
+    storedWhatsAppPreset === "casual" ||
+    storedWhatsAppPreset === "english"
+      ? storedWhatsAppPreset
+      : "formal";
 
   const sections: Record<string, SharedSectionRecord> = {};
   sectionsMap.forEach((val, key) => {
@@ -202,6 +231,8 @@ export function extractStateFromYDoc(doc: Y.Doc): SharedDraftState {
       customColors,
       useContainer: globalSettingsMap.get("useContainer") !== undefined ? Boolean(globalSettingsMap.get("useContainer")) : true,
       cardStyle: normalizeCardStyle(cardStyleValue),
+      whatsAppPreset,
+      whatsAppMessageTemplates,
     },
     sectionOrder: sectionOrderArray.toArray(),
     sections,

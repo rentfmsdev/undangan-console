@@ -24,6 +24,7 @@ import {
   formatDateLabel,
 } from "@/modules/admin/date-filter";
 import { writeClipboardText } from "@/lib/browser-compat";
+import { RootsConfirmDialog, type RootsDialogState } from "./RootsConfirmDialog";
 
 export type RootAdminItem = {
   id: string;
@@ -104,6 +105,7 @@ export function RootsAdminManagement({
   // Lock / Unlock Action
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [modalDialog, setModalDialog] = useState<RootsDialogState | null>(null);
 
   const fetchAdmins = async () => {
     setIsLoading(true);
@@ -222,39 +224,80 @@ export function RootsAdminManagement({
     }
   };
 
-  const handleToggleLock = async (admin: RootAdminItem) => {
+  const handleToggleLock = (admin: RootAdminItem) => {
     const action = admin.isLocked ? "unlock" : "lock";
-    const confirmText = admin.isLocked
-      ? `Buka kunci akun admin "${admin.username}"?`
-      : `Kunci akun admin "${admin.username}"? Admin tidak akan bisa masuk hingga dibuka kuncinya.`;
+    setModalDialog({
+      isOpen: true,
+      type: "confirm",
+      variant: admin.isLocked ? "info" : "danger",
+      title: admin.isLocked ? "Buka Kunci Akun Admin" : "Kunci Akun Admin",
+      message: admin.isLocked
+        ? `Buka kunci akun admin "${admin.username}"? Admin akan dapat masuk kembali.`
+        : `Kunci akun admin "${admin.username}"?`,
+      note: admin.isLocked
+        ? "Akun akan diizinkan kembali untuk mengakses portal Roots."
+        : "Admin tidak akan bisa masuk ke portal Roots hingga akun dibuka kembali oleh Super Admin.",
+      confirmText: admin.isLocked ? "Ya, Buka Kunci" : "Ya, Kunci Akun",
+      cancelText: "Batal",
+      onConfirm: async () => {
+        setActionLoadingId(admin.id);
+        setStatusMessage(null);
+        setModalDialog((prev) => (prev ? { ...prev, isLoading: true } : null));
 
-    if (!window.confirm(confirmText)) return;
+        try {
+          const res = await fetch(`/api/roots/admin-users/${admin.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action }),
+          });
 
-    setActionLoadingId(admin.id);
-    setStatusMessage(null);
+          const data = await res.json();
 
-    try {
-      const res = await fetch(`/api/roots/admin-users/${admin.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
+          if (!res.ok) {
+            setStatusMessage({
+              type: "error",
+              text: data.error || "Gagal memperbarui status akun.",
+            });
+            setModalDialog({
+              isOpen: true,
+              type: "alert",
+              variant: "danger",
+              title: "Gagal",
+              message: data.error || "Gagal memperbarui status akun.",
+              confirmText: "Tutup",
+            });
+            return;
+          }
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setStatusMessage({ type: "error", text: data.error || "Gagal memperbarui status akun." });
-        return;
-      }
-
-      setStatusMessage({ type: "success", text: data.message });
-      fetchAdmins();
-    } catch (err) {
-      console.error(err);
-      setStatusMessage({ type: "error", text: "Terjadi kesalahan jaringan." });
-    } finally {
-      setActionLoadingId(null);
-    }
+          setStatusMessage({ type: "success", text: data.message });
+          fetchAdmins();
+          setModalDialog({
+            isOpen: true,
+            type: "alert",
+            variant: "success",
+            title: "Berhasil",
+            message: data.message || "Status akun berhasil diperbarui.",
+            confirmText: "Mengerti",
+          });
+        } catch (err) {
+          console.error(err);
+          setStatusMessage({
+            type: "error",
+            text: "Terjadi kesalahan jaringan.",
+          });
+          setModalDialog({
+            isOpen: true,
+            type: "alert",
+            variant: "danger",
+            title: "Terjadi Kesalahan",
+            message: "Terjadi kesalahan jaringan saat memperbarui status akun.",
+            confirmText: "Tutup",
+          });
+        } finally {
+          setActionLoadingId(null);
+        }
+      },
+    });
   };
 
   const filteredAdmins = useMemo(() => {
@@ -760,6 +803,11 @@ export function RootsAdminManagement({
           </div>
         </div>
       )}
+
+      <RootsConfirmDialog
+        dialog={modalDialog}
+        onClose={() => setModalDialog(null)}
+      />
     </section>
   );
 }

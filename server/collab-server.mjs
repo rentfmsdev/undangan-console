@@ -29,6 +29,7 @@ const DB_URL = getDatabaseUrl();
 const SESSION_COOKIE_NAME = "undangan_session";
 const MAX_DOCUMENT_UPDATE_BYTES = 1_000_000;
 const VALID_SURFACES = new Set(["canvas", "preview", "left-sidebar", "right-sidebar"]);
+const WHATSAPP_PRESETS = new Set(["formal", "islami", "non-muslim", "casual", "english"]);
 const DRAFT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REDIS_CHANNEL = "undangan:collaboration:events";
 const RETENTION_DAYS = parsePositiveInteger(process.env.PUBLISH_RETENTION_DAYS, 30, 3650);
@@ -37,6 +38,22 @@ const RETENTION_SWEEP_MINUTES = parsePositiveInteger(process.env.PUBLISH_RETENTI
 function parsePositiveInteger(value, fallback, maximum) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= 1 && parsed <= maximum ? parsed : fallback;
+}
+
+function applyWhatsAppSettings(globals, overrides) {
+  globals.set(
+    "whatsAppPreset",
+    WHATSAPP_PRESETS.has(overrides.whatsAppPreset) ? overrides.whatsAppPreset : "formal",
+  );
+  const whatsAppTemplates = new Y.Map();
+  if (overrides.whatsAppMessageTemplates && typeof overrides.whatsAppMessageTemplates === "object") {
+    Object.entries(overrides.whatsAppMessageTemplates).forEach(([key, value]) => {
+      if (WHATSAPP_PRESETS.has(key) && typeof value === "string") {
+        whatsAppTemplates.set(key, value.slice(0, 12_000));
+      }
+    });
+  }
+  globals.set("whatsAppMessageTemplates", whatsAppTemplates);
 }
 
 const dbPool = mysql.createPool({
@@ -246,6 +263,13 @@ async function loadRoomSnapshot(draftId, ydoc) {
   );
   if (snapRows.length) {
     Y.applyUpdate(ydoc, Buffer.from(snapRows[0].snapshot, "base64"));
+    const [invRows] = await dbPool.query(
+      "SELECT style_overrides AS styleOverrides FROM invitations WHERE id = ? LIMIT 1",
+      [draftId],
+    );
+    let overrides = {};
+    try { overrides = typeof invRows[0]?.styleOverrides === "string" ? JSON.parse(invRows[0].styleOverrides || "{}") : (invRows[0]?.styleOverrides || {}); } catch {}
+    applyWhatsAppSettings(ydoc.getMap("globalSettings"), overrides);
     return Number(snapRows[0].revision) + 1;
   }
 
@@ -280,6 +304,7 @@ async function loadRoomSnapshot(draftId, ydoc) {
     globals.set("themeId", inv.themeId || "royal-blue-gold");
     globals.set("musicUrl", initialMusicUrl);
     globals.set("musicVolume", typeof overrides.musicVolume === "number" ? overrides.musicVolume : 0.6);
+    applyWhatsAppSettings(globals, overrides);
     const colors = new Y.Map();
     if (overrides.customColors && typeof overrides.customColors === "object") {
       Object.entries(overrides.customColors).forEach(([key, value]) => { if (typeof value === "string") colors.set(key, value); });
@@ -421,11 +446,20 @@ async function flushRoomSnapshot(room, draftId, createdBy = null) {
     const [currentRows] = await connection.query("SELECT style_overrides AS styleOverrides FROM invitations WHERE id = ? FOR UPDATE", [draftId]);
     let styleOverrides = {};
     try { styleOverrides = typeof currentRows[0]?.styleOverrides === "string" ? JSON.parse(currentRows[0].styleOverrides || "{}") : (currentRows[0]?.styleOverrides || {}); } catch {}
+    const storedWhatsAppPreset = globals.get("whatsAppPreset");
+    const rawWhatsAppTemplates = jsonFromY(globals.get("whatsAppMessageTemplates"));
+    const whatsAppMessageTemplates = Object.fromEntries(
+      Object.entries(rawWhatsAppTemplates && typeof rawWhatsAppTemplates === "object" ? rawWhatsAppTemplates : {})
+        .filter(([key, value]) => WHATSAPP_PRESETS.has(key) && typeof value === "string")
+        .map(([key, value]) => [key, value.slice(0, 12_000)])
+    );
     styleOverrides = {
       ...styleOverrides,
       musicUrl: typeof globals.get("musicUrl") === "string" ? globals.get("musicUrl") : "",
       musicVolume: Number(globals.get("musicVolume") ?? 0.6),
       customColors: jsonFromY(globals.get("customColors")) || {},
+      whatsAppPreset: WHATSAPP_PRESETS.has(storedWhatsAppPreset) ? storedWhatsAppPreset : "formal",
+      whatsAppMessageTemplates,
     };
 
     await connection.query("DELETE FROM invitation_sections WHERE invitation_id = ?", [draftId]);

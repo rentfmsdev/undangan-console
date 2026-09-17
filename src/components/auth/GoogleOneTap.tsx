@@ -28,7 +28,7 @@ type GoogleIdentityApi = {
 };
 
 const GOOGLE_IDENTITY_SCRIPT_ID = "google-identity-services";
-const ONE_TAP_PROMPTED_KEY = "undangan-console:google-one-tap-prompted:v1";
+const ONE_TAP_PROMPTED_KEY = "undangan-console:google-one-tap-prompted:v2";
 
 function getGoogleIdentity() {
   return (window as Window & { google?: GoogleIdentityApi }).google;

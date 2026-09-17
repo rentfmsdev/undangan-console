@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { users, invitations, payments } from "@/db/schema";
+import { invitationActivityLogs, users, invitations, payments } from "@/db/schema";
 import { getAdminSession } from "@/modules/admin/auth";
 import { getTemplateById, getTemplateCatalogItem } from "@/templates/registry";
 import { isDateInRange } from "@/modules/admin/date-filter";
@@ -93,6 +93,14 @@ export async function GET(request: Request) {
     .leftJoin(users, eq(payments.userId, users.id))
     .orderBy(desc(payments.createdAt));
 
+  const manualActivations = await db
+    .select({ invitationId: invitationActivityLogs.invitationId })
+    .from(invitationActivityLogs)
+    .where(eq(invitationActivityLogs.action, "admin_payment_bypass_activation"));
+  const manuallyActivatedInvitationIds = new Set(
+    manualActivations.map((activation) => activation.invitationId)
+  );
+
   // Map latest payment per invitation
   const latestPaymentByInvitation = new Map<string, (typeof allPayments)[0]>();
   for (const p of allPayments) {
@@ -132,6 +140,12 @@ export async function GET(request: Request) {
     const payment = latestPaymentByInvitation.get(inv.id) || null;
     const template = getTemplateById(inv.templateId);
     const catalogItem = getTemplateCatalogItem(inv.templateId);
+    const paymentIdentifierMatches =
+      payment?.mode === "path"
+        ? inv.publishMode === "path" && inv.slug === payment.identifier
+        : payment?.mode === "subdomain"
+          ? inv.publishMode === "subdomain" && inv.subdomain === payment.identifier
+          : false;
     return {
       ...inv,
       templateName: template?.name || catalogItem?.name || inv.templateId,
@@ -141,6 +155,8 @@ export async function GET(request: Request) {
             id: payment.id,
             amount: payment.amount,
             status: payment.status,
+            mode: payment.mode,
+            identifier: payment.identifier,
             method: payment.paymentMethod,
             channel: payment.paymentChannel,
             paidAt: payment.paidAt,
@@ -150,11 +166,18 @@ export async function GET(request: Request) {
       paymentStatus:
         payment?.status === "paid"
           ? "paid"
+          : inv.status === "published" && manuallyActivatedInvitationIds.has(inv.id)
+          ? "bypassed"
           : payment?.status === "pending"
           ? "pending"
           : inv.status === "published"
           ? "paid"
           : "unpaid",
+      canActivateWithoutPayment:
+        payment?.status === "pending" &&
+        inv.status !== "published" &&
+        inv.status !== "archived" &&
+        paymentIdentifierMatches,
     };
   });
 
