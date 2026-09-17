@@ -49,7 +49,8 @@ export function renderShareCard(data: InvitationShareData) {
           height="630"
           style={{
             position: "absolute",
-            inset: 0,
+            top: 0,
+            left: 0,
             width: "100%",
             height: "100%",
             objectFit: "cover",
@@ -61,15 +62,28 @@ export function renderShareCard(data: InvitationShareData) {
         <div
           style={{
             position: "absolute",
-            inset: 0,
-            background,
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: background,
             opacity: overlayOpacity,
             display: "flex",
           }}
         />
       ) : null}
       {cardStyle.styleId !== "minimal" ? (
-        <div style={{ position: "absolute", inset: 0, display: "flex", pointerEvents: "none" }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            pointerEvents: "none",
+          }}
+        >
           <div
             style={{
               position: "absolute",
