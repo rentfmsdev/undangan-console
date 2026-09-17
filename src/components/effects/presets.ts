@@ -32,12 +32,12 @@ export const TOUCH_PARTICLE_PRESETS: Record<TouchParticlePreset, Required<Omit<T
     symbols: ["✦", "✧", "✺"],
   },
   leaves: {
-    particlesPerBurst: 2,
+    particlesPerBurst: 3,
     maxParticles: 48,
     durationMs: 1800,
     fadeDelayMs: 600,
     minVerticalDistance: 20,
-    colors: ["#365a45", "#7f9f77", "#c59b58"],
+    colors: ["#235f4d", "#5f8977", "#c3a66a"],
     symbols: [""],
   },
   editorial: {

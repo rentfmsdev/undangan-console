@@ -21,7 +21,8 @@ function isInteractiveTarget(target: EventTarget | null) {
 
 export function useTouchParticleTrail({ rootRef, layerRef, config, enabled = true }: Options) {
   const presetConfig = resolveTouchParticleConfig(config);
-  const { preset, maxParticles, durationMs, colors, symbols, disabled } = presetConfig;
+  const { preset, maxParticles, durationMs, colors, symbols, disabled, particlesPerBurst } = presetConfig;
+  const burstCount = Math.max(1, particlesPerBurst ?? 3);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -46,30 +47,39 @@ export function useTouchParticleTrail({ rootRef, layerRef, config, enabled = tru
       const originY = clientY - rect.top;
 
       // Ensure coordinate is inside or near the layer bounds
-      if (originX < -30 || originX > rect.width + 30 || originY < -30 || originY > rect.height + 30) {
+      if (originX < -40 || originX > rect.width + 40 || originY < -40 || originY > rect.height + 40) {
         return;
       }
 
       removeOldestParticle();
 
       const particle = document.createElement("span");
-      const size = preset === "leaves" ? 11 + Math.random() * 9 : 10 + Math.random() * 12;
+      const size = preset === "leaves" ? 12 + Math.random() * 8 : 10 + Math.random() * 12;
       particle.className = "touch-particle-trail__particle";
       particle.dataset.preset = preset;
+
+      if (preset === "leaves") {
+        // 3 subtle shape variants for organic leaf look
+        particle.dataset.shape = String(Math.floor(Math.random() * 3));
+      }
 
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
       if (symbol) {
         particle.textContent = symbol;
       }
 
+      const chosenColor = colors[Math.floor(Math.random() * colors.length)];
       particle.style.left = `${originX}px`;
       particle.style.top = `${originY}px`;
       particle.style.fontSize = `${size}px`;
-      particle.style.color = colors[Math.floor(Math.random() * colors.length)];
+      particle.style.color = chosenColor;
+      if (preset === "leaves") {
+        particle.style.backgroundColor = chosenColor;
+      }
 
-      const driftX = (Math.random() - 0.5) * 90;
-      const driftY = preset === "leaves" ? 25 + Math.random() * 65 : -40 - Math.random() * 70;
-      const rotation = (Math.random() - 0.5) * 280;
+      const driftX = (Math.random() - 0.5) * 85;
+      const driftY = preset === "leaves" ? 28 + Math.random() * 62 : -40 - Math.random() * 70;
+      const rotation = (Math.random() - 0.5) * 260;
       const scale = 0.75 + Math.random() * 0.55;
       const duration = durationMs ? Math.min(durationMs, 2200) : 1800;
 
@@ -81,7 +91,7 @@ export function useTouchParticleTrail({ rootRef, layerRef, config, enabled = tru
       particle.style.setProperty("--touch-particle-duration", `${duration}ms`);
 
       particle.addEventListener("animationend", () => particle.remove(), { once: true });
-      // Fallback cleanup timer
+      // Fallback cleanup timer for Safari iOS under scroll throttling
       setTimeout(() => particle.remove(), duration + 100);
 
       layer.appendChild(particle);
@@ -91,21 +101,21 @@ export function useTouchParticleTrail({ rootRef, layerRef, config, enabled = tru
       if (document.visibilityState !== "visible") return;
       for (let i = 0; i < count; i++) {
         createParticle(
-          clientX + (count > 1 ? (Math.random() - 0.5) * 16 : 0),
-          clientY + (count > 1 ? (Math.random() - 0.5) * 16 : 0),
+          clientX + (count > 1 ? (Math.random() - 0.5) * 24 : 0),
+          clientY + (count > 1 ? (Math.random() - 0.5) * 24 : 0),
         );
       }
     };
 
-    // --- Touch Events (Mobile Touch & Scroll Trail) ---
+    // --- Touch Events (Mobile Touch & Scroll Trail on iOS & Android) ---
     const handleTouchStart = (event: TouchEvent) => {
       const touch = event.touches[0];
       if (!touch || isInteractiveTarget(event.target)) return;
       isActive = true;
       lastX = touch.clientX;
       lastY = touch.clientY;
-      // Emit initial gentle burst on touch down (tap or start of drag)
-      emitBurst(touch.clientX, touch.clientY, 2);
+      // Emit burst of 3 particles on touch down
+      emitBurst(touch.clientX, touch.clientY, burstCount);
     };
 
     const handleTouchMove = (event: TouchEvent) => {
@@ -113,7 +123,7 @@ export function useTouchParticleTrail({ rootRef, layerRef, config, enabled = tru
       const touch = event.touches[0];
       if (!touch) return;
       const dist = Math.hypot(touch.clientX - lastX, touch.clientY - lastY);
-      // Emit continuously every 26px of finger travel along the scroll
+      // Emit continuous trail every 26px along the finger path
       if (dist >= 26) {
         emitBurst(touch.clientX, touch.clientY, 1);
         lastX = touch.clientX;
@@ -131,7 +141,7 @@ export function useTouchParticleTrail({ rootRef, layerRef, config, enabled = tru
       isActive = true;
       lastX = event.clientX;
       lastY = event.clientY;
-      emitBurst(event.clientX, event.clientY, 2);
+      emitBurst(event.clientX, event.clientY, burstCount);
     };
 
     const handlePointerMove = (event: PointerEvent) => {
@@ -148,29 +158,29 @@ export function useTouchParticleTrail({ rootRef, layerRef, config, enabled = tru
       isActive = false;
     };
 
-    // Listen on root with passive touch listeners so scrolling is never blocked
+    // Listen on root and window with passive listeners for maximum iOS Safari compatibility
     root.addEventListener("touchstart", handleTouchStart, { passive: true });
-    root.addEventListener("touchmove", handleTouchMove, { passive: true });
-    root.addEventListener("touchend", handleTouchEnd, { passive: true });
-    root.addEventListener("touchcancel", handleTouchEnd, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", handleTouchEnd, { passive: true });
 
     root.addEventListener("pointerdown", handlePointerDown, { passive: true });
-    root.addEventListener("pointermove", handlePointerMove, { passive: true });
-    root.addEventListener("pointerup", handlePointerUp, { passive: true });
-    root.addEventListener("pointercancel", handlePointerUp, { passive: true });
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("pointerup", handlePointerUp, { passive: true });
+    window.addEventListener("pointercancel", handlePointerUp, { passive: true });
 
     return () => {
       root.removeEventListener("touchstart", handleTouchStart);
-      root.removeEventListener("touchmove", handleTouchMove);
-      root.removeEventListener("touchend", handleTouchEnd);
-      root.removeEventListener("touchcancel", handleTouchEnd);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchEnd);
 
       root.removeEventListener("pointerdown", handlePointerDown);
-      root.removeEventListener("pointermove", handlePointerMove);
-      root.removeEventListener("pointerup", handlePointerUp);
-      root.removeEventListener("pointercancel", handlePointerUp);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
 
       layer.replaceChildren();
     };
-  }, [colors, disabled, durationMs, enabled, maxParticles, preset, rootRef, symbols]);
+  }, [burstCount, colors, disabled, durationMs, enabled, maxParticles, preset, rootRef, symbols]);
 }

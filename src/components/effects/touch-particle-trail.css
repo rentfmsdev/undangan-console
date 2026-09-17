@@ -1,12 +1,18 @@
 .touch-particle-trail {
   inset: 0;
-  pointer-events: none;
+  pointer-events: none !important;
   position: absolute;
   z-index: 80;
   overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
 }
 
 .touch-particle-trail__particle {
+  -webkit-animation: touch-particle-trail-drift var(--touch-particle-duration, 1800ms) cubic-bezier(.16, .72, .25, 1) forwards;
   animation: touch-particle-trail-drift var(--touch-particle-duration, 1800ms) cubic-bezier(.16, .72, .25, 1) forwards;
   color: currentColor;
   font-family: Georgia, serif;
@@ -16,15 +22,20 @@
   position: absolute;
   text-align: center;
   top: 0;
-  transform: translate(-50%, -50%);
+  -webkit-transform: translate3d(-50%, -50%, 0);
+  transform: translate3d(-50%, -50%, 0);
+  -webkit-transform-origin: center;
   transform-origin: center;
   will-change: opacity, transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   pointer-events: none;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .touch-particle-trail__particle[data-preset="leaves"] {
-  background: currentColor;
+  background-color: currentColor;
   border-radius: 100% 0 100% 0;
   height: calc(var(--touch-particle-size) * .6);
   width: var(--touch-particle-size);
@@ -32,24 +43,58 @@
   display: block;
 }
 
-@keyframes touch-particle-trail-drift {
+.touch-particle-trail__particle[data-preset="leaves"][data-shape="1"] {
+  border-radius: 0 100% 0 100%;
+}
+
+.touch-particle-trail__particle[data-preset="leaves"][data-shape="2"] {
+  border-radius: 65% 0 65% 0;
+  height: calc(var(--touch-particle-size) * .48);
+}
+
+@-webkit-keyframes touch-particle-trail-drift {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) rotate(0deg) scale(.4);
+    -webkit-transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(.4);
+    transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(.4);
   }
   15% {
     opacity: .95;
-    transform: translate(-50%, -50%) rotate(15deg) scale(1);
+    -webkit-transform: translate3d(-50%, -50%, 0) rotate(15deg) scale(1);
+    transform: translate3d(-50%, -50%, 0) rotate(15deg) scale(1);
   }
   65% {
     opacity: .85;
   }
   100% {
     opacity: 0;
-    transform: translate(calc(-50% + var(--touch-particle-drift-x)), calc(-50% + var(--touch-particle-drift-y))) rotate(var(--touch-particle-rotation)) scale(var(--touch-particle-scale));
+    -webkit-transform: translate3d(calc(-50% + var(--touch-particle-drift-x)), calc(-50% + var(--touch-particle-drift-y)), 0) rotate(var(--touch-particle-rotation)) scale(var(--touch-particle-scale));
+    transform: translate3d(calc(-50% + var(--touch-particle-drift-x)), calc(-50% + var(--touch-particle-drift-y)), 0) rotate(var(--touch-particle-rotation)) scale(var(--touch-particle-scale));
+  }
+}
+
+@keyframes touch-particle-trail-drift {
+  0% {
+    opacity: 0;
+    -webkit-transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(.4);
+    transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(.4);
+  }
+  15% {
+    opacity: .95;
+    -webkit-transform: translate3d(-50%, -50%, 0) rotate(15deg) scale(1);
+    transform: translate3d(-50%, -50%, 0) rotate(15deg) scale(1);
+  }
+  65% {
+    opacity: .85;
+  }
+  100% {
+    opacity: 0;
+    -webkit-transform: translate3d(calc(-50% + var(--touch-particle-drift-x)), calc(-50% + var(--touch-particle-drift-y)), 0) rotate(var(--touch-particle-rotation)) scale(var(--touch-particle-scale));
+    transform: translate3d(calc(-50% + var(--touch-particle-drift-x)), calc(-50% + var(--touch-particle-drift-y)), 0) rotate(var(--touch-particle-rotation)) scale(var(--touch-particle-scale));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .touch-particle-trail { display: none; }
 }
+
