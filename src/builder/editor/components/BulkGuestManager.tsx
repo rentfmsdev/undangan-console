@@ -643,12 +643,24 @@ export function BulkGuestManager({
     }
 
     const message = getMessageForGuest(guest.name);
-    let waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-    if (guest.phone) {
-      waUrl = `https://api.whatsapp.com/send?phone=${guest.phone}&text=${encodeURIComponent(
-        message
-      )}`;
+    // Normalize emojis for URL:
+    // 1. Convert spiral calendar (🗓️ / 🗓) to standard tear-off calendar (📅)
+    // 2. Strip variation selector-16 (\uFE0F) which causes Meta redirect / WhatsApp Web to drop characters
+    const normalizedMessage = message
+      .replace(/\uD83D\uDDD3\uFE0F?/g, "📅")
+      .replace(/\uFE0F/g, "");
+
+    let cleanPhone = (guest.phone || "").replace(/\D/g, "");
+    if (cleanPhone.startsWith("0")) {
+      cleanPhone = `62${cleanPhone.slice(1)}`;
+    } else if (cleanPhone.length >= 9 && cleanPhone.startsWith("8")) {
+      cleanPhone = `62${cleanPhone}`;
     }
+
+    const encodedText = encodeURIComponent(normalizedMessage);
+    const waUrl = cleanPhone
+      ? `https://wa.me/${cleanPhone}?text=${encodedText}`
+      : `https://wa.me/?text=${encodedText}`;
 
     // Auto mark as sent
     setGuests((prev) =>

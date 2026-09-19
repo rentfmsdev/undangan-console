@@ -38,7 +38,7 @@ export function buildEventDetailLines(
 
   // Baris Tanggal
   if (date) {
-    lines.push(`🗓️ ${date}`);
+    lines.push(`📅 ${date}`);
   }
 
   // Baris Waktu/Jam
