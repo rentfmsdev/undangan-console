@@ -55,6 +55,14 @@ const WEDDING_ELEGANCE_TOUCH_FLOWERS: TouchParticleConfig = {
   symbols: ["✿", "❀", "❁", "✾"],
 };
 
+function restoreTemplateScrollPosition(scrollRoot: HTMLElement | null, scrollTop: number | null) {
+  if (!scrollRoot || scrollTop === null) return;
+  const previousScrollBehavior = scrollRoot.style.scrollBehavior;
+  scrollRoot.style.scrollBehavior = "auto";
+  scrollRoot.scrollTop = scrollTop;
+  scrollRoot.style.scrollBehavior = previousScrollBehavior;
+}
+
 function formatGuestName(value: string) {
   return value
     .toLocaleLowerCase("id-ID")
@@ -269,9 +277,7 @@ function GallerySection() {
 
   const preserveGalleryScroll = () => {
     const scrollRoot = document.querySelector<HTMLElement>("[data-template-scroll-root]");
-    const scrollTop = galleryScrollTopRef.current;
-    if (!scrollRoot || scrollTop === null) return;
-    scrollRoot.scrollTop = scrollTop;
+    restoreTemplateScrollPosition(scrollRoot, galleryScrollTopRef.current);
   };
 
   const openLightbox = (index: number, trigger: HTMLButtonElement) => {
@@ -360,14 +366,33 @@ function GallerySection() {
 
 function GiftSection() {
   const [copied, setCopied] = useState<number | null>(null);
+  const copyResetTimerRef = useRef<number | null>(null);
 
-  const copyAccount = async (number: string, index: number) => {
+  useEffect(() => () => {
+    if (copyResetTimerRef.current !== null) window.clearTimeout(copyResetTimerRef.current);
+  }, []);
+
+  const copyAccount = async (number: string, index: number, trigger: HTMLButtonElement) => {
+    const scrollRoot = document.querySelector<HTMLElement>("[data-template-scroll-root]");
+    const scrollTop = scrollRoot?.scrollTop ?? null;
+    const preserveScroll = () => restoreTemplateScrollPosition(scrollRoot, scrollTop);
+    trigger.blur();
+
     try {
       await writeClipboardText(number.replace(/\s/g, ""));
       setCopied(index);
-      window.setTimeout(() => setCopied(null), 1600);
+      window.requestAnimationFrame(() => {
+        preserveScroll();
+        window.requestAnimationFrame(preserveScroll);
+      });
+      if (copyResetTimerRef.current !== null) window.clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = window.setTimeout(() => {
+        setCopied(null);
+        window.requestAnimationFrame(preserveScroll);
+      }, 1600);
     } catch {
       setCopied(null);
+      window.requestAnimationFrame(preserveScroll);
     }
   };
 
@@ -384,7 +409,7 @@ function GiftSection() {
               <div className="bank-top"><span>{account.bank}</span><i>♡</i></div>
               <strong>{account.number}</strong>
               <p>{account.holder}</p>
-              <button onClick={() => copyAccount(account.number, index)}>
+              <button type="button" onClick={(event) => copyAccount(account.number, index, event.currentTarget)}>
                 {copied === index ? <Check size={15} /> : <Copy size={15} />}
                 {copied === index ? "Tersalin" : "Salin nomor"}
               </button>
