@@ -106,7 +106,7 @@ import { MusicSelectorField } from "./components/MusicSelectorField";
 import { stockMusicLibrary, getDefaultStockMusic } from "@/config/stock-music";
 import { makeAdminWhatsAppUrl } from "@/config/contact";
 import { PublishModal, type PublishResult } from "./components/PublishModal";
-import { buildInvitationUrl, getAppBaseUrl } from "@/lib/app-url";
+import { buildInvitationUrl, buildSubdomainUrl, getAppBaseUrl } from "@/lib/app-url";
 import { createClientId } from "@/lib/browser-compat";
 import { useAutoSave } from "./hooks/useAutoSave";
 import { AutoSaveStatusBadge } from "./components/AutoSaveStatusBadge";
@@ -1232,10 +1232,9 @@ export function ConsoleWorkspace({
       if (payload.draft.publishMode === "subdomain") setPublishMode("subdomain");
       else if (payload.draft.publishMode === "path") setPublishMode("path");
 
-      const rootDomain = "undangan.co";
       if (nextStatus === "published") {
         if (payload.draft.publishMode === "subdomain" && payload.draft.subdomain) {
-          setPublishUrl(`https://${payload.draft.subdomain}.${rootDomain}`);
+          setPublishUrl(buildSubdomainUrl(payload.draft.subdomain));
         } else if (payload.draft.slug) {
           setPublishUrl(buildInvitationUrl(payload.draft.slug));
         }
