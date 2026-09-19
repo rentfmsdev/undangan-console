@@ -2754,7 +2754,10 @@ img {
   border-radius: 12px 2px 12px 2px;
   background: #c69087;
   opacity: .7;
+  -webkit-animation: petal 8s linear infinite;
   animation: petal 8s linear infinite;
+  will-change: transform;
+  pointer-events: none;
 }
 
 .falling-petals i:nth-child(1) {
@@ -3142,9 +3145,17 @@ img {
   }
 }
 
+@-webkit-keyframes petal {
+  to {
+    -webkit-transform: translate3d(55px, 860px, 0) rotate(560deg);
+    transform: translate3d(55px, 860px, 0) rotate(560deg);
+  }
+}
+
 @keyframes petal {
   to {
-    transform: translate(55px, 860px) rotate(560deg);
+    -webkit-transform: translate3d(55px, 860px, 0) rotate(560deg);
+    transform: translate3d(55px, 860px, 0) rotate(560deg);
   }
 }
 
@@ -3366,7 +3377,7 @@ img {
     scroll-behavior: auto;
   }
 
-  *,
+  *:not(.falling-petals):not(.falling-petals i),
   *::before,
   *::after {
     animation-duration: .01ms !important;

@@ -534,9 +534,20 @@ function applyTopLevelOrder(sections: WeddingPreviewSection[]) {
     const element = getWeddingSectionElement(type, page);
     if (element?.parentElement === page) nodes.set(type, element);
   }
-  for (const section of sections) {
-    const element = nodes.get(section.type);
-    if (element) page.appendChild(element);
+  const targetElements = sections
+    .map((section) => nodes.get(section.type))
+    .filter((element): element is HTMLElement => Boolean(element));
+
+  const currentChildren = Array.from(page.children);
+  const alreadyInOrder =
+    targetElements.length > 0 &&
+    targetElements.length === currentChildren.length &&
+    targetElements.every((el, index) => currentChildren[index] === el);
+
+  if (alreadyInOrder) return;
+
+  for (const element of targetElements) {
+    page.appendChild(element);
   }
 }
 
@@ -626,35 +637,14 @@ export function applyWeddingTemplateState(sections: WeddingPreviewSection[], the
 }
 
 export function watchWeddingTemplateState(sections: WeddingPreviewSection[], themeId: string, settings: WeddingGlobalSettings = {}) {
-  let animationFrame = 0;
-  const scheduleApply = () => {
-    if (animationFrame) window.cancelAnimationFrame(animationFrame);
-    animationFrame = window.requestAnimationFrame(() => {
-      animationFrame = 0;
-      applyWeddingTemplateState(sections, themeId, settings);
-    });
-  };
-
-  const observer = new MutationObserver((mutations) => {
-    const hasDynamicWeddingElement = mutations.some((mutation) => {
-      const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
-      if (target?.closest(".gift-section")) return false;
-      if (target?.closest(".gallery-lightbox, .gift-section, .wishes-section, .opening-screen, [data-template-section]")) return true;
-      return Array.from(mutation.addedNodes).some((node) => node instanceof Element && (node.matches(".gallery-lightbox, .celebration, .empty-wishes, .wish-bubble, .opening-screen, [data-template-section]") || node.querySelector(".gallery-lightbox, .celebration, .empty-wishes, .wish-bubble, .opening-screen, [data-template-section]")));
-    });
-    if (!hasDynamicWeddingElement) return;
-    scheduleApply();
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+  applyWeddingTemplateState(sections, themeId, settings);
 
   const handleCustomNavigate = () => {
-    scheduleApply();
+    applyWeddingTemplateState(sections, themeId, settings);
   };
   window.addEventListener("wedding-preview-navigate", handleCustomNavigate);
 
   return () => {
-    observer.disconnect();
     window.removeEventListener("wedding-preview-navigate", handleCustomNavigate);
-    if (animationFrame) window.cancelAnimationFrame(animationFrame);
   };
 }
