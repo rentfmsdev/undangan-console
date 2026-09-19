@@ -57,7 +57,7 @@ export function DemoTemplateClient({
     const path = typeof window !== "undefined" ? window.location.pathname : `/demo/${template.code}`;
     const url = `${origin}${path}`;
     const message = `Hai! Cek template undangan digital "${template.name}" ini di Undangan Studio:\n${url}`;
-    const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    const waUrl = `https://api.whatsapp.com/send/?text=${encodeURIComponent(message)}`;
     window.open(waUrl, "_blank", "noopener,noreferrer");
   };
 

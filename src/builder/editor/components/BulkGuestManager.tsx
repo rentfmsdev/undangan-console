@@ -658,9 +658,8 @@ export function BulkGuestManager({
     }
 
     const encodedText = encodeURIComponent(normalizedMessage);
-    const waUrl = cleanPhone
-      ? `https://wa.me/${cleanPhone}?text=${encodedText}`
-      : `https://wa.me/?text=${encodedText}`;
+    const phoneParam = cleanPhone ? `phone=${cleanPhone}&` : "";
+    const waUrl = `https://api.whatsapp.com/send/?${phoneParam}text=${encodedText}`;
 
     // Auto mark as sent
     setGuests((prev) =>
