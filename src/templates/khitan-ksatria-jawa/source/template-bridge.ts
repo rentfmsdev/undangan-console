@@ -290,9 +290,24 @@ export function updateKhitanPreview(
         const link = node.querySelector<HTMLAnchorElement>("[data-map-link]");
         if (link) link.href = section.data.mapUrl;
       }
-      if (typeof section.data.calendarUrl === "string") {
-        const calLink = node.querySelector<HTMLAnchorElement>("[data-calendar-link]");
-        if (calLink) calLink.href = section.data.calendarUrl;
+      const rawCalendarUrl = typeof section.data.calendarUrl === "string" ? section.data.calendarUrl : undefined;
+      const calLink = node.querySelector<HTMLAnchorElement>("[data-calendar-link]");
+      if (calLink) {
+        const heroSection = sections.find((s) => s.type === "hero" || s.type === "profile" || s.type === "opening-envelope");
+        const boyName = (heroSection?.data.boyName as string)?.trim() || (heroSection?.data.name as string)?.trim() || (heroSection?.data.title as string)?.trim() || "Raden Mas Arya Pratama";
+        let targetCalUrl = rawCalendarUrl || calLink.href || "https://calendar.google.com/calendar/render?action=TEMPLATE";
+        try {
+          const parsed = new URL(targetCalUrl);
+          parsed.searchParams.set("action", "TEMPLATE");
+          if (!parsed.searchParams.get("text") || /arya|pratama/i.test(parsed.searchParams.get("text") || "") || boyName !== "Raden Mas Arya Pratama") {
+            parsed.searchParams.set("text", `Walimatul Khitan ${boyName}`);
+          }
+          if (!parsed.searchParams.get("details") || /arya|pratama/i.test(parsed.searchParams.get("details") || "") || boyName !== "Raden Mas Arya Pratama") {
+            parsed.searchParams.set("details", `Doa Syukuran Khitan ${boyName}`);
+          }
+          targetCalUrl = parsed.toString();
+        } catch {}
+        calLink.href = targetCalUrl;
       }
     }
 

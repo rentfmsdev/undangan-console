@@ -202,10 +202,13 @@ export default function EternalOrbitSource({ invitationId, verifiedGuestName }: 
     const start = `${match[3]}${String(month).padStart(2, "0")}${match[1].padStart(2, "0")}T${String(hour).padStart(2, "0")}${String(minute).padStart(2, "0")}00`;
     const endHour = (hour + 2) % 24;
     const end = `${match[3]}${String(month).padStart(2, "0")}${match[1].padStart(2, "0")}T${String(endHour).padStart(2, "0")}${String(minute).padStart(2, "0")}00`;
+    const heroTitle = rootRef.current?.querySelector<HTMLElement>("[data-template-section=\"hero\"] [data-field=\"title\"]")?.textContent?.trim() || "";
+    const eventSummary = heroTitle ? `The Wedding of ${heroTitle}` : (value("title") || "Undangan Pernikahan");
+    const safeSlug = heroTitle ? heroTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") : "eternal-orbit";
     const escapeIcs = (text: string) => text.replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n");
-    const calendar = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Undangan Studio//Eternal Orbit//ID", "BEGIN:VEVENT", `UID:${Date.now()}@undangan.studio`, `DTSTART;TZID=Asia/Jakarta:${start}`, `DTEND;TZID=Asia/Jakarta:${end}`, `SUMMARY:${escapeIcs(value("title") || "Undangan Pernikahan")}`, `LOCATION:${escapeIcs(`${value("venue")}, ${value("address")}`)}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+    const calendar = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Undangan Studio//Eternal Orbit//ID", "BEGIN:VEVENT", `UID:${Date.now()}@undangan.studio`, `DTSTART;TZID=Asia/Jakarta:${start}`, `DTEND;TZID=Asia/Jakarta:${end}`, `SUMMARY:${escapeIcs(eventSummary)}`, `LOCATION:${escapeIcs(`${value("venue")}, ${value("address")}`)}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     const url = URL.createObjectURL(new Blob([calendar], { type: "text/calendar;charset=utf-8" }));
-    const link = document.createElement("a"); link.href = url; link.download = "undangan-eternal-orbit.ics"; link.click(); URL.revokeObjectURL(url);
+    const link = document.createElement("a"); link.href = url; link.download = `undangan-${safeSlug}.ics`; link.click(); URL.revokeObjectURL(url);
   };
 
   const submitWish = async (event: FormEvent) => {

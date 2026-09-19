@@ -169,6 +169,12 @@ function CountdownSection({ countdown }: { countdown: Countdown }) {
     [countdown.seconds, "Detik"],
   ];
 
+  const coupleName = typeof document !== "undefined"
+    ? (document.documentElement.dataset.weddingCoupleName || document.querySelector(".hero-content h1")?.textContent?.replace(/\s+/g, " ").trim() || "Ayu & Ardi")
+    : "Ayu & Ardi";
+
+  const calendarHref = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`The Wedding of ${coupleName}`)}&dates=20260926T010000Z/20260926T070000Z&details=${encodeURIComponent(`Undangan Pernikahan ${coupleName}`)}&location=Dusun%20Srimenanti%2C%20Negeri%20Sakti%2C%20Pesawaran%2C%20Lampung`;
+
   return (
     <section className="countdown-section" data-template-section="countdown">
       <div className="countdown-image" aria-hidden="true" />
@@ -186,7 +192,7 @@ function CountdownSection({ countdown }: { countdown: Countdown }) {
         </div>
         <a
           className="light-button"
-          href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=The%20Wedding%20of%20Ayu%20%26%20Ardi&dates=20260926T010000Z/20260926T070000Z&details=Undangan%20Pernikahan%20Ayu%20dan%20Ardi&location=Dusun%20Srimenanti%2C%20Negeri%20Sakti%2C%20Pesawaran%2C%20Lampung"
+          href={calendarHref}
           target="_blank"
           rel="noreferrer"
         >

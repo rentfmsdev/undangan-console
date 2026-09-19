@@ -431,8 +431,9 @@ export default function VerdantVowsSource({
     ].join("\r\n");
     const file = new Blob([calendar], { type: "text/calendar;charset=utf-8" });
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(file);
-    link.download = "undangan-raisa-arga.ics";
+    const heroTitle = document.querySelector<HTMLElement>('[data-template-section="hero"] [data-field="title"]')?.textContent?.trim() ?? "pernikahan";
+    const safeSlug = heroTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    link.download = `undangan-${safeSlug || "pernikahan"}.ics`;
     link.click();
     URL.revokeObjectURL(link.href);
   };

@@ -706,6 +706,7 @@ export function AqiqahLittleBloomSource() {
             </a>
             <a
               href={googleCalUrl}
+              data-calendar-link
               target="_blank"
               rel="noreferrer"
               className="aqiqah-btn-cal"

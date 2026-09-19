@@ -800,6 +800,7 @@ export default function BirthdayCelestialSource({ invitationId, verifiedGuestNam
           <a
             className="birthday-event-btn birthday-calendar-btn"
             href={CALENDAR_URL}
+            data-calendar-link
             target="_blank"
             rel="noreferrer"
             aria-label="Tambah acara ke Google Calendar"

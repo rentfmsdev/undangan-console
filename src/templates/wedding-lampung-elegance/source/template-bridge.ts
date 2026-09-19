@@ -376,6 +376,51 @@ export function resolveWeddingCoupleName(sections: WeddingPreviewSection[]): str
   return primaryCoupleName || rawLightboxTitle || "Ayu & Ardi";
 }
 
+export function resolveDynamicCalendarUrl(
+  rawUrl: string | undefined,
+  coupleName: string,
+  targetDate?: string,
+  location?: string
+): string {
+  const couple = (coupleName || "Ayu & Ardi").trim();
+  const eventTitle = `The Wedding of ${couple}`;
+  const details = `Undangan Pernikahan ${couple}`;
+
+  try {
+    const fallbackBase = "https://calendar.google.com/calendar/render?action=TEMPLATE&dates=20260926T010000Z/20260926T070000Z";
+    const urlString = rawUrl && rawUrl.includes("calendar.google.com") ? rawUrl.trim() : fallbackBase;
+    const parsed = new URL(urlString.startsWith("http") ? urlString : `https://${urlString}`);
+    parsed.searchParams.set("action", "TEMPLATE");
+
+    const currentText = parsed.searchParams.get("text") || "";
+    if (!currentText || /ayu|ardi/i.test(currentText) || (couple !== "Ayu & Ardi")) {
+      parsed.searchParams.set("text", eventTitle);
+    }
+
+    const currentDetails = parsed.searchParams.get("details") || "";
+    if (!currentDetails || /ayu|ardi/i.test(currentDetails) || (couple !== "Ayu & Ardi")) {
+      parsed.searchParams.set("details", details);
+    }
+
+    if (targetDate) {
+      const d = new Date(targetDate);
+      if (!isNaN(d.getTime())) {
+        const start = d.toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+        const end = new Date(d.getTime() + 4 * 3600 * 1000).toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+        parsed.searchParams.set("dates", `${start}/${end}`);
+      }
+    }
+
+    if (location && (!parsed.searchParams.get("location") || /srimenanti|pesawaran/i.test(parsed.searchParams.get("location") || ""))) {
+      parsed.searchParams.set("location", location);
+    }
+
+    return parsed.toString();
+  } catch {
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=20260926T010000Z/20260926T070000Z&details=${encodeURIComponent(details)}`;
+  }
+}
+
 function applySectionText(section: WeddingPreviewSection, element: HTMLElement, coupleName?: string) {
   const { title, subtitle, imageUrl } = section.data;
   const field = (key: string) => typeof section.data[key] === "string" ? section.data[key] as string : undefined;
@@ -423,13 +468,20 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement, 
       applyEditableImage(element, ".welcome-portrait img", imageUrl);
       break;
     }
-    case "countdown":
+    case "countdown": {
       setText(element.querySelector(".countdown-content h2"), title);
       setText(element.querySelector(".countdown-content > p"), subtitle);
       setTextKeepingChildren(element.querySelector(".light-button"), field("buttonLabel"));
-      setLinkHref(element.querySelector<HTMLAnchorElement>(".light-button"), field("calendarUrl"));
+      const dynamicUrl = resolveDynamicCalendarUrl(
+        field("calendarUrl"),
+        coupleName || "Ayu & Ardi",
+        typeof section.data.targetDate === "string" ? section.data.targetDate : undefined,
+        undefined
+      );
+      setLinkHref(element.querySelector<HTMLAnchorElement>(".light-button"), dynamicUrl);
       applyCountdown(section, element);
       break;
+    }
     case "event":
       setText(element.querySelector(".section-heading > span"), field("eyebrow"));
       setText(element.querySelector(".section-heading h2"), title);

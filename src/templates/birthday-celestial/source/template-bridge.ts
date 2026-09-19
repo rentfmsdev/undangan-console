@@ -248,8 +248,17 @@ export function applyBirthdayTemplateState(sections: BirthdayPreviewSection[], t
       }
     }
 
-    if (section.type === "event" && typeof section.data.mapUrl === "string") {
-      node.querySelector<HTMLAnchorElement>("[data-map-link]")?.setAttribute("href", section.data.mapUrl);
+    if (section.type === "event") {
+      if (typeof section.data.mapUrl === "string") {
+        node.querySelector<HTMLAnchorElement>("[data-map-link]")?.setAttribute("href", section.data.mapUrl);
+      }
+      const calLink = node.querySelector<HTMLAnchorElement>(".birthday-calendar-btn, [data-calendar-link]");
+      if (calLink) {
+        const heroSection = sections.find((s) => s.type === "hero" || s.type === "opening-envelope");
+        const rawTitle = (heroSection?.data.title as string) || "";
+        const personName = rawTitle.replace(/^happy birthday,?\s*/i, "").replace(/turns \d+/i, "").trim() || "Naya";
+        calLink.href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Birthday Party ${personName}`)}&dates=20261018T090000Z/20261018T140000Z&details=${encodeURIComponent(`Mari rayakan hari istimewa ulang tahun bersama ${personName}!`)}&location=Sky+Garden,+Bandar+Lampung`;
+      }
     }
 
     // Text style capability

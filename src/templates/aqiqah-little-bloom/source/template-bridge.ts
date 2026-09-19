@@ -282,11 +282,19 @@ export function applyAqiqahTemplateState(
       }
     }
 
-    // Handle Google Maps
-    if (section.type === "event" && typeof section.data?.mapUrl === "string") {
-      const mapLink = node.querySelector<HTMLAnchorElement>("[data-map-link]");
-      if (mapLink) {
-        mapLink.href = section.data.mapUrl || "https://maps.google.com";
+    // Handle Google Maps & Calendar
+    if (section.type === "event") {
+      if (typeof section.data?.mapUrl === "string") {
+        const mapLink = node.querySelector<HTMLAnchorElement>("[data-map-link]");
+        if (mapLink) {
+          mapLink.href = section.data.mapUrl || "https://maps.google.com";
+        }
+      }
+      const calLink = node.querySelector<HTMLAnchorElement>(".aqiqah-btn-cal, [data-calendar-link]");
+      if (calLink) {
+        const heroSection = sections.find((s) => s.type === "hero" || s.type === "opening-envelope" || s.type === "profile");
+        const babyName = (heroSection?.data?.babyName as string)?.trim() || (heroSection?.data?.title as string)?.trim() || "Muhammad Rayyan Al-Fatih";
+        calLink.href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Tasyakuran Walimatul Aqiqah ${babyName}`)}&dates=20261220T020000Z/20261220T050000Z&details=${encodeURIComponent(`Walimatul Aqiqah dan Doa Bersama untuk ${babyName}`)}&location=Kemang,+Jakarta+Selatan`;
       }
     }
 

@@ -189,10 +189,12 @@ function AvantVowsSource({ invitationId, verifiedGuestName }: Props) {
     const time = field("akadTime").match(/(\d{1,2})[.:](\d{2})/);
     const hour = Number(time?.[1] ?? 8); const minute = Number(time?.[2] ?? 0);
     const stamp = `${date[3]}${String(month).padStart(2, "0")}${date[1].padStart(2, "0")}`;
-    const escape = (value: string) => value.replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n");
-    const content = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", `UID:${Date.now()}@undangan.studio`, `DTSTART;TZID=Asia/Jakarta:${stamp}T${String(hour).padStart(2, "0")}${String(minute).padStart(2, "0")}00`, `DTEND;TZID=Asia/Jakarta:${stamp}T${String(Math.min(hour + 2, 23)).padStart(2, "0")}${String(minute).padStart(2, "0")}00`, `SUMMARY:${escape(field("title"))}`, `LOCATION:${escape(`${field("venue")}, ${field("address")}`)}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+    const heroTitle = rootRef.current?.querySelector<HTMLElement>("[data-template-section=hero] [data-field='title']")?.textContent?.trim() || "";
+    const eventSummary = heroTitle ? `The Wedding of ${heroTitle}` : (field("title") || "Undangan Pernikahan");
+    const safeSlug = heroTitle ? heroTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") : "avant-vows";
+    const content = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", `UID:${Date.now()}@undangan.studio`, `DTSTART;TZID=Asia/Jakarta:${stamp}T${String(hour).padStart(2, "0")}${String(minute).padStart(2, "0")}00`, `DTEND;TZID=Asia/Jakarta:${stamp}T${String(Math.min(hour + 2, 23)).padStart(2, "0")}${String(minute).padStart(2, "0")}00`, `SUMMARY:${escape(eventSummary)}`, `LOCATION:${escape(`${field("venue")}, ${field("address")}`)}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     const url = URL.createObjectURL(new Blob([content], { type: "text/calendar;charset=utf-8" }));
-    const link = document.createElement("a"); link.href = url; link.download = "avant-vows.ics"; link.click(); URL.revokeObjectURL(url);
+    const link = document.createElement("a"); link.href = url; link.download = `undangan-${safeSlug}.ics`; link.click(); URL.revokeObjectURL(url);
     setEventFeedback("Kalender berhasil disiapkan.");
     window.setTimeout(() => setEventFeedback(""), 2200);
   };

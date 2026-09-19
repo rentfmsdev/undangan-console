@@ -298,9 +298,24 @@ export function updateWisudaPreview(
         const mapLink = node.querySelector<HTMLAnchorElement>("[data-reception-map-link], [data-map-link]");
         if (mapLink) mapLink.href = section.data.mapUrl;
       }
-      if (typeof section.data.calendarUrl === "string") {
-        const calLink = node.querySelector<HTMLAnchorElement>("[data-calendar-link]");
-        if (calLink) calLink.href = section.data.calendarUrl;
+      const rawCalendarUrl = typeof section.data.calendarUrl === "string" ? section.data.calendarUrl : undefined;
+      const calLink = node.querySelector<HTMLAnchorElement>("[data-calendar-link]");
+      if (calLink) {
+        const heroSection = sections.find((s) => s.type === "hero" || s.type === "opening-envelope");
+        const graduateName = (heroSection?.data.graduateName as string)?.trim() || (heroSection?.data.title as string)?.trim() || "Anindya Putri Rahayu";
+        let targetCalUrl = rawCalendarUrl || calLink.href || "https://calendar.google.com/calendar/render?action=TEMPLATE";
+        try {
+          const parsed = new URL(targetCalUrl);
+          parsed.searchParams.set("action", "TEMPLATE");
+          if (!parsed.searchParams.get("text") || /anindya/i.test(parsed.searchParams.get("text") || "") || graduateName !== "Anindya Putri Rahayu") {
+            parsed.searchParams.set("text", `Upacara Wisuda ${graduateName}`);
+          }
+          if (!parsed.searchParams.get("details") || /anindya/i.test(parsed.searchParams.get("details") || "") || graduateName !== "Anindya Putri Rahayu") {
+            parsed.searchParams.set("details", `Upacara Wisuda dan Kelulusan ${graduateName}`);
+          }
+          targetCalUrl = parsed.toString();
+        } catch {}
+        calLink.href = targetCalUrl;
       }
     }
 
