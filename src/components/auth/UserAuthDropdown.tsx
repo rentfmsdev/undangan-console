@@ -196,13 +196,11 @@ export function UserAuthDropdown({
 
           <div className="space-y-0.5">
             {/* Undangan Saya */}
-            <button
-              type="button"
+            <Link
+              href="/undangan-saya"
               onClick={() => {
                 setIsOpen(false);
-                if (onMyInvitationsClick) {
-                  onMyInvitationsClick();
-                }
+                onMyInvitationsClick?.();
               }}
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12px] font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition group"
               style={{ fontSize: "12px", fontWeight: 600 }}
@@ -216,7 +214,7 @@ export function UserAuthDropdown({
                   </span>
                 )}
               </span>
-            </button>
+            </Link>
 
             {/* Undang Kolaborator */}
             {onInviteCollaboratorClick && (

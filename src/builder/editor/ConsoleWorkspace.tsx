@@ -101,7 +101,6 @@ import {
   AssetLibraryModal,
   type UserAsset,
 } from "./components/AssetLibraryModal";
-import { MyInvitationsModal } from "@/components/invitations/MyInvitationsModal";
 import { MusicSelectorField } from "./components/MusicSelectorField";
 import { stockMusicLibrary, getDefaultStockMusic } from "@/config/stock-music";
 import { makeAdminWhatsAppUrl } from "@/config/contact";
@@ -582,7 +581,6 @@ export function ConsoleWorkspace({
     "Masuk dengan Google untuk menyimpan perubahan dan mengelola undangan Anda.",
   );
   const [assetTarget, setAssetTarget] = useState<AssetTarget | null>(null);
-  const [isMyInvitationsOpen, setIsMyInvitationsOpen] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [wishRecords, setWishRecords] = useState<WishRecord[]>([]);
@@ -2651,9 +2649,6 @@ export function ConsoleWorkspace({
               onLogout={() => {
                 setCurrentUser(null);
               }}
-              onMyInvitationsClick={() => {
-                setIsMyInvitationsOpen(true);
-              }}
               onInviteCollaboratorClick={() => {
                 if (!currentUser) {
                   requestLogin(
@@ -4071,7 +4066,6 @@ export function ConsoleWorkspace({
       />
       <GoogleLoginModal open={loginModalOpen} onClose={() => setLoginModalOpen(false)} returnTo={draftId ? `/editor/${template.code}/${draftId}` : `/editor/${template.code}`} description={loginReason} />
       <VersionHistoryModal open={isVersionHistoryOpen} draftId={draftId} disabled={presence.connectionStatus !== "connected"} onClose={() => setIsVersionHistoryOpen(false)} onRestore={handleRestoreVersion} />
-      <MyInvitationsModal open={isMyInvitationsOpen} onClose={() => setIsMyInvitationsOpen(false)} />
       <InviteCollaboratorModal
         open={isInviteModalOpen}
         draftId={draftId}
