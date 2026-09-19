@@ -35,6 +35,8 @@ import { wedding } from "./wedding-data";
 import { WEDDING_GALLERY_UPDATE_EVENT } from "./template-bridge";
 import { trackMetaPixel } from "@/lib/meta-pixel";
 import { writeClipboardText } from "@/lib/browser-compat";
+import { TouchParticleTrail } from "@/components/effects/TouchParticleTrail";
+import type { TouchParticleConfig } from "@/components/effects/presets";
 
 type Attendance = "Hadir" | "Belum pasti" | "Berhalangan hadir";
 type StoredWish = { id: string; name: string; attendance: Attendance; message: string; createdAt: string };
@@ -42,6 +44,15 @@ type StoredWish = { id: string; name: string; attendance: Attendance; message: s
 type Countdown = { days: number; hours: number; minutes: number; seconds: number };
 
 const emptyCountdown: Countdown = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+
+const WEDDING_ELEGANCE_TOUCH_FLOWERS: TouchParticleConfig = {
+  preset: "editorial",
+  particlesPerBurst: 10,
+  maxParticles: 40,
+  durationMs: 2200,
+  colors: ["#c9a85f", "#8f3e4a", "#d6b873", "#758876"],
+  symbols: ["✿", "❀", "❁", "✾"],
+};
 
 function formatGuestName(value: string) {
   return value
@@ -265,7 +276,6 @@ function GallerySection() {
 
   useEffect(() => {
     if (activePhotoIndex === null) return;
-    const previousOverflow = document.body.style.overflow;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setActivePhotoIndex(null);
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
@@ -274,10 +284,8 @@ function GallerySection() {
       }
     };
 
-    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKeyDown);
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [activePhotoIndex, galleryPhotos.length]);
@@ -608,6 +616,7 @@ function WeddingInvitation({
   const [countdown, setCountdown] = useState<Countdown>(emptyCountdown);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const musicRef = useRef<HTMLAudioElement>(null);
+  const scrollRootRef = useRef<HTMLDivElement>(null);
   const opened = stage === "opened";
 
   useEffect(() => {
@@ -626,7 +635,7 @@ function WeddingInvitation({
   }, []);
 
   useEffect(() => {
-    const root = document.querySelector<HTMLElement>("[data-template-scroll-root]");
+    const root = scrollRootRef.current;
     if (root) root.dataset.templateHydrated = "true";
     return () => {
       if (root) delete root.dataset.templateHydrated;
@@ -720,7 +729,7 @@ function WeddingInvitation({
         void delayedMusic.play().catch(() => {});
       }
       setStage("opened");
-      const scrollRoot = document.querySelector<HTMLElement>("[data-template-scroll-root]");
+      const scrollRoot = scrollRootRef.current;
       if (scrollRoot) scrollRoot.scrollTop = 0;
     }, 4350);
   };
@@ -760,7 +769,7 @@ function WeddingInvitation({
           {musicPlaying ? <Volume2 size={20} /> : <VolumeX size={20} />}
         </button>
       )}
-      <div className="wedding-scroll-root" data-template-scroll-root data-opened={opened ? "true" : "false"}>
+      <div ref={scrollRootRef} className="wedding-scroll-root" data-template-scroll-root data-opened={opened ? "true" : "false"}>
         <div className="invitation-page" aria-hidden={!opened}>
           <Hero guestName={guestName} />
           <Welcome />
@@ -773,6 +782,7 @@ function WeddingInvitation({
           <ClosingSection />
         </div>
       </div>
+      <TouchParticleTrail rootRef={scrollRootRef} config={WEDDING_ELEGANCE_TOUCH_FLOWERS} enabled={opened} />
       {opened && <FloatingNav />}
     </main>
   );

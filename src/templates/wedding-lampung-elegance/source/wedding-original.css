@@ -1940,6 +1940,8 @@ img {
   place-items: center;
   padding: 28px 22px;
   overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
   background: rgba(35, 9, 14, .91);
   backdrop-filter: blur(10px);
   animation: lightbox-in .35s ease both;
