@@ -33,7 +33,12 @@ import { OpeningEnvelope, type OpeningStage } from "./components/opening-envelop
 import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNavigationRuntime";
 import { WeddingLampungNavigationAdapter } from "../navigation-adapter";
 import { wedding } from "./wedding-data";
-import { WEDDING_GALLERY_UPDATE_EVENT } from "./template-bridge";
+import {
+  getCurrentWeddingGiftData,
+  WEDDING_GALLERY_UPDATE_EVENT,
+  WEDDING_GIFT_UPDATE_EVENT,
+  type WeddingGiftUpdateDetail,
+} from "./template-bridge";
 import { trackMetaPixel } from "@/lib/meta-pixel";
 import { writeClipboardText } from "@/lib/browser-compat";
 import { TouchParticleTrail } from "@/components/effects/TouchParticleTrail";
@@ -366,14 +371,32 @@ function GallerySection() {
 
 function GiftSection() {
   const [copied, setCopied] = useState<number | null>(null);
+  const [giftData, setGiftData] = useState<WeddingGiftUpdateDetail>({
+    accounts: wedding.giftAccounts,
+    buttonLabel: "Salin nomor",
+    copiedLabel: "Tersalin",
+  });
   const copyResetTimerRef = useRef<number | null>(null);
 
-  useEffect(() => () => {
-    if (copyResetTimerRef.current !== null) window.clearTimeout(copyResetTimerRef.current);
+  useEffect(() => {
+    let active = true;
+    const updateGiftData = (event: Event) => {
+      setGiftData((event as CustomEvent<WeddingGiftUpdateDetail>).detail);
+    };
+    window.addEventListener(WEDDING_GIFT_UPDATE_EVENT, updateGiftData);
+    queueMicrotask(() => {
+      const currentGiftData = getCurrentWeddingGiftData();
+      if (active && currentGiftData) setGiftData(currentGiftData);
+    });
+    return () => {
+      active = false;
+      window.removeEventListener(WEDDING_GIFT_UPDATE_EVENT, updateGiftData);
+      if (copyResetTimerRef.current !== null) window.clearTimeout(copyResetTimerRef.current);
+    };
   }, []);
 
   const copyAccount = async (index: number, trigger: HTMLButtonElement) => {
-    const number = trigger.closest<HTMLElement>(".bank-card")?.querySelector<HTMLElement>("strong")?.textContent?.trim() ?? "";
+    const number = giftData.accounts[index]?.number.trim() ?? "";
     if (!number) return;
     const scrollRoot = document.querySelector<HTMLElement>("[data-template-scroll-root]");
     const scrollTop = scrollRoot?.scrollTop ?? null;
@@ -406,14 +429,18 @@ function GiftSection() {
           Doa restu Anda merupakan hadiah terindah bagi kami. Namun bila ingin memberikan tanda kasih, dapat melalui rekening berikut.
         </p>
         <div className="bank-list">
-          {wedding.giftAccounts.map((account, index) => (
-            <article className="bank-card reveal" key={account.bank}>
+          {giftData.accounts.map((account, index) => (
+            <article className="bank-card reveal" key={index}>
               <div className="bank-top"><span>{account.bank}</span><i>♡</i></div>
               <strong>{account.number}</strong>
               <p>{account.holder}</p>
-              <button type="button" onClick={(event) => copyAccount(index, event.currentTarget)}>
+              <button
+                type="button"
+                onPointerDown={(event) => event.preventDefault()}
+                onClick={(event) => copyAccount(index, event.currentTarget)}
+              >
                 {copied === index ? <Check size={15} /> : <Copy size={15} />}
-                {copied === index ? "Tersalin" : "Salin nomor"}
+                {copied === index ? giftData.copiedLabel : giftData.buttonLabel}
               </button>
             </article>
           ))}

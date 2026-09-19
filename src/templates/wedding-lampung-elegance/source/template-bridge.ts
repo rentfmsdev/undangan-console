@@ -25,6 +25,19 @@ export type WeddingGlobalSettings = {
 };
 
 export const WEDDING_GALLERY_UPDATE_EVENT = "wedding:gallery-update";
+export const WEDDING_GIFT_UPDATE_EVENT = "wedding:gift-update";
+
+export type WeddingGiftUpdateDetail = {
+  accounts: Array<{ bank: string; number: string; holder: string }>;
+  buttonLabel: string;
+  copiedLabel: string;
+};
+
+let currentWeddingGiftData: WeddingGiftUpdateDetail | null = null;
+
+export function getCurrentWeddingGiftData() {
+  return currentWeddingGiftData;
+}
 
 export const weddingSectionSelectors = {
   "opening-envelope": ".opening-screen",
@@ -446,14 +459,18 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement) 
       setText(element.querySelector(".section-heading > span"), field("eyebrow"));
       setText(element.querySelector(".section-heading h2"), title);
       setText(element.querySelector(".gift-copy"), subtitle);
-      element.querySelectorAll<HTMLElement>(".bank-card").forEach((card, index) => {
-        const number = index + 1;
-        setText(card.querySelector(".bank-top span"), field(`bank${number}`));
-        setText(card.querySelector(":scope > strong"), field(`account${number}`));
-        setText(card.querySelector(":scope > p"), field(`holder${number}`));
-        const isCopied = Boolean(card.querySelector("button .lucide-check"));
-        setTextKeepingChildren(card.querySelector("button"), isCopied ? field("copiedLabel") : field("buttonLabel"));
-      });
+      currentWeddingGiftData = {
+        accounts: [1, 2].map((number) => ({
+          bank: field(`bank${number}`) ?? "",
+          number: field(`account${number}`) ?? "",
+          holder: field(`holder${number}`) ?? "",
+        })),
+        buttonLabel: field("buttonLabel") ?? "Salin nomor",
+        copiedLabel: field("copiedLabel") ?? "Tersalin",
+      };
+      window.dispatchEvent(new CustomEvent<WeddingGiftUpdateDetail>(WEDDING_GIFT_UPDATE_EVENT, {
+        detail: currentWeddingGiftData,
+      }));
       break;
     case "wishes": {
       setText(element.querySelector(".section-heading > span"), field("eyebrow"));
@@ -619,6 +636,7 @@ export function watchWeddingTemplateState(sections: WeddingPreviewSection[], the
   const observer = new MutationObserver((mutations) => {
     const hasDynamicWeddingElement = mutations.some((mutation) => {
       const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
+      if (target?.closest(".gift-section")) return false;
       if (target?.closest(".gallery-lightbox, .gift-section, .wishes-section, .opening-screen, [data-template-section]")) return true;
       return Array.from(mutation.addedNodes).some((node) => node instanceof Element && (node.matches(".gallery-lightbox, .celebration, .empty-wishes, .wish-bubble, .opening-screen, [data-template-section]") || node.querySelector(".gallery-lightbox, .celebration, .empty-wishes, .wish-bubble, .opening-screen, [data-template-section]")));
     });
