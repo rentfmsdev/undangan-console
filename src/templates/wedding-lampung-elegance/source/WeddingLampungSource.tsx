@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { WeddingField } from "./components/ui/wedding-field";
 import { OpeningEnvelope, type OpeningStage } from "./components/opening-envelope";
 import { TemplateNavigationRuntime } from "@/templates/navigation/TemplateNavigationRuntime";
@@ -313,7 +314,7 @@ function GallerySection() {
         <p className="gallery-signature reveal">Two cultures, one beautiful story.</p>
       </section>
 
-      {activePhoto && activePhotoIndex !== null && (
+      {activePhoto && activePhotoIndex !== null && createPortal(
         <div className="gallery-lightbox" role="dialog" aria-modal="true" aria-label={`Preview foto ${activePhotoIndex + 1}`} onMouseDown={(event) => { if (event.target === event.currentTarget) closeLightbox(); }}>
           <div className="gallery-lightbox-glow" aria-hidden="true" />
           <div className="gallery-lightbox-panel">
@@ -325,7 +326,8 @@ function GallerySection() {
             <button className="lightbox-nav lightbox-next" type="button" onClick={() => movePhoto(1)} aria-label="Foto berikutnya"><ChevronRight size={25} /></button>
             <div className="lightbox-caption"><span>Ayu <i>&</i> Ardi</span><b>{String(activePhotoIndex + 1).padStart(2, "0")} <i>/</i> {String(galleryPhotos.length).padStart(2, "0")}</b></div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
