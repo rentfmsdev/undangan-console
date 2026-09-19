@@ -355,7 +355,28 @@ function applyCountdown(section: WeddingPreviewSection, element: HTMLElement) {
   });
 }
 
-function applySectionText(section: WeddingPreviewSection, element: HTMLElement) {
+export function resolveWeddingCoupleName(sections: WeddingPreviewSection[]): string {
+  const heroTitle = sections.find((s) => s.type === "hero" && typeof s.data.title === "string" && s.data.title.trim())?.data.title as string | undefined;
+  const openingTitle = sections.find((s) => s.type === "opening-envelope" && typeof s.data.title === "string" && s.data.title.trim())?.data.title as string | undefined;
+  const closingSubtitle = sections.find((s) => s.type === "closing" && typeof s.data.subtitle === "string" && s.data.subtitle.trim())?.data.subtitle as string | undefined;
+  const coupleSection = sections.find((s) => s.type === "couple");
+  const coupleNames = (coupleSection?.data.brideName && coupleSection?.data.groomName)
+    ? `${coupleSection.data.brideName} & ${coupleSection.data.groomName}`
+    : undefined;
+
+  const gallerySection = sections.find((s) => s.type === "gallery");
+  const rawLightboxTitle = typeof gallerySection?.data.lightboxTitle === "string" ? gallerySection.data.lightboxTitle.trim() : undefined;
+
+  const primaryCoupleName = heroTitle?.trim() || openingTitle?.trim() || closingSubtitle?.trim() || coupleNames?.trim();
+
+  if (rawLightboxTitle && rawLightboxTitle !== "Ayu & Ardi") {
+    return rawLightboxTitle;
+  }
+
+  return primaryCoupleName || rawLightboxTitle || "Ayu & Ardi";
+}
+
+function applySectionText(section: WeddingPreviewSection, element: HTMLElement, coupleName?: string) {
   const { title, subtitle, imageUrl } = section.data;
   const field = (key: string) => typeof section.data[key] === "string" ? section.data[key] as string : undefined;
 
@@ -442,16 +463,33 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement) 
       setText(element.querySelector("blockquote cite"), subtitle);
       applyEditableImage(element, ":scope > img", imageUrl);
       break;
-    case "gallery":
+    case "gallery": {
       setText(element.querySelector(".section-heading > span"), field("eyebrow"));
       setText(element.querySelector(".section-heading h2"), title);
       setText(element.querySelector(".gallery-signature"), subtitle);
       element.querySelectorAll(".gallery-item em").forEach((target) => setText(target, field("viewLabel")));
-      setNames(document.querySelector<HTMLElement>(".gallery-lightbox .lightbox-caption span"), field("lightboxTitle"), "i");
+
+      const rawLightboxTitle = field("lightboxTitle")?.trim();
+      const effectiveLightboxTitle =
+        (rawLightboxTitle && rawLightboxTitle !== "Ayu & Ardi" ? rawLightboxTitle : undefined) ||
+        coupleName ||
+        rawLightboxTitle ||
+        "Ayu & Ardi";
+
+      setNames(document.querySelector<HTMLElement>(".gallery-lightbox .lightbox-caption span"), effectiveLightboxTitle, "i");
       applyImage(element, ".gallery-item img", imageUrl);
-      if (Array.isArray(section.data.imageUrls)) {
-        const photos = section.data.imageUrls.filter((url): url is string => typeof url === "string" && Boolean(url));
-        window.dispatchEvent(new CustomEvent(WEDDING_GALLERY_UPDATE_EVENT, { detail: { photos } }));
+
+      const photos = Array.isArray(section.data.imageUrls)
+        ? section.data.imageUrls.filter((url): url is string => typeof url === "string" && Boolean(url))
+        : undefined;
+
+      window.dispatchEvent(
+        new CustomEvent(WEDDING_GALLERY_UPDATE_EVENT, {
+          detail: { photos, coupleName: effectiveLightboxTitle },
+        })
+      );
+
+      if (photos) {
         element.querySelectorAll<HTMLImageElement>(".gallery-item img").forEach((image, index) => {
           const url = photos[index];
           if (url) { image.src = url; image.srcset = ""; }
@@ -462,6 +500,7 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement) 
         if (lightboxImage && lightboxUrl) { lightboxImage.src = lightboxUrl; lightboxImage.srcset = ""; }
       }
       break;
+    }
     case "gift":
       setText(element.querySelector(".section-heading > span"), field("eyebrow"));
       setText(element.querySelector(".section-heading h2"), title);
@@ -626,11 +665,16 @@ export function applyWeddingTemplateState(sections: WeddingPreviewSection[], the
     (window as unknown as { __weddingMusicVolume?: number }).__weddingMusicVolume = vol;
   }
 
+  const coupleName = resolveWeddingCoupleName(sections);
+  if (typeof document !== "undefined") {
+    document.documentElement.dataset.weddingCoupleName = coupleName;
+  }
+
   for (const section of sections) {
     const element = getWeddingSectionElement(section.type);
     if (!element) continue;
     element.style.display = section.enabled ? "" : "none";
-    applySectionText(section, element);
+    applySectionText(section, element, coupleName);
     applySectionBackground(section, element);
     applyFieldFonts(section, element);
   }

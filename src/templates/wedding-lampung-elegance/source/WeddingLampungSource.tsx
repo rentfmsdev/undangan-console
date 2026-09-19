@@ -265,13 +265,26 @@ function QuoteSection() {
 
 function GallerySection() {
   const [galleryPhotos, setGalleryPhotos] = useState<string[]>(wedding.galleryPhotos);
+  const [coupleName, setCoupleName] = useState<string>(() => {
+    if (typeof document !== "undefined") {
+      const stored = document.documentElement.dataset.weddingCoupleName;
+      if (stored) return stored;
+      const hero = document.querySelector(".hero-content h1")?.textContent?.replace(/\s+/g, " ").trim();
+      if (hero) return hero;
+    }
+    return "Ayu & Ardi";
+  });
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
   const galleryScrollTopRef = useRef<number | null>(null);
   const activePhoto = activePhotoIndex === null ? null : galleryPhotos[activePhotoIndex];
 
   useEffect(() => {
     const updateGallery = (event: Event) => {
-      const photos = (event as CustomEvent<{ photos?: unknown }>).detail?.photos;
+      const detail = (event as CustomEvent<{ photos?: unknown; coupleName?: string }>).detail;
+      if (typeof detail?.coupleName === "string" && detail.coupleName.trim()) {
+        setCoupleName(detail.coupleName.trim());
+      }
+      const photos = detail?.photos;
       if (!Array.isArray(photos)) return;
       const nextPhotos = photos.filter((photo): photo is string => typeof photo === "string" && Boolean(photo));
       setGalleryPhotos((current) => current.length === nextPhotos.length && current.every((photo, index) => photo === nextPhotos[index]) ? current : nextPhotos);
@@ -289,6 +302,14 @@ function GallerySection() {
   const openLightbox = (index: number, trigger: HTMLButtonElement) => {
     const scrollRoot = document.querySelector<HTMLElement>("[data-template-scroll-root]");
     galleryScrollTopRef.current = scrollRoot?.scrollTop ?? null;
+    const resolved =
+      document.documentElement.dataset.weddingCoupleName ||
+      document.querySelector(".hero-content h1")?.textContent?.replace(/\s+/g, " ").trim() ||
+      document.querySelector(".opening-title h1")?.textContent?.replace(/\s+/g, " ").trim() ||
+      document.querySelector(".closing-content h2")?.textContent?.replace(/\s+/g, " ").trim();
+    if (resolved) {
+      setCoupleName(resolved);
+    }
     trigger.blur();
     setActivePhotoIndex(index);
     window.requestAnimationFrame(preserveGalleryScroll);
@@ -339,9 +360,9 @@ function GallerySection() {
               key={`${photo}-${index}`}
               type="button"
               onClick={(event) => openLightbox(index, event.currentTarget)}
-              aria-label={`Lihat foto prewedding Ayu dan Ardi ${index + 1}`}
+              aria-label={`Lihat foto prewedding ${coupleName} ${index + 1}`}
             >
-              <Image src={photo} alt={`Foto prewedding Ayu dan Ardi ${index + 1}`} fill sizes="(max-width: 720px) 50vw, 300px" />
+              <Image src={photo} alt={`Foto prewedding ${coupleName} ${index + 1}`} fill sizes="(max-width: 720px) 50vw, 300px" />
               <span>0{index + 1}</span>
               <em>lihat foto</em>
             </button>
@@ -358,10 +379,24 @@ function GallerySection() {
             <button className="lightbox-close" type="button" onClick={closeLightbox} aria-label="Tutup preview foto"><X size={20} /></button>
             <button className="lightbox-nav lightbox-prev" type="button" onClick={() => movePhoto(-1)} aria-label="Foto sebelumnya"><ChevronLeft size={25} /></button>
             <div className="lightbox-photo-frame">
-              <Image src={activePhoto} alt={`Preview foto prewedding Ayu dan Ardi ${activePhotoIndex + 1}`} fill sizes="(max-width: 720px) 94vw, 620px" priority />
+              <Image src={activePhoto} alt={`Preview foto prewedding ${coupleName} ${activePhotoIndex + 1}`} fill sizes="(max-width: 720px) 94vw, 620px" priority />
             </div>
             <button className="lightbox-nav lightbox-next" type="button" onClick={() => movePhoto(1)} aria-label="Foto berikutnya"><ChevronRight size={25} /></button>
-            <div className="lightbox-caption"><span>Ayu <i>&</i> Ardi</span><b>{String(activePhotoIndex + 1).padStart(2, "0")} <i>/</i> {String(galleryPhotos.length).padStart(2, "0")}</b></div>
+            <div className="lightbox-caption">
+              <span>
+                {(() => {
+                  const [first, ...rest] = (coupleName || "Ayu & Ardi").split(/\s*&\s*/);
+                  const second = rest.join(" & ");
+                  return (
+                    <>
+                      {first.trim()}
+                      {second && <> <i>&</i> {second.trim()}</>}
+                    </>
+                  );
+                })()}
+              </span>
+              <b>{String(activePhotoIndex + 1).padStart(2, "0")} <i>/</i> {String(galleryPhotos.length).padStart(2, "0")}</b>
+            </div>
           </div>
         </div>,
         document.body,
