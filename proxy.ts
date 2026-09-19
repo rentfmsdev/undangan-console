@@ -54,8 +54,8 @@ export function proxy(request: NextRequest) {
   const segments = pathname.split("/").filter(Boolean);
   const firstSegment = segments[0]?.toLowerCase();
 
-  // Skip rewrite for reserved system routes or static files
-  if (firstSegment && (reservedRootPaths.has(firstSegment) || pathname.includes("."))) {
+  // Skip rewrite for reserved system routes.
+  if (firstSegment && reservedRootPaths.has(firstSegment)) {
     return NextResponse.next();
   }
 
