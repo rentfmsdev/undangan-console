@@ -64,7 +64,15 @@ export function OpeningEnvelope({ guestName, onOpen, stage }: OpeningEnvelopePro
             <strong>{guestName}</strong>
           </div>
           <button
+            className="envelope-open-hit-area"
+            type="button"
+            onClick={onOpen}
+            disabled={isOpening}
+            aria-label="Buka undangan"
+          />
+          <button
             className="wax-seal"
+            type="button"
             onClick={onOpen}
             aria-label="Klik segel untuk membuka undangan"
             disabled={isOpening}

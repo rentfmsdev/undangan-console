@@ -76,7 +76,8 @@ function formatGuestName(value: string) {
 
 function getCountdown(): Countdown {
   const configuredTarget = typeof document === "undefined" ? "" : document.documentElement.dataset.weddingTargetDate;
-  const gap = Math.max(0, new Date(configuredTarget || wedding.dateISO).getTime() - Date.now());
+  const targetDate = configuredTarget === undefined ? wedding.dateISO : configuredTarget;
+  const gap = targetDate ? Math.max(0, new Date(targetDate).getTime() - Date.now()) : 0;
   return {
     days: Math.floor(gap / 86_400_000),
     hours: Math.floor((gap / 3_600_000) % 24),
@@ -254,8 +255,8 @@ function QuoteSection() {
       <Image src={wedding.photos[3]} alt="Ayu dan Ardi dalam busana adat Jawa" fill sizes="(max-width: 720px) 100vw, 620px" />
       <div className="quote-overlay" />
       <blockquote className="reveal">
-        <span>“</span>
-        Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu merasa tenteram di sampingnya.
+        <span className="quote-mark">“</span>
+        <span className="quote-copy">Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu merasa tenteram di sampingnya.</span>
         <cite>QS. Ar-Rum: 21</cite>
       </blockquote>
     </section>
@@ -395,14 +396,12 @@ function GiftSection() {
     };
   }, []);
 
-  const copyAccount = async (index: number, trigger: HTMLButtonElement) => {
+  const copyAccount = async (index: number) => {
     const number = giftData.accounts[index]?.number.trim() ?? "";
     if (!number) return;
     const scrollRoot = document.querySelector<HTMLElement>("[data-template-scroll-root]");
     const scrollTop = scrollRoot?.scrollTop ?? null;
     const preserveScroll = () => restoreTemplateScrollPosition(scrollRoot, scrollTop);
-    trigger.blur();
-
     try {
       await writeClipboardText(number.replace(/\s/g, ""));
       setCopied(index);
@@ -413,7 +412,6 @@ function GiftSection() {
       if (copyResetTimerRef.current !== null) window.clearTimeout(copyResetTimerRef.current);
       copyResetTimerRef.current = window.setTimeout(() => {
         setCopied(null);
-        window.requestAnimationFrame(preserveScroll);
       }, 1600);
     } catch {
       setCopied(null);
@@ -436,8 +434,10 @@ function GiftSection() {
               <p>{account.holder}</p>
               <button
                 type="button"
-                onPointerDown={(event) => event.preventDefault()}
-                onClick={(event) => copyAccount(index, event.currentTarget)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void copyAccount(index);
+                }}
               >
                 {copied === index ? <Check size={15} /> : <Copy size={15} />}
                 {copied === index ? giftData.copiedLabel : giftData.buttonLabel}
@@ -833,7 +833,7 @@ function WeddingInvitation({
     <main className={mainClass}>
       <TemplateNavigationRuntime createAdapter={createWeddingNavigationAdapter} />
       <audio ref={musicRef} loop preload="auto" playsInline>
-        <source src="/assets/audio/a-thousand-years.mp3" type="audio/mpeg" />
+        <source src="/assets/audio/easy-on-me.webm" type="audio/webm" />
       </audio>
       <div style={{ display: opened ? "none" : undefined }} aria-hidden={opened}>
         <OpeningEnvelope guestName={guestName} onOpen={openInvitation} stage={stage} />

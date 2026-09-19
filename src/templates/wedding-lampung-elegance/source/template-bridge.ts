@@ -152,7 +152,7 @@ const fieldFontTargets: Record<string, Record<string, string>> = {
   event: { eyebrow: ".section-heading > span", title: ".section-heading h2", subtitle: ".event-invite", day: ".date-ribbon span:first-child", date: ".date-ribbon strong", monthYear: ".date-ribbon span:last-child", akadTitle: ".event-card:first-child > p", akadTime: ".event-card:first-child h3", akadNote: ".event-card:first-child > span", receptionTitle: ".event-card:last-child > p", receptionTime: ".event-card:last-child h3", receptionNote: ".event-card:last-child > span" },
   map: { title: ":scope > small", subtitle: ":scope > p", buttonLabel: ":scope > a" },
   "unduh-mantu": { kicker: ".unduh-content > small", title: ".unduh-content > p", subtitle: ".unduh-content > h3", address: ".unduh-address span", buttonLabel: ".unduh-content > a" },
-  quote: { title: "blockquote", subtitle: "blockquote cite" },
+  quote: { title: ".quote-copy", subtitle: "blockquote cite" },
   gallery: { eyebrow: ".section-heading > span", title: ".section-heading h2", viewLabel: ".gallery-item em", subtitle: ".gallery-signature", lightboxTitle: ".lightbox-caption span" },
   gift: { eyebrow: ".section-heading > span", title: ".section-heading h2", subtitle: ".gift-copy", bank1: ".bank-card:first-child .bank-top span", account1: ".bank-card:first-child > strong", holder1: ".bank-card:first-child > p", bank2: ".bank-card:last-child .bank-top span", account2: ".bank-card:last-child > strong", holder2: ".bank-card:last-child > p", buttonLabel: ".bank-card button", copiedLabel: ".bank-card button" },
   wishes: { eyebrow: ".section-heading > span", title: ".section-heading h2", formTitle: ".wish-form-heading strong", subtitle: ".wish-form-heading small", nameLabel: "label[for='wish-name']", namePlaceholder: "#wish-name", attendanceLabel: ".wedding-field:has(.attendance-options) .wedding-field-label", presentLabel: ".attendance-options label:nth-child(1) span", unsureLabel: ".attendance-options label:nth-child(2) span", absentLabel: ".attendance-options label:nth-child(3) span", messageLabel: "label[for='wish-message']", messagePlaceholder: "#wish-message", submitLabel: ".wish-submit", savingLabel: ".wish-submit", successLabel: ".wish-form-message", celebrationLabel: ".celebration strong", loadingLabel: ".empty-wishes", emptyLabel: ".empty-wishes" },
@@ -187,7 +187,7 @@ function setTextKeepingChildren(element: Element | null, value?: string) {
 }
 
 function setNames(element: HTMLElement | null, value?: string, accentTag = "span") {
-  if (!element || !value) return;
+  if (!element || value === undefined) return;
   if (element.textContent?.replace(/\s+/g, " ").trim() === value.replace(/\s+/g, " ").trim()) return;
   const [first, ...remaining] = value.split(/\s*&\s*/);
   const second = remaining.join(" & ");
@@ -200,7 +200,7 @@ function setNames(element: HTMLElement | null, value?: string, accentTag = "span
 }
 
 function setHeroMonogram(element: HTMLElement | null, value?: string) {
-  if (!element || !value) return;
+  if (!element || value === undefined) return;
   if (element.textContent?.replace(/\s+/g, " ").trim() === value.replace(/\s+/g, " ").trim()) return;
   const [first, ...remaining] = value.split(/\s*&\s*/);
   const second = remaining.join(" & ");
@@ -214,12 +214,6 @@ function setHeroMonogram(element: HTMLElement | null, value?: string) {
     secondName.textContent = second.trim();
     element.append(ampersand, secondName);
   }
-}
-
-function setQuoteText(element: HTMLElement | null, value?: string) {
-  if (!element || !value) return;
-  const textNode = Array.from(element.childNodes).find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim());
-  if (textNode && textNode.textContent?.trim() !== value) textNode.textContent = `\n        ${value}\n        `;
 }
 
 function applyImage(element: HTMLElement, selector: string, url?: string) {
@@ -239,6 +233,20 @@ function restoreImage(element: HTMLElement, selector: string) {
   if (!image?.dataset.templateOriginalSrc) return;
   image.src = image.dataset.templateOriginalSrc;
   image.srcset = image.dataset.templateOriginalSrcset ?? "";
+}
+
+function setLinkHref(element: HTMLAnchorElement | null, value?: string) {
+  if (!element) return;
+  const href = value?.trim() ?? "";
+  if (href) {
+    element.setAttribute("href", href);
+    element.removeAttribute("aria-disabled");
+    element.removeAttribute("tabindex");
+    return;
+  }
+  element.removeAttribute("href");
+  element.setAttribute("aria-disabled", "true");
+  element.setAttribute("tabindex", "-1");
 }
 
 function applyEditableImage(element: HTMLElement, selector: string, url: unknown) {
@@ -331,10 +339,9 @@ function applyFieldFonts(section: WeddingPreviewSection, element: HTMLElement) {
 
 function applyCountdown(section: WeddingPreviewSection, element: HTMLElement) {
   const targetDate = typeof section.data.targetDate === "string" ? section.data.targetDate : "";
-  if (targetDate) document.documentElement.dataset.weddingTargetDate = targetDate;
-  else delete document.documentElement.dataset.weddingTargetDate;
+  document.documentElement.dataset.weddingTargetDate = targetDate;
 
-  const gap = Math.max(0, new Date(targetDate || "2026-09-26T08:00").getTime() - Date.now());
+  const gap = targetDate ? Math.max(0, new Date(targetDate).getTime() - Date.now()) : 0;
   const values = [
     Math.floor(gap / 86_400_000),
     Math.floor((gap / 3_600_000) % 24),
@@ -399,7 +406,7 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement) 
       setText(element.querySelector(".countdown-content h2"), title);
       setText(element.querySelector(".countdown-content > p"), subtitle);
       setTextKeepingChildren(element.querySelector(".light-button"), field("buttonLabel"));
-      if (field("calendarUrl")) element.querySelector<HTMLAnchorElement>(".light-button")?.setAttribute("href", field("calendarUrl")!);
+      setLinkHref(element.querySelector<HTMLAnchorElement>(".light-button"), field("calendarUrl"));
       applyCountdown(section, element);
       break;
     case "event":
@@ -419,7 +426,7 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement) 
     case "map":
       setText(element.querySelector(":scope > small"), title);
       setText(element.querySelector(":scope > p"), subtitle);
-      if (field("mapUrl")) element.querySelector<HTMLAnchorElement>(":scope > a")?.setAttribute("href", field("mapUrl")!);
+      setLinkHref(element.querySelector<HTMLAnchorElement>(":scope > a"), field("mapUrl"));
       setText(element.querySelector(":scope > a"), field("buttonLabel"));
       break;
     case "unduh-mantu":
@@ -427,11 +434,11 @@ function applySectionText(section: WeddingPreviewSection, element: HTMLElement) 
       setText(element.querySelector(".unduh-content > h3"), subtitle);
       setText(element.querySelector(".unduh-content > small"), field("kicker"));
       setText(element.querySelector(".unduh-address span"), field("address"));
-      if (field("mapUrl")) element.querySelector<HTMLAnchorElement>(".unduh-content > a")?.setAttribute("href", field("mapUrl")!);
+      setLinkHref(element.querySelector<HTMLAnchorElement>(".unduh-content > a"), field("mapUrl"));
       setText(element.querySelector(".unduh-content > a"), field("buttonLabel"));
       break;
     case "quote":
-      setQuoteText(element.querySelector<HTMLElement>("blockquote"), title);
+      setText(element.querySelector(".quote-copy"), title);
       setText(element.querySelector("blockquote cite"), subtitle);
       applyEditableImage(element, ":scope > img", imageUrl);
       break;
@@ -591,12 +598,7 @@ export function applyWeddingTemplateState(sections: WeddingPreviewSection[], the
       audioSource.src = "";
       audio.load();
     } else {
-      const supportsWebm = Boolean(
-        audio.canPlayType('audio/webm; codecs="opus"') || audio.canPlayType("audio/webm"),
-      );
-      const playableUrl = /\.webm(?:$|[?#])/i.test(targetUrl) && !supportsWebm
-        ? "/assets/audio/a-thousand-years.mp3"
-        : targetUrl;
+      const playableUrl = targetUrl;
       if (audioSource.getAttribute("src") !== playableUrl) {
         audioSource.setAttribute("src", playableUrl);
         audioSource.type = /\.mp3(?:$|[?#])/i.test(playableUrl) ? "audio/mpeg" : "audio/webm";
