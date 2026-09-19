@@ -372,7 +372,9 @@ function GiftSection() {
     if (copyResetTimerRef.current !== null) window.clearTimeout(copyResetTimerRef.current);
   }, []);
 
-  const copyAccount = async (number: string, index: number, trigger: HTMLButtonElement) => {
+  const copyAccount = async (index: number, trigger: HTMLButtonElement) => {
+    const number = trigger.closest<HTMLElement>(".bank-card")?.querySelector<HTMLElement>("strong")?.textContent?.trim() ?? "";
+    if (!number) return;
     const scrollRoot = document.querySelector<HTMLElement>("[data-template-scroll-root]");
     const scrollTop = scrollRoot?.scrollTop ?? null;
     const preserveScroll = () => restoreTemplateScrollPosition(scrollRoot, scrollTop);
@@ -409,7 +411,7 @@ function GiftSection() {
               <div className="bank-top"><span>{account.bank}</span><i>♡</i></div>
               <strong>{account.number}</strong>
               <p>{account.holder}</p>
-              <button type="button" onClick={(event) => copyAccount(account.number, index, event.currentTarget)}>
+              <button type="button" onClick={(event) => copyAccount(index, event.currentTarget)}>
                 {copied === index ? <Check size={15} /> : <Copy size={15} />}
                 {copied === index ? "Tersalin" : "Salin nomor"}
               </button>

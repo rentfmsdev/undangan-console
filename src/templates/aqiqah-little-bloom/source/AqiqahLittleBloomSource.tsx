@@ -288,8 +288,14 @@ export function AqiqahLittleBloomSource() {
     }
   };
 
-  const copyToClipboard = (text: string, key: string) => {
-    void writeClipboardText(text).then(() => {
+  const copyToClipboard = (field: string, key: string, trigger: HTMLButtonElement, compact = true) => {
+    const renderedValue = scrollRootRef.current
+      ?.querySelector<HTMLElement>(`[data-template-section="gift"] [data-field="${field}"]`)
+      ?.textContent?.trim() ?? "";
+    const value = compact ? renderedValue.replace(/\s/g, "") : renderedValue;
+    if (!value) return;
+    trigger.blur();
+    void writeClipboardText(value).then(() => {
       setCopiedKey(key);
       setTimeout(() => setCopiedKey(null), 2500);
     }).catch(() => setCopiedKey(null));
@@ -762,7 +768,7 @@ export function AqiqahLittleBloomSource() {
               <button
                 type="button"
                 className="aqiqah-btn-copy-card"
-                onClick={() => copyToClipboard("8830192847", "bank1")}
+                onClick={(event) => copyToClipboard("bank1Account", "bank1", event.currentTarget)}
               >
                 {copiedKey === "bank1" ? (
                   <><Check size={12} /><span>Tersalin!</span></>
@@ -792,7 +798,7 @@ export function AqiqahLittleBloomSource() {
               <button
                 type="button"
                 className="aqiqah-btn-copy-card"
-                onClick={() => copyToClipboard("7128394012", "bank2")}
+                onClick={(event) => copyToClipboard("bank2Account", "bank2", event.currentTarget)}
               >
                 {copiedKey === "bank2" ? (
                   <><Check size={12} /><span>Tersalin!</span></>
@@ -821,7 +827,7 @@ export function AqiqahLittleBloomSource() {
           <button
             type="button"
             className="aqiqah-gift-physical__copy"
-            onClick={() => copyToClipboard("Jl. Dahlia Indah No. 18, Kemang, Jakarta Selatan (12730)", "address")}
+            onClick={(event) => copyToClipboard("giftAddress", "address", event.currentTarget, false)}
             aria-label="Salin alamat"
           >
             {copiedKey === "address" ? <Check size={14} /> : <Copy size={14} />}

@@ -28,6 +28,23 @@ export async function writeClipboardText(value: string) {
   if (typeof document === "undefined")
     throw new Error("Clipboard tidak tersedia.");
 
+  const scrollPositions = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-template-scroll-root]"),
+    (element) => ({ element, left: element.scrollLeft, top: element.scrollTop }),
+  );
+  const windowScrollX = window.scrollX;
+  const windowScrollY = window.scrollY;
+  const restoreScrollPositions = () => {
+    for (const position of scrollPositions) {
+      const previousScrollBehavior = position.element.style.scrollBehavior;
+      position.element.style.scrollBehavior = "auto";
+      position.element.scrollLeft = position.left;
+      position.element.scrollTop = position.top;
+      position.element.style.scrollBehavior = previousScrollBehavior;
+    }
+    window.scrollTo(windowScrollX, windowScrollY);
+  };
+
   const textarea = document.createElement("textarea");
   textarea.value = value;
   textarea.setAttribute("readonly", "");
@@ -35,10 +52,15 @@ export async function writeClipboardText(value: string) {
   textarea.style.left = "-9999px";
   textarea.style.top = "0";
   document.body.appendChild(textarea);
-  textarea.focus();
+  textarea.focus({ preventScroll: true });
   textarea.select();
   textarea.setSelectionRange(0, textarea.value.length);
   const copied = typeof document.execCommand === "function" && document.execCommand("copy");
   textarea.remove();
+  restoreScrollPositions();
+  window.requestAnimationFrame(() => {
+    restoreScrollPositions();
+    window.requestAnimationFrame(restoreScrollPositions);
+  });
   if (!copied) throw new Error("Clipboard tidak tersedia.");
 }

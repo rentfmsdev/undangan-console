@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X, ZoomIn, Grid, Play, ImageIcon } from "lucide-react";
 
 type Props = {
@@ -27,28 +28,6 @@ export function AqiqahGallery({ images }: Props) {
         ];
   const len = effectiveImages.length;
 
-  // Keyboard navigation for lightbox
-  useEffect(() => {
-    if (lightboxIndex === null) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") nextLightbox();
-      if (e.key === "ArrowLeft") prevLightbox();
-      if (e.key === "Escape") setLightboxIndex(null);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [lightboxIndex]);
-
-  // Prevent body scroll when lightbox is open
-  useEffect(() => {
-    if (lightboxIndex !== null) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [lightboxIndex]);
-
   const prevSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : len - 1));
   }, [len]);
@@ -64,6 +43,17 @@ export function AqiqahGallery({ images }: Props) {
   const nextLightbox = useCallback(() => {
     setLightboxIndex((prev) => (prev !== null && prev < len - 1 ? prev + 1 : 0));
   }, [len]);
+
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") nextLightbox();
+      if (e.key === "ArrowLeft") prevLightbox();
+      if (e.key === "Escape") setLightboxIndex(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [lightboxIndex, nextLightbox, prevLightbox]);
 
   // Touch swipe handlers for carousel
   function handleTouchStart(e: React.TouchEvent) {
@@ -261,7 +251,7 @@ export function AqiqahGallery({ images }: Props) {
       )}
 
       {/* ── Lightbox ── */}
-      {lightboxIndex !== null && (
+      {lightboxIndex !== null && createPortal(
         <div
           className="ag-lightbox"
           onClick={() => setLightboxIndex(null)}
@@ -317,7 +307,8 @@ export function AqiqahGallery({ images }: Props) {
           <div className="ag-lightbox-footer" onClick={(e) => e.stopPropagation()}>
             <span className="ag-lightbox-counter">{lightboxIndex + 1} / {len}</span>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

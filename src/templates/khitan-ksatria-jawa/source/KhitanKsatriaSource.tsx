@@ -133,9 +133,14 @@ export function KhitanKsatriaSource() {
     }
   }
 
-  function handleCopyAccount(acc: string, bankName: string) {
-    void writeClipboardText(acc).then(() => {
-      setCopiedBank(bankName);
+  function handleCopyAccount(field: "account" | "account2", key: string, trigger: HTMLButtonElement) {
+    const account = document
+      .querySelector<HTMLElement>(`[data-template-section="gift"] [data-field="${field}"]`)
+      ?.textContent?.replace(/\s/g, "") ?? "";
+    if (!account) return;
+    trigger.blur();
+    void writeClipboardText(account).then(() => {
+      setCopiedBank(key);
       setTimeout(() => setCopiedBank(null), 2500);
     }).catch(() => setCopiedBank(null));
   }
@@ -489,7 +494,7 @@ export function KhitanKsatriaSource() {
           <button
             type="button"
             className="khitan-btn-copy"
-            onClick={() => handleCopyAccount("7820182990", "BCA")}
+            onClick={(event) => handleCopyAccount("account", "BCA", event.currentTarget)}
           >
             {copiedBank === "BCA" ? "✓ Tersalin!" : "Salin Nomor Rekening"}
           </button>
@@ -503,7 +508,7 @@ export function KhitanKsatriaSource() {
           <button
             type="button"
             className="khitan-btn-copy"
-            onClick={() => handleCopyAccount("1140029384721", "MANDIRI")}
+            onClick={(event) => handleCopyAccount("account2", "MANDIRI", event.currentTarget)}
           >
             {copiedBank === "MANDIRI" ? "✓ Tersalin!" : "Salin Nomor Rekening"}
           </button>
