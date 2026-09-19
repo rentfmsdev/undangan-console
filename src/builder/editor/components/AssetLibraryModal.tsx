@@ -283,7 +283,7 @@ export function AssetLibraryModal({
   return (
     <>
       <div
-        className="fixed inset-0 z-[70] flex items-end bg-slate-950/60 p-0 backdrop-blur-sm animate-in fade-in duration-200 sm:grid sm:place-items-center sm:p-4"
+        className="fixed inset-0 z-[80] flex items-end bg-slate-950/60 p-0 backdrop-blur-sm animate-in fade-in duration-200 sm:grid sm:place-items-center sm:p-4"
         role="dialog"
         aria-modal="true"
         aria-label="Asset Manager"

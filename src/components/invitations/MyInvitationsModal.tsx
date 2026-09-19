@@ -186,7 +186,7 @@ export function MyInvitationsModal({ open, onClose }: MyInvitationsModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="my-invitations-title"

@@ -127,7 +127,7 @@ export function UserAuthDropdown({
 
   // Logged in: Show user avatar pill & dropdown
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={`relative ${isOpen ? "z-50" : ""}`} ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}

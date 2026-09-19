@@ -2523,7 +2523,7 @@ export function ConsoleWorkspace({
       <main
         className={`${view === "editor" ? "fixed inset-0 flex h-dvh max-h-dvh flex-col overflow-hidden" : "min-h-screen"} bg-slate-50 text-slate-900`}
       >
-        <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur md:px-6">
+        <header className="sticky top-0 z-[60] flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/"
@@ -3268,7 +3268,7 @@ export function ConsoleWorkspace({
 
             <aside
               ref={inspectorPanelRef}
-              className={`editor-inspector-panel console-scrollbar fixed inset-y-0 right-0 z-[80] w-[min(420px,88vw)] max-h-none min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-slate-200 bg-slate-50 p-3 shadow-2xl transition-transform duration-300 ease-out lg:relative lg:inset-auto lg:z-40 lg:w-auto lg:h-full lg:min-h-0 lg:max-h-none lg:shadow-none lg:transition-all lg:duration-200 ${
+              className={`editor-inspector-panel console-scrollbar fixed inset-y-0 right-0 z-[80] w-[min(420px,88vw)] max-h-none min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-slate-200 bg-slate-50 p-3 shadow-2xl transition-transform duration-300 ease-out lg:relative lg:inset-auto lg:z-10 lg:w-auto lg:h-full lg:min-h-0 lg:max-h-none lg:shadow-none lg:transition-all lg:duration-200 ${
                 isInspectorCollapsed
                   ? "translate-x-full pointer-events-none lg:translate-x-0 lg:overflow-hidden lg:p-0 lg:border-0 lg:opacity-0"
                   : "translate-x-0 pointer-events-auto lg:opacity-100"
