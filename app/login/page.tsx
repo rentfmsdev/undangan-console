@@ -6,6 +6,7 @@ import type { Route } from "next";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, Suspense } from "react";
 import { openGoogleOAuthPopup } from "@/components/auth/google-oauth-popup";
+import { trackGoogleRegistration } from "@/lib/meta-pixel";
 import {
   Sparkles,
   ArrowRight,
@@ -86,6 +87,7 @@ function LoginForm() {
 
       const data = await res.json();
       if (res.ok && data.success) {
+        if (data.isNewUser === true) trackGoogleRegistration();
         router.push(data.returnTo || "/");
         router.refresh();
       } else {

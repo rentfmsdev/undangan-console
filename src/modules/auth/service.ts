@@ -77,7 +77,7 @@ export async function findOrCreateGoogleUser(payload: {
   email: string;
   name: string;
   avatarUrl?: string;
-}): Promise<{ user: AuthUser; sessionToken: string }> {
+}): Promise<{ user: AuthUser; sessionToken: string; isNewUser: boolean }> {
   const cleanEmail = payload.email.trim().toLowerCase();
   const cleanName = payload.name.trim() || cleanEmail.split("@")[0];
 
@@ -90,6 +90,7 @@ export async function findOrCreateGoogleUser(payload: {
 
   let userId: string;
   let userRecord: AuthUser;
+  const isNewUser = existingUsers.length === 0;
 
   if (existingUsers.length > 0) {
     const existing = existingUsers[0];
@@ -164,5 +165,6 @@ export async function findOrCreateGoogleUser(payload: {
   return {
     user: userRecord,
     sessionToken,
+    isNewUser,
   };
 }

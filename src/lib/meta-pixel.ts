@@ -1,4 +1,4 @@
-export type MetaPixelEvent = "Contact" | "InitiateCheckout" | "Lead" | "PageView" | "ViewContent";
+export type MetaPixelEvent = "CompleteRegistration" | "Contact" | "InitiateCheckout" | "Lead" | "PageView" | "ViewContent";
 
 type MetaPixelParameters = Record<string, boolean | number | string | undefined>;
 
@@ -26,6 +26,13 @@ export function trackMetaPixel(event: MetaPixelEvent, parameters?: MetaPixelPara
   }
 
   window.fbq("track", event, parameters);
+}
+
+export function trackGoogleRegistration() {
+  trackMetaPixel("CompleteRegistration", {
+    content_name: "Google Signup",
+    status: true,
+  });
 }
 
 export function flushMetaPixelEvents() {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { trackGoogleRegistration } from "@/lib/meta-pixel";
 
 type SignedInUser = {
   id: string;
@@ -118,7 +119,8 @@ export function GoogleOneTap({
               });
               if (!response.ok) return;
 
-              const payload = (await response.json()) as { user?: SignedInUser };
+              const payload = (await response.json()) as { user?: SignedInUser; isNewUser?: boolean };
+              if (payload.isNewUser === true) trackGoogleRegistration();
               if (payload.user) onAuthenticatedRef.current(payload.user);
             } catch {
               // The regular Google sign-in button remains available as a fallback.

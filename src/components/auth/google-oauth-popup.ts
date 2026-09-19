@@ -1,5 +1,7 @@
+import { trackGoogleRegistration } from "@/lib/meta-pixel";
+
 export type GoogleOAuthPopupResult =
-  | { success: true; returnTo: string }
+  | { success: true; returnTo: string; isNewUser: boolean }
   | { success: false; error: "cancelled" | "popup_blocked" | string };
 
 const GOOGLE_OAUTH_MESSAGE = "undangan:google-oauth";
@@ -21,9 +23,13 @@ export function openGoogleOAuthPopup(returnTo: string): Promise<GoogleOAuthPopup
     };
     const onMessage = (event: MessageEvent<unknown>) => {
       if (event.origin !== window.location.origin || !event.data || typeof event.data !== "object") return;
-      const payload = event.data as { type?: string; success?: boolean; returnTo?: string; error?: string };
+      const payload = event.data as { type?: string; success?: boolean; returnTo?: string; error?: string; isNewUser?: boolean };
       if (payload.type !== GOOGLE_OAUTH_MESSAGE) return;
-      if (payload.success && typeof payload.returnTo === "string") finish({ success: true, returnTo: payload.returnTo });
+      if (payload.success && typeof payload.returnTo === "string") {
+        const isNewUser = payload.isNewUser === true;
+        if (isNewUser) trackGoogleRegistration();
+        finish({ success: true, returnTo: payload.returnTo, isNewUser });
+      }
       else finish({ success: false, error: payload.error || "oauth_failed" });
     };
     const closedTimer = window.setInterval(() => {

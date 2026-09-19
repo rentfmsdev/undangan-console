@@ -17,7 +17,7 @@ function clearOAuthCookies(response: NextResponse) {
   return response;
 }
 
-function popupResponse(request: NextRequest, payload: { error?: string; returnTo: string; success: boolean }) {
+function popupResponse(request: NextRequest, payload: { error?: string; returnTo: string; success: boolean; isNewUser?: boolean }) {
   const targetOrigin = getAppBaseUrl(request);
   const message = JSON.stringify({ type: "undangan:google-oauth", ...payload }).replace(/</g, "\\u003c");
   const origin = JSON.stringify(targetOrigin);
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Single Action: Find or Create User in DB
-    const { sessionToken } = await findOrCreateGoogleUser({
+    const { sessionToken, isNewUser } = await findOrCreateGoogleUser({
       googleId: profile.id,
       email: profile.email,
       name: profile.name || profile.email.split("@")[0],
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
 
     // 4. Set Session Cookie
     const response = request.cookies.get(OAUTH_POPUP_COOKIE_NAME)?.value === "1"
-      ? popupResponse(request, { success: true, returnTo })
+      ? popupResponse(request, { success: true, returnTo, isNewUser })
       : NextResponse.redirect(new URL(returnTo, baseUrl));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       httpOnly: true,
@@ -124,14 +124,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email diperlukan" }, { status: 400 });
     }
 
-    const { user, sessionToken } = await findOrCreateGoogleUser({
+    const { user, sessionToken, isNewUser } = await findOrCreateGoogleUser({
       googleId: googleId || `google_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       email,
       name: name || email.split("@")[0],
       avatarUrl: avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
     });
 
-    const response = NextResponse.json({ success: true, user, returnTo });
+    const response = NextResponse.json({ success: true, user, returnTo, isNewUser });
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       httpOnly: true,
       secure: false,

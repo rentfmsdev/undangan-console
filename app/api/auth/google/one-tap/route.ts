@@ -31,14 +31,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Akun Google belum terverifikasi." }, { status: 401 });
     }
 
-    const { user, sessionToken } = await findOrCreateGoogleUser({
+    const { user, sessionToken, isNewUser } = await findOrCreateGoogleUser({
       googleId,
       email,
       name: typeof payload.name === "string" ? payload.name : email.split("@")[0],
       avatarUrl: typeof payload.picture === "string" ? payload.picture : undefined,
     });
 
-    const response = NextResponse.json({ user });
+    const response = NextResponse.json({ user, isNewUser });
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

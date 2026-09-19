@@ -252,6 +252,7 @@ function QuoteSection() {
 function GallerySection() {
   const [galleryPhotos, setGalleryPhotos] = useState<string[]>(wedding.galleryPhotos);
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
+  const galleryScrollTopRef = useRef<number | null>(null);
   const activePhoto = activePhotoIndex === null ? null : galleryPhotos[activePhotoIndex];
 
   useEffect(() => {
@@ -266,7 +267,25 @@ function GallerySection() {
     return () => window.removeEventListener(WEDDING_GALLERY_UPDATE_EVENT, updateGallery);
   }, []);
 
-  const closeLightbox = () => setActivePhotoIndex(null);
+  const preserveGalleryScroll = () => {
+    const scrollRoot = document.querySelector<HTMLElement>("[data-template-scroll-root]");
+    const scrollTop = galleryScrollTopRef.current;
+    if (!scrollRoot || scrollTop === null) return;
+    scrollRoot.scrollTop = scrollTop;
+  };
+
+  const openLightbox = (index: number, trigger: HTMLButtonElement) => {
+    const scrollRoot = document.querySelector<HTMLElement>("[data-template-scroll-root]");
+    galleryScrollTopRef.current = scrollRoot?.scrollTop ?? null;
+    trigger.blur();
+    setActivePhotoIndex(index);
+    window.requestAnimationFrame(preserveGalleryScroll);
+  };
+
+  const closeLightbox = () => {
+    setActivePhotoIndex(null);
+    window.requestAnimationFrame(preserveGalleryScroll);
+  };
   const movePhoto = (direction: number) => {
     setActivePhotoIndex((current) => {
       if (current === null) return 0;
@@ -277,6 +296,11 @@ function GallerySection() {
 
   useEffect(() => {
     if (activePhotoIndex === null) return;
+    preserveGalleryScroll();
+    const firstFrame = window.requestAnimationFrame(() => {
+      preserveGalleryScroll();
+      window.requestAnimationFrame(preserveGalleryScroll);
+    });
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setActivePhotoIndex(null);
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
@@ -287,6 +311,7 @@ function GallerySection() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => {
+      window.cancelAnimationFrame(firstFrame);
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [activePhotoIndex, galleryPhotos.length]);
@@ -301,7 +326,7 @@ function GallerySection() {
               className={`gallery-item gallery-item-${index + 1} reveal`}
               key={`${photo}-${index}`}
               type="button"
-              onClick={() => setActivePhotoIndex(index)}
+              onClick={(event) => openLightbox(index, event.currentTarget)}
               aria-label={`Lihat foto prewedding Ayu dan Ardi ${index + 1}`}
             >
               <Image src={photo} alt={`Foto prewedding Ayu dan Ardi ${index + 1}`} fill sizes="(max-width: 720px) 50vw, 300px" />
